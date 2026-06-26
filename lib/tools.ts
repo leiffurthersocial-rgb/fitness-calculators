@@ -3,12 +3,14 @@ import RepMax from "@/components/calculators/RepMax";
 import TrainingMax from "@/components/calculators/TrainingMax";
 import PlateLoading from "@/components/calculators/PlateLoading";
 import Dots from "@/components/calculators/Dots";
+import StrengthStandards from "@/components/calculators/StrengthStandards";
 import Vo2Max from "@/components/calculators/Vo2Max";
 import HeartRateZones from "@/components/calculators/HeartRateZones";
 import PaceRace from "@/components/calculators/PaceRace";
 import Tdee from "@/components/calculators/Tdee";
 import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
+import IdealWeight from "@/components/calculators/IdealWeight";
 import Caffeine from "@/components/calculators/Caffeine";
 import Sleep from "@/components/calculators/Sleep";
 import Water from "@/components/calculators/Water";
@@ -37,6 +39,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "training-max", name: "Training max", blurb: "Working-weight percentages", Component: TrainingMax },
       { id: "plate-loading", name: "Plate loading", blurb: "Plates per side for a target", Component: PlateLoading },
       { id: "dots", name: "Wilks / DOTS", blurb: "Bodyweight-adjusted strength", Component: Dots },
+      { id: "standards", name: "Strength standards", blurb: "Rank your lifts by age, weight & sport", Component: StrengthStandards },
     ],
   },
   {
@@ -55,6 +58,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "tdee", name: "TDEE / BMR", blurb: "Daily energy needs", Component: Tdee },
       { id: "macros", name: "Macros", blurb: "Protein / carbs / fat split", Component: Macros },
       { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
+      { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },
     ],
   },
   {

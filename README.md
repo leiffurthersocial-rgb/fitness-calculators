@@ -13,11 +13,14 @@ converts the whole app. Dark mode is the default with a light toggle.
 
 | Group | Tools |
 | --- | --- |
-| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Wilks/DOTS |
+| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Wilks/DOTS, Strength standards (age/weight/sex/sport) |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel) |
-| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR) |
-| **Recovery** | Caffeine half-life tracker (decay curve), Sleep cycles, Water intake |
-| **Productivity** | Pomodoro timer (with daily tally), Habit tracker (streaks + heatmap) |
+| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass) |
+| **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |
+| **Productivity** | Pomodoro timer (with daily tally) |
+
+Tools that offer multiple methods (Rep-max formula, VO₂ max test, HR-zone
+method) show an inline **“which should I use?”** recommendation.
 
 Every calculator updates live as you type, labels its outputs, and has an
 expandable **“how this is calculated”** note. All formulas live in one

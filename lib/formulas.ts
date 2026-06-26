@@ -402,3 +402,259 @@ export function vo2maxCategory(
   if (vo2 >= b.poor) return "Poor";
   return "Very poor";
 }
+
+/* ========================================================================
+ * STRENGTH STANDARDS  (bodyweight-, sex-, age- and sport-aware)
+ * ====================================================================== */
+
+export type Lift = "squat" | "bench" | "deadlift" | "ohp";
+
+export const LIFTS: { key: Lift; label: string }[] = [
+  { key: "squat", label: "Back squat" },
+  { key: "bench", label: "Bench press" },
+  { key: "deadlift", label: "Deadlift" },
+  { key: "ohp", label: "Overhead press" },
+];
+
+export type StrengthLevel =
+  | "Beginner"
+  | "Novice"
+  | "Intermediate"
+  | "Advanced"
+  | "Elite";
+
+export const STRENGTH_LEVELS: StrengthLevel[] = [
+  "Beginner",
+  "Novice",
+  "Intermediate",
+  "Advanced",
+  "Elite",
+];
+
+/**
+ * Approximate strength standards expressed as a 1RM multiple of bodyweight,
+ * ordered [Beginner, Novice, Intermediate, Advanced, Elite]. These are a
+ * transparent simplification synthesised from common published tables
+ * (ExRx / Strength Level averages) — real tables also vary with bodyweight,
+ * so treat these as a guide, not a verdict.
+ */
+const STRENGTH_RATIOS: Record<"male" | "female", Record<Lift, number[]>> = {
+  male: {
+    squat: [0.6, 1.0, 1.5, 2.0, 2.5],
+    bench: [0.5, 0.75, 1.0, 1.4, 1.8],
+    deadlift: [0.75, 1.25, 1.75, 2.25, 2.75],
+    ohp: [0.35, 0.55, 0.8, 1.05, 1.3],
+  },
+  female: {
+    squat: [0.5, 0.75, 1.2, 1.6, 2.0],
+    bench: [0.3, 0.45, 0.65, 0.9, 1.15],
+    deadlift: [0.5, 1.0, 1.4, 1.85, 2.3],
+    ohp: [0.2, 0.32, 0.47, 0.62, 0.8],
+  },
+};
+
+/**
+ * Age scaling for strength expectations. Strength peaks ~23–30; we ramp up
+ * through the teens and decline ~0.75%/yr past 30 (loosely tracking masters
+ * age-grading). Used to scale the required weight for each level.
+ */
+export function ageStrengthFactor(age: number): number {
+  if (age < 14) return 0.7;
+  if (age <= 23) return 0.9 + ((age - 14) / 9) * 0.1; // 0.90 → 1.00
+  if (age <= 30) return 1.0;
+  return Math.max(0.55, 1 - (age - 30) * 0.0075);
+}
+
+export interface StandardRow {
+  level: StrengthLevel;
+  weight: number; // required 1RM in kg
+  ratio: number; // multiple of bodyweight (age-adjusted)
+}
+
+/** The five level thresholds for one lift, in kg, age- & bodyweight-adjusted. */
+export function liftStandards(
+  lift: Lift,
+  sex: "male" | "female",
+  bodyweightKg: number,
+  age: number
+): StandardRow[] {
+  const factor = ageStrengthFactor(age);
+  return STRENGTH_RATIOS[sex][lift].map((baseRatio, i) => {
+    const ratio = baseRatio * factor;
+    return {
+      level: STRENGTH_LEVELS[i],
+      ratio,
+      weight: ratio * bodyweightKg,
+    };
+  });
+}
+
+export interface LiftClassification {
+  rows: StandardRow[];
+  levelIndex: number; // -1 = below Beginner
+  level: StrengthLevel | "Untrained";
+  ratio: number; // user's lift as a multiple of bodyweight
+  next: StandardRow | null;
+  toNextKg: number; // kg still needed to reach the next level (0 if Elite)
+}
+
+/** Classify a user's 1RM against the standards for a lift. */
+export function classifyLift(
+  oneRMkg: number,
+  lift: Lift,
+  sex: "male" | "female",
+  bodyweightKg: number,
+  age: number
+): LiftClassification {
+  const rows = liftStandards(lift, sex, bodyweightKg, age);
+  let levelIndex = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (oneRMkg >= rows[i].weight) levelIndex = i;
+  }
+  const next = levelIndex + 1 < rows.length ? rows[levelIndex + 1] : null;
+  return {
+    rows,
+    levelIndex,
+    level: levelIndex < 0 ? "Untrained" : rows[levelIndex].level,
+    ratio: bodyweightKg > 0 ? oneRMkg / bodyweightKg : 0,
+    next,
+    toNextKg: next ? Math.max(0, next.weight - oneRMkg) : 0,
+  };
+}
+
+export type Emphasis = "absolute" | "relative" | "power" | "balanced";
+
+export interface SportProfile {
+  key: string;
+  label: string;
+  /** Lifts most relevant to the sport (highlighted in the UI). */
+  lifts: Lift[];
+  emphasis: Emphasis;
+  /** Recommended minimum level to be competitive at an amateur level. */
+  target: StrengthLevel;
+  note: string;
+}
+
+/**
+ * Sport-specific guidance: which lifts matter and whether the sport rewards
+ * absolute strength, strength relative to bodyweight, or explosive power.
+ */
+export const SPORTS: SportProfile[] = [
+  {
+    key: "general",
+    label: "General fitness",
+    lifts: ["squat", "bench", "deadlift", "ohp"],
+    emphasis: "balanced",
+    target: "Intermediate",
+    note: "Build all four lifts evenly. Intermediate across the board is a strong, healthy baseline.",
+  },
+  {
+    key: "powerlifting",
+    label: "Powerlifting",
+    lifts: ["squat", "bench", "deadlift"],
+    emphasis: "absolute",
+    target: "Advanced",
+    note: "Maximal absolute strength in the squat, bench and deadlift — your total is everything.",
+  },
+  {
+    key: "weightlifting",
+    label: "Olympic weightlifting",
+    lifts: ["squat", "ohp"],
+    emphasis: "power",
+    target: "Advanced",
+    note: "Explosive power from a huge squat and strong overhead position. Front-squat and overhead strength carry over most.",
+  },
+  {
+    key: "strongman",
+    label: "Strongman",
+    lifts: ["deadlift", "squat", "ohp"],
+    emphasis: "absolute",
+    target: "Advanced",
+    note: "Raw absolute strength and overhead pressing power across odd objects — heavier bodyweight is usually an advantage.",
+  },
+  {
+    key: "field",
+    label: "Football / rugby / field sports",
+    lifts: ["squat", "bench", "deadlift"],
+    emphasis: "power",
+    target: "Advanced",
+    note: "Lower-body power and contact strength. Squat and bench build the force you put into opponents and the ground.",
+  },
+  {
+    key: "endurance",
+    label: "Running / cycling / endurance",
+    lifts: ["squat", "deadlift"],
+    emphasis: "relative",
+    target: "Novice",
+    note: "Strength is support work, not the goal. Keep it relative — strong legs without extra bodyweight protect against injury.",
+  },
+  {
+    key: "climbing",
+    label: "Climbing / gymnastics",
+    lifts: ["deadlift", "ohp"],
+    emphasis: "relative",
+    target: "Intermediate",
+    note: "Strength-to-weight is king. Pulling and pressing strength matter, but only relative to a light bodyweight.",
+  },
+  {
+    key: "combat",
+    label: "Combat sports / martial arts",
+    lifts: ["squat", "deadlift", "ohp"],
+    emphasis: "relative",
+    target: "Intermediate",
+    note: "Explosive, weight-class-friendly strength. Build power without drifting out of your division.",
+  },
+];
+
+/* ========================================================================
+ * IDEAL BODYWEIGHT  &  LEAN MASS
+ * ====================================================================== */
+
+/** Inches of height above 5 ft (the basis of the classic IBW formulas). */
+function inchesOver5ft(heightCm: number): number {
+  return Math.max(0, heightCm / 2.54 - 60);
+}
+
+export interface IdealWeightRow {
+  name: string;
+  kg: number;
+}
+
+/**
+ * Classic height-based ideal-weight formulas (all return kg). They were
+ * derived for medication dosing, so they trend a little lean — use the
+ * healthy-BMI range as the practical target.
+ */
+export function idealWeightFormulas(
+  heightCm: number,
+  sex: "male" | "female"
+): IdealWeightRow[] {
+  const over = inchesOver5ft(heightCm);
+  const male = sex === "male";
+  return [
+    { name: "Devine", kg: (male ? 50 : 45.5) + 2.3 * over },
+    { name: "Robinson", kg: (male ? 52 : 49) + (male ? 1.9 : 1.7) * over },
+    { name: "Miller", kg: (male ? 56.2 : 53.1) + (male ? 1.41 : 1.36) * over },
+    { name: "Hamwi", kg: (male ? 48 : 45.5) + (male ? 2.7 : 2.2) * over },
+  ];
+}
+
+/** Healthy weight range (kg) for a height, from BMI 18.5–24.9. */
+export function healthyWeightRange(heightCm: number): { minKg: number; maxKg: number } {
+  const m = heightCm / 100;
+  return { minKg: 18.5 * m * m, maxKg: 24.9 * m * m };
+}
+
+/**
+ * Lean body mass (Boer formula), kg. Useful as a floor for cuts and a sanity
+ * check on ideal weight: you can't healthily weigh less than your lean mass.
+ */
+export function leanBodyMassBoer(
+  weightKg: number,
+  heightCm: number,
+  sex: "male" | "female"
+): number {
+  return sex === "male"
+    ? 0.407 * weightKg + 0.267 * heightCm - 19.2
+    : 0.252 * weightKg + 0.473 * heightCm - 48.3;
+}
