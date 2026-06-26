@@ -4,6 +4,7 @@ import TrainingMax from "@/components/calculators/TrainingMax";
 import PlateLoading from "@/components/calculators/PlateLoading";
 import Dots from "@/components/calculators/Dots";
 import StrengthStandards from "@/components/calculators/StrengthStandards";
+import SportsBuildRater from "@/components/calculators/SportsBuildRater";
 import Vo2Max from "@/components/calculators/Vo2Max";
 import HeartRateZones from "@/components/calculators/HeartRateZones";
 import PaceRace from "@/components/calculators/PaceRace";
@@ -11,10 +12,14 @@ import Tdee from "@/components/calculators/Tdee";
 import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
 import IdealWeight from "@/components/calculators/IdealWeight";
+import Ffmi from "@/components/calculators/Ffmi";
+import CalorieBurn from "@/components/calculators/CalorieBurn";
+import BloodPressure from "@/components/calculators/BloodPressure";
+import WaistHip from "@/components/calculators/WaistHip";
+import Bsa from "@/components/calculators/Bsa";
 import Caffeine from "@/components/calculators/Caffeine";
 import Sleep from "@/components/calculators/Sleep";
 import Water from "@/components/calculators/Water";
-import Pomodoro from "@/components/calculators/Pomodoro";
 
 export interface Tool {
   id: string;
@@ -31,6 +36,13 @@ export interface ToolGroup {
 
 /** The full navigation registry: groups, in display order, with their tools. */
 export const TOOL_GROUPS: ToolGroup[] = [
+  {
+    group: "Sports",
+    emoji: "🏅",
+    tools: [
+      { id: "build-rater", name: "Sports build rater", blurb: "Rate your build for a sport & position", Component: SportsBuildRater },
+    ],
+  },
   {
     group: "Strength",
     emoji: "🏋️",
@@ -59,6 +71,17 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "macros", name: "Macros", blurb: "Protein / carbs / fat split", Component: Macros },
       { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
       { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },
+      { id: "ffmi", name: "FFMI", blurb: "Fat-free mass index", Component: Ffmi },
+      { id: "calorie-burn", name: "Calorie burn", blurb: "Energy used by activity (METs)", Component: CalorieBurn },
+    ],
+  },
+  {
+    group: "Health",
+    emoji: "🩺",
+    tools: [
+      { id: "blood-pressure", name: "Blood pressure", blurb: "Category from systolic / diastolic", Component: BloodPressure },
+      { id: "waist-hip", name: "Waist-to-hip ratio", blurb: "Fat distribution & risk", Component: WaistHip },
+      { id: "bsa", name: "Body surface area", blurb: "Mosteller & Du Bois", Component: Bsa },
     ],
   },
   {
@@ -68,13 +91,6 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "caffeine", name: "Caffeine tracker", blurb: "Half-life decay curve", Component: Caffeine },
       { id: "sleep", name: "Sleep cycles", blurb: "Best bed / wake times", Component: Sleep },
       { id: "water", name: "Water intake", blurb: "Daily hydration target", Component: Water },
-    ],
-  },
-  {
-    group: "Productivity",
-    emoji: "⏱️",
-    tools: [
-      { id: "pomodoro", name: "Pomodoro timer", blurb: "Focus intervals + tally", Component: Pomodoro },
     ],
   },
 ];

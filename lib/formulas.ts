@@ -658,3 +658,141 @@ export function leanBodyMassBoer(
     ? 0.407 * weightKg + 0.267 * heightCm - 19.2
     : 0.252 * weightKg + 0.473 * heightCm - 48.3;
 }
+
+/* ========================================================================
+ * HEALTH METRICS
+ * ====================================================================== */
+
+export interface FfmiResult {
+  leanMassKg: number;
+  ffmi: number;
+  normalizedFfmi: number; // adjusted to a 1.8 m reference height
+}
+
+/**
+ * Fat-Free Mass Index — lean mass relative to height², the muscularity
+ * counterpart to BMI. Normalised FFMI corrects to a 1.8 m reference so tall
+ * and short lifters compare fairly.
+ *   FFMI = leanMass / height_m²
+ *   normalised = FFMI + 6.1 × (1.8 − height_m)
+ */
+export function ffmi(
+  weightKg: number,
+  heightCm: number,
+  bodyFatPct: number
+): FfmiResult {
+  const m = heightCm / 100;
+  const leanMassKg = weightKg * (1 - bodyFatPct / 100);
+  const raw = m > 0 ? leanMassKg / (m * m) : 0;
+  return {
+    leanMassKg,
+    ffmi: raw,
+    normalizedFfmi: raw + 6.1 * (1.8 - m),
+  };
+}
+
+/** Rough interpretation of normalised FFMI by sex. */
+export function ffmiCategory(nffmi: number, sex: "male" | "female"): string {
+  // Women carry less lean mass, so the bands sit lower.
+  const b =
+    sex === "male"
+      ? { low: 18, avg: 20, athletic: 22, exceptional: 25, suspicious: 26 }
+      : { low: 15, avg: 17, athletic: 19, exceptional: 21, suspicious: 22 };
+  if (nffmi >= b.suspicious) return "Beyond natural limits";
+  if (nffmi >= b.exceptional) return "Exceptional";
+  if (nffmi >= b.athletic) return "Athletic";
+  if (nffmi >= b.avg) return "Above average";
+  if (nffmi >= b.low) return "Average";
+  return "Below average";
+}
+
+/**
+ * Calories burned from MET value: kcal = MET × 3.5 × kg / 200 × minutes.
+ * (3.5 ml O₂/kg/min at 1 MET; ~5 kcal per litre of O₂.)
+ */
+export function caloriesFromMet(
+  met: number,
+  weightKg: number,
+  minutes: number
+): number {
+  return (met * 3.5 * weightKg) / 200 * minutes;
+}
+
+/** A compact MET table covering common training & daily activities. */
+export const MET_ACTIVITIES = [
+  { key: "walk_slow", label: "Walking (slow, 3 km/h)", met: 2.8 },
+  { key: "walk_brisk", label: "Walking (brisk, 5.5 km/h)", met: 4.3 },
+  { key: "hiking", label: "Hiking", met: 6.0 },
+  { key: "run_easy", label: "Running (8 km/h)", met: 8.3 },
+  { key: "run_fast", label: "Running (12 km/h)", met: 11.5 },
+  { key: "cycling_light", label: "Cycling (16–19 km/h)", met: 6.8 },
+  { key: "cycling_hard", label: "Cycling (22–25 km/h)", met: 10.0 },
+  { key: "swimming", label: "Swimming (moderate)", met: 5.8 },
+  { key: "rowing", label: "Rowing machine (vigorous)", met: 8.5 },
+  { key: "weights_light", label: "Weight training (general)", met: 3.5 },
+  { key: "weights_hard", label: "Weight training (vigorous)", met: 6.0 },
+  { key: "hiit", label: "HIIT / circuit training", met: 8.0 },
+  { key: "yoga", label: "Yoga", met: 2.5 },
+  { key: "elliptical", label: "Elliptical trainer", met: 5.0 },
+  { key: "jump_rope", label: "Jump rope", met: 12.3 },
+  { key: "basketball", label: "Basketball (game)", met: 8.0 },
+  { key: "soccer", label: "Soccer (casual)", met: 7.0 },
+  { key: "tennis", label: "Tennis (singles)", met: 7.3 },
+  { key: "climbing", label: "Rock climbing", met: 8.0 },
+  { key: "housework", label: "Housework / cleaning", met: 3.3 },
+] as const;
+
+export interface BpResult {
+  category: string;
+  tone: "accent" | "warn" | "danger";
+  advice: string;
+}
+
+/**
+ * Blood-pressure category per the 2017 ACC/AHA guidelines. The higher of the
+ * two readings' categories wins (e.g. 118/85 is Stage 1 on diastolic).
+ */
+export function bloodPressureCategory(
+  systolic: number,
+  diastolic: number
+): BpResult {
+  if (systolic >= 180 || diastolic >= 120)
+    return { category: "Hypertensive crisis", tone: "danger", advice: "Seek medical care promptly, especially with symptoms." };
+  if (systolic >= 140 || diastolic >= 90)
+    return { category: "Hypertension stage 2", tone: "danger", advice: "Likely needs medication plus lifestyle change — see a doctor." };
+  if (systolic >= 130 || diastolic >= 80)
+    return { category: "Hypertension stage 1", tone: "warn", advice: "Lifestyle changes; a clinician may consider medication." };
+  if (systolic >= 120)
+    return { category: "Elevated", tone: "warn", advice: "Adopt healthy-lifestyle habits to avoid progressing." };
+  if (systolic >= 90 && diastolic >= 60)
+    return { category: "Normal", tone: "accent", advice: "Healthy range — keep it up." };
+  return { category: "Low", tone: "warn", advice: "Often harmless, but see a doctor if you feel dizzy or faint." };
+}
+
+/** Waist-to-hip ratio. */
+export function waistToHip(waistCm: number, hipCm: number): number {
+  if (hipCm <= 0) return 0;
+  return waistCm / hipCm;
+}
+
+/** WHR cardiovascular-risk band (WHO thresholds, sex-specific). */
+export function whrCategory(ratio: number, sex: "male" | "female"): string {
+  if (sex === "male") {
+    if (ratio < 0.9) return "Low risk";
+    if (ratio <= 0.99) return "Moderate risk";
+    return "High risk";
+  }
+  if (ratio < 0.8) return "Low risk";
+  if (ratio <= 0.84) return "Moderate risk";
+  return "High risk";
+}
+
+/** Body surface area, m². Mosteller is the common clinical default. */
+export function bsaMosteller(weightKg: number, heightCm: number): number {
+  return Math.sqrt((heightCm * weightKg) / 3600);
+}
+
+/** Body surface area, m² — Du Bois & Du Bois (older, slightly different). */
+export function bsaDuBois(weightKg: number, heightCm: number): number {
+  return 0.007184 * Math.pow(weightKg, 0.425) * Math.pow(heightCm, 0.725);
+}

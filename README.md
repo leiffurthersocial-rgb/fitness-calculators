@@ -13,11 +13,17 @@ converts the whole app. Dark mode is the default with a light toggle.
 
 | Group | Tools |
 | --- | --- |
+| **Sports** | Sports build rater (rate your build & strength for a sport + position) |
 | **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Wilks/DOTS, Strength standards (age/weight/sex/sport) |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel) |
-| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass) |
+| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Calorie burn (METs) |
+| **Health** | Blood pressure (ACC/AHA), Waist-to-hip ratio, Body surface area (Mosteller / Du Bois) |
 | **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |
-| **Productivity** | Pomodoro timer (with daily tally) |
+
+The **Sports build rater** combines anthropometry (height & BMI vs the
+position's typical range) with relative strength (your lifts & pull-ups vs
+target ratios), weighting the two by what the role demands — a basketball
+centre is mostly height, a powerlifter almost all strength.
 
 Tools that offer multiple methods (Rep-max formula, VO₂ max test, HR-zone
 method) show an inline **“which should I use?”** recommendation.
