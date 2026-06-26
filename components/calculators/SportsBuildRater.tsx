@@ -42,12 +42,14 @@ export default function SportsBuildRater() {
   const su = smallLengthUnit(units);
 
   const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
+  const [age, setAge] = useState(DEFAULTS.age);
   const [height, setHeight] = useState(
     Math.round(lengthFromCm(DEFAULTS.heightCm, units))
   );
   const [weight, setWeight] = useState(
     Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
+  const [wingspan, setWingspan] = useState(0); // display length unit
   const [sportKey, setSportKey] = useState("basketball");
   const sport = SPORTS_DB.find((s) => s.key === sportKey)!;
   const [posKey, setPosKey] = useState(sport.positions[0].key);
@@ -65,9 +67,13 @@ export default function SportsBuildRater() {
   const position =
     sport.positions.find((p) => p.key === posKey) ?? sport.positions[0];
 
+  // Sports where a long wingspan (reach) is a genuine advantage.
+  const REACH_SPORTS = new Set(["basketball", "volleyball", "swimming", "combat"]);
+
   const result = useMemo(() => {
     const input: BuildInput = {
       sex,
+      age,
       heightCm: lengthToCm(height, units),
       weightKg: weightToKg(weight, units),
       squat: squat ? weightToKg(squat, units) : 0,
@@ -78,9 +84,12 @@ export default function SportsBuildRater() {
       sprint100,
       vertical: vertical ? lengthToCm(vertical, units) : 0,
       vo2max,
+      wingspanCm: wingspan ? lengthToCm(wingspan, units) : 0,
+      reach: REACH_SPORTS.has(sportKey),
     };
     return rateBuild(input, position);
-  }, [sex, height, weight, squat, bench, deadlift, ohp, pullups, sprint100, vertical, vo2max, position, units]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sex, age, height, weight, wingspan, squat, bench, deadlift, ohp, pullups, sprint100, vertical, vo2max, position, sportKey, units]);
 
   const onSport = (key: string) => {
     setSportKey(key);
@@ -116,7 +125,7 @@ export default function SportsBuildRater() {
             {position.note}
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Sex">
               <SegmentedControl
                 value={sex}
@@ -126,6 +135,9 @@ export default function SportsBuildRater() {
                   { value: "female", label: "F" },
                 ]}
               />
+            </Field>
+            <Field label="Age">
+              <NumberInput value={age} onChange={setAge} />
             </Field>
             <Field label={`Height (${lu})`}>
               <NumberInput value={height} onChange={setHeight} suffix={lu} />
@@ -167,21 +179,28 @@ export default function SportsBuildRater() {
               <Field label="VO₂max">
                 <NumberInput value={vo2max} onChange={setVo2max} suffix="ml/kg/min" />
               </Field>
+              <Field
+                label={`Wingspan (${lu})`}
+                hint={REACH_SPORTS.has(sportKey) ? "matters here" : undefined}
+              >
+                <NumberInput value={wingspan} onChange={setWingspan} suffix={lu} />
+              </Field>
             </div>
           </div>
         </div>
         <InfoNote>
           <p>
-            Four groups are scored: <strong>physique</strong> (height & BMI vs the
-            role&apos;s range), <strong>strength</strong> (relative lifts &
-            pull-ups), <strong>power</strong> (100 m &amp; vertical) and{" "}
-            <strong>endurance</strong> (VO₂max).
+            Four groups are scored: <strong>physique</strong> (height, BMI &
+            wingspan vs the role&apos;s range), <strong>strength</strong>{" "}
+            (relative lifts & pull-ups), <strong>power</strong> (100 m &amp;
+            vertical) and <strong>endurance</strong> (VO₂max).
           </p>
           <p>
             Each position weights the groups by what it demands, and the overall
             is the weighted average over only the groups you fill in — so the more
-            you enter, the more accurate it gets. Norms are approximate
-            elite-athlete averages, shifted for sex.
+            you enter, the more accurate it gets. Targets are{" "}
+            <strong>age-adjusted</strong> and shifted for sex; wingspan rewards
+            reach in sports like basketball, volleyball and swimming.
           </p>
         </InfoNote>
       </Card>
@@ -225,6 +244,28 @@ export default function SportsBuildRater() {
             </div>
           </div>
         </div>
+
+        {/* Limiter / standout insight */}
+        {(result.limiter || result.standout) && (
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {result.standout && (
+              <div className="rounded-xl border border-accent-200 bg-accent-50 px-3 py-2 dark:border-accent-800 dark:bg-accent-900/20">
+                <div className="text-xs text-zinc-500">Standout</div>
+                <div className="text-sm font-semibold text-accent-700 dark:text-accent-300">
+                  {result.standout.label} · {result.standout.score}
+                </div>
+              </div>
+            )}
+            {result.limiter && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-900 dark:bg-amber-900/20">
+                <div className="text-xs text-zinc-500">Biggest limiter</div>
+                <div className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+                  {result.limiter.label} · {result.limiter.score}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Per-metric bars */}
         <div className="mt-5 space-y-2.5">

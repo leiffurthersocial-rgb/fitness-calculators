@@ -201,6 +201,7 @@ export interface BuildInput {
   sex: "male" | "female";
   heightCm: number;
   weightKg: number;
+  age?: number; // age-adjusts the performance targets (defaults to prime, 25)
   // All optional (0 / undefined = not provided). Lifts in kg, sprint in s.
   squat?: number;
   bench?: number;
@@ -210,6 +211,8 @@ export interface BuildInput {
   sprint100?: number;
   vertical?: number;
   vo2max?: number;
+  wingspanCm?: number; // arm span, for the ape-index (reach) metric
+  reach?: boolean; // does the sport reward reach? (basketball, volleyball, …)
 }
 
 export interface MetricScore {
@@ -234,6 +237,8 @@ export interface BuildResult {
   metrics: MetricScore[];
   feedback: string[];
   enteredGroups: number;
+  limiter: { label: string; score: number } | null; // weakest attribute
+  standout: { label: string; score: number } | null; // strongest attribute
 }
 
 /** Triangular band score: 100 at the centre, ~75 at the edges, 0 a band-width out. */
@@ -259,8 +264,33 @@ const GROUP_LABELS: Record<AttributeGroup, string> = {
   endurance: "Endurance",
 };
 
+/**
+ * Age scaling for STRENGTH expectations — peaks ~23–30, ramps up through the
+ * teens, declines ~0.75%/yr after 30.
+ */
+function ageStrengthFactor(age: number): number {
+  if (age < 14) return 0.72;
+  if (age <= 23) return 0.9 + ((age - 14) / 9) * 0.1;
+  if (age <= 30) return 1.0;
+  return Math.max(0.55, 1 - (age - 30) * 0.0075);
+}
+
+/**
+ * Age scaling for POWER & ENDURANCE — these peak a little earlier (~20–27) and
+ * decline a touch faster than strength (~0.9%/yr), matching sprint/VO₂max norms.
+ */
+function agePerformanceFactor(age: number): number {
+  if (age < 14) return 0.72;
+  if (age <= 22) return 0.9 + ((age - 14) / 8) * 0.1;
+  if (age <= 27) return 1.0;
+  return Math.max(0.5, 1 - (age - 27) * 0.009);
+}
+
 export function rateBuild(input: BuildInput, position: BuildPosition): BuildResult {
   const female = input.sex === "female";
+  const age = input.age && input.age > 0 ? input.age : 25;
+  const aS = ageStrengthFactor(age); // strength target multiplier
+  const aP = agePerformanceFactor(age); // power / endurance multiplier
   const heightM = input.heightCm / 100;
   const bmi = heightM > 0 ? input.weightKg / (heightM * heightM) : 0;
   const metrics: MetricScore[] = [];
@@ -281,17 +311,21 @@ export function rateBuild(input: BuildInput, position: BuildPosition): BuildResu
     detail: bmi < position.bmi[0] ? "Leaner/lighter than typical — consider adding mass"
       : bmi > position.bmi[1] ? "Heavier than typical for the role" : "Well-matched build",
   });
-  const physiqueScore = (heightScore + buildScore) / 2;
 
   // ---- Helper to score & record one performance metric ----
   const t = position.targets;
   const addMetric = (
     key: string, label: string, group: AttributeGroup,
     actual: number | undefined, baseTarget: number | undefined,
-    opts: { relative?: boolean; lowerBetter?: boolean; femaleKey?: keyof typeof FEMALE; unit?: string }
+    opts: { relative?: boolean; lowerBetter?: boolean; femaleKey?: keyof typeof FEMALE; unit?: string; ageMult?: number }
   ) => {
     if (baseTarget == null || !actual || actual <= 0) return;
-    const target = female && opts.femaleKey ? baseTarget * FEMALE[opts.femaleKey] : baseTarget;
+    let target = baseTarget;
+    if (female && opts.femaleKey) target *= FEMALE[opts.femaleKey];
+    // Age-adjust the bar: older/younger athletes are judged against age-fair
+    // targets. A lower required time (lowerBetter) gets *easier* with age.
+    const ageMult = opts.ageMult ?? 1;
+    target = opts.lowerBetter ? target / ageMult : target * ageMult;
     let attainment: number;
     let detail: string;
     if (opts.lowerBetter) {
@@ -308,19 +342,30 @@ export function rateBuild(input: BuildInput, position: BuildPosition): BuildResu
     metrics.push({ key, label, group, score: Math.max(0, Math.min(115, attainment * 100)), detail });
   };
 
-  addMetric("squat", "Squat", "strength", input.squat, t.squat, { relative: true, femaleKey: "squat" });
-  addMetric("bench", "Bench", "strength", input.bench, t.bench, { relative: true, femaleKey: "bench" });
-  addMetric("deadlift", "Deadlift", "strength", input.deadlift, t.deadlift, { relative: true, femaleKey: "deadlift" });
-  addMetric("ohp", "Overhead press", "strength", input.ohp, t.ohp, { relative: true, femaleKey: "ohp" });
-  addMetric("pullups", "Pull-ups", "strength", input.pullups, t.pullups, { femaleKey: "pullups", unit: " reps" });
-  addMetric("sprint100", "100 m sprint", "power", input.sprint100, t.sprint100, { lowerBetter: true, femaleKey: "sprint100" });
-  addMetric("vertical", "Vertical jump", "power", input.vertical, t.vertical, { femaleKey: "vertical", unit: " cm" });
-  addMetric("vo2max", "VO₂max", "endurance", input.vo2max, t.vo2max, { femaleKey: "vo2max" });
+  addMetric("squat", "Squat", "strength", input.squat, t.squat, { relative: true, femaleKey: "squat", ageMult: aS });
+  addMetric("bench", "Bench", "strength", input.bench, t.bench, { relative: true, femaleKey: "bench", ageMult: aS });
+  addMetric("deadlift", "Deadlift", "strength", input.deadlift, t.deadlift, { relative: true, femaleKey: "deadlift", ageMult: aS });
+  addMetric("ohp", "Overhead press", "strength", input.ohp, t.ohp, { relative: true, femaleKey: "ohp", ageMult: aS });
+  addMetric("pullups", "Pull-ups", "strength", input.pullups, t.pullups, { femaleKey: "pullups", unit: " reps", ageMult: aS });
+  addMetric("sprint100", "100 m sprint", "power", input.sprint100, t.sprint100, { lowerBetter: true, femaleKey: "sprint100", ageMult: aP });
+  addMetric("vertical", "Vertical jump", "power", input.vertical, t.vertical, { femaleKey: "vertical", unit: " cm", ageMult: aP });
+  addMetric("vo2max", "VO₂max", "endurance", input.vo2max, t.vo2max, { femaleKey: "vo2max", ageMult: aP });
+
+  // Wingspan / ape index — long arms help in reach sports (basketball,
+  // volleyball, swimming, combat). Scored within physique when provided.
+  if (input.wingspanCm && input.wingspanCm > 0 && input.heightCm > 0) {
+    const ape = input.wingspanCm / input.heightCm;
+    const apeTarget = input.reach ? 1.05 : 1.0; // reach sports reward longer arms
+    metrics.push({
+      key: "wingspan", label: "Wingspan (ape index)", group: "physique",
+      score: Math.max(0, Math.min(115, (ape / apeTarget) * 100)),
+      detail: `ape index ${ape.toFixed(2)} vs ~${apeTarget.toFixed(2)} ideal`,
+    });
+  }
 
   // ---- Aggregate into groups ----
   const mw = position.metricWeights ?? {};
   const groupScoreRaw = (group: AttributeGroup): number | null => {
-    if (group === "physique") return physiqueScore;
     const ms = metrics.filter((m) => m.group === group);
     if (ms.length === 0) return null;
     // Weighted average within the group using per-metric importance.
@@ -392,5 +437,11 @@ export function rateBuild(input: BuildInput, position: BuildPosition): BuildResu
   if (feedback.length === 0)
     feedback.push("Strong match across the board — your build and performance suit this role well.");
 
-  return { overall, verdict, groups, metrics, feedback, enteredGroups };
+  // Biggest limiter & standout across every scored metric (capped at 100).
+  const capped = metrics.map((m) => ({ label: m.label, score: Math.round(Math.min(100, m.score)) }));
+  const limiter = capped.length ? capped.reduce((a, b) => (b.score < a.score ? b : a)) : null;
+  const best = capped.length ? capped.reduce((a, b) => (b.score > a.score ? b : a)) : null;
+  const standout = best && best.score >= 90 ? best : null;
+
+  return { overall, verdict, groups, metrics, feedback, enteredGroups, limiter, standout };
 }

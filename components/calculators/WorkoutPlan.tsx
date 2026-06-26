@@ -16,10 +16,13 @@ import { useUnits } from "@/lib/settings";
 import { DEFAULTS } from "@/lib/defaults";
 import {
   GOALS,
+  EQUIPMENT,
   generatePlan,
   goalForSport,
+  volumeTarget,
   type Goal,
   type MainLift,
+  type Equipment,
 } from "@/lib/workoutPlan";
 import { SPORTS_DB } from "@/lib/buildRater";
 import {
@@ -44,6 +47,7 @@ export default function WorkoutPlan() {
 
   const [goal, setGoal] = useState<Goal>("athletic");
   const [days, setDays] = useState(4);
+  const [equipment, setEquipment] = useState<Equipment>("full");
   const [tailor, setTailor] = useState(false);
   const [sportKey, setSportKey] = useState("basketball");
   const sport = SPORTS_DB.find((s) => s.key === sportKey)!;
@@ -87,11 +91,14 @@ export default function WorkoutPlan() {
     return generatePlan({
       goal,
       daysPerWeek: days,
+      equipment,
       incrementKg: inc,
       oneRMs: rmKg,
       weakLifts,
     });
-  }, [goal, days, inc, oneRMs, weakLifts, units]);
+  }, [goal, days, equipment, inc, oneRMs, weakLifts, units]);
+
+  const vt = volumeTarget(goal);
 
   return (
     <div className="space-y-5">
@@ -115,6 +122,13 @@ export default function WorkoutPlan() {
                   { value: "4", label: "4 days" },
                   { value: "5", label: "5 days" },
                 ]}
+              />
+            </Field>
+            <Field label="Equipment">
+              <Select
+                value={equipment}
+                onChange={setEquipment}
+                options={EQUIPMENT.map((e) => ({ value: e.key, label: e.label }))}
               />
             </Field>
             <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
@@ -205,14 +219,17 @@ export default function WorkoutPlan() {
         </div>
         <InfoNote>
           <p>
-            We pick a split for your training frequency, apply a goal-based
-            set/rep/intensity scheme, and compute working weights from your 1RMs
-            using training-max percentages.
+            The split trains every muscle ~2× per week — at matched volume that
+            beats once-weekly splits for growth. Set/rep/intensity follow the
+            goal, with a target RIR (reps in reserve) rather than always going to
+            failure, and the weekly-volume card checks each muscle lands in the
+            productive range.
           </p>
           <p>
-            When you tailor to a sport, any lift below that role&apos;s target
-            ratio gets an extra set, and we suggest the goal that best matches
-            the position&apos;s demands.
+            Working weights come from your 1RMs (barbell mode) via training-max
+            percentages. Tailor to a sport and any lift below that role&apos;s
+            target ratio gets an extra set, plus we suggest the best-matching
+            goal.
           </p>
         </InfoNote>
       </Card>
@@ -249,13 +266,14 @@ export default function WorkoutPlan() {
                       </td>
                       <td className="px-3 py-2 tabular-nums">
                         {ex.sets}×{ex.reps}
+                        <div className="text-xs font-normal text-zinc-400">{ex.rir}</div>
                       </td>
                       <td className="px-3 py-2 text-zinc-500">
                         {ex.weightKg
                           ? `${fmt(weightFromKg(ex.weightKg, units))} ${wu}`
                           : ex.pct
                           ? `${Math.round(ex.pct * 100)}% 1RM`
-                          : "RPE 7–8"}
+                          : "hard effort"}
                       </td>
                     </tr>
                   ))}
@@ -268,6 +286,47 @@ export default function WorkoutPlan() {
           </Card>
         ))}
       </div>
+
+      {/* Weekly volume per muscle */}
+      <Card>
+        <CardTitle>Weekly volume</CardTitle>
+        <p className="mb-3 text-sm text-zinc-500">{vt.label}.</p>
+        <div className="space-y-2">
+          {plan.volume.map((v) => {
+            const inRange = v.sets >= vt.min && v.sets <= vt.max;
+            const tone =
+              v.sets < vt.min ? "#f59e0b" : v.sets > vt.max ? "#ef4444" : "#10b981";
+            return (
+              <div key={v.muscle}>
+                <div className="mb-0.5 flex items-center justify-between text-xs">
+                  <span className="font-medium">{v.muscle}</span>
+                  <span className="text-zinc-400">
+                    {Math.round(v.sets)} sets · {v.frequency}×/week
+                    {!inRange && (
+                      <span className="ml-1 text-amber-500">
+                        {v.sets < vt.min ? "below range" : "high"}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min(100, (v.sets / (vt.max + 4)) * 100)}%`,
+                      backgroundColor: tone,
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs text-zinc-400">
+          Each bar is total hard sets per week; the target band is {vt.min}–{vt.max}.
+          Every muscle is hit at least 2×/week.
+        </p>
+      </Card>
 
       <Card>
         <CardTitle>Coaching notes</CardTitle>
