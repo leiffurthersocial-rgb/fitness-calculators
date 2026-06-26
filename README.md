@@ -12,7 +12,7 @@ Every calculator is standalone (type your own stats), with one global
 
 | Group | Tools |
 | --- | --- |
-| **Sports** | Sports build rater (rate your build, strength & performance for a sport + position) |
+| **Sports** | Sports build rater (rate your build, strength & performance for a sport + position), Workout plan generator |
 | **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (age/weight/sex/sport) |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel) |
 | **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Calorie burn (METs) |
@@ -27,6 +27,13 @@ sprinter, vertical for a volleyball middle blocker). Every performance input is
 optional — the overall is the weighted average over only the groups you fill
 in, so the more you enter, the more accurate it gets. The model + data live in
 [`lib/buildRater.ts`](lib/buildRater.ts).
+
+The **Workout plan generator** turns that into action: choose a goal (or let a
+sport/position suggest one), pick 3–5 training days, and it builds a weekly
+split, applies a goal-based set/rep/intensity scheme, computes working weights
+from your 1RMs (via training-max percentages), and adds an extra set to any
+lift that falls below your sport's target ratio. Logic in
+[`lib/workoutPlan.ts`](lib/workoutPlan.ts).
 
 Tools that offer multiple methods (Rep-max formula, VO₂ max test, HR-zone
 method) show an inline **“which should I use?”** recommendation.

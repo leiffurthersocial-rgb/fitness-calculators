@@ -3,6 +3,7 @@ import RepMax from "@/components/calculators/RepMax";
 import TrainingMax from "@/components/calculators/TrainingMax";
 import PlateLoading from "@/components/calculators/PlateLoading";
 import StrengthStandards from "@/components/calculators/StrengthStandards";
+import WorkoutPlan from "@/components/calculators/WorkoutPlan";
 import SportsBuildRater from "@/components/calculators/SportsBuildRater";
 import Vo2Max from "@/components/calculators/Vo2Max";
 import HeartRateZones from "@/components/calculators/HeartRateZones";
@@ -37,6 +38,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
     emoji: "🏅",
     tools: [
       { id: "build-rater", name: "Sports build rater", blurb: "Rate your build for a sport & position", Component: SportsBuildRater },
+      { id: "workout-plan", name: "Workout plan generator", blurb: "Weekly plan from your goal, sport & lifts", Component: WorkoutPlan },
     ],
   },
   {
