@@ -10,14 +10,14 @@ import {
   InfoNote,
   CalcGrid,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
 import { roundToIncrement } from "@/lib/formulas";
 import { weightUnit, loadingIncrement, fmt } from "@/lib/units";
 
 export default function TrainingMax() {
-  const { profile } = useProfile();
-  const unit = weightUnit(profile.units);
-  const inc = loadingIncrement(profile.units);
+  const { units } = useUnits();
+  const unit = weightUnit(units);
+  const inc = loadingIncrement(units);
   const [oneRM, setOneRM] = useState(120);
   const [tmPct, setTmPct] = useState(90);
 

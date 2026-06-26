@@ -1,29 +1,32 @@
 # Vital — All-in-One Health & Fitness Hub
 
-A clean, dark-mode-first single-page app with 15 health, fitness, and
-productivity calculators. Built with **Next.js (App Router) + React +
-TypeScript + Tailwind CSS**. No backend — your shared profile and logs live in
-**localStorage**, so you never re-enter your stats.
+A clean, dark-mode-first single-page app with a suite of health & fitness
+calculators. Built with **Next.js (App Router) + React + TypeScript + Tailwind
+CSS**. No backend — each tool is self-contained and any logs live in
+**localStorage**. A single **metric/imperial toggle** converts the whole app.
 
 ## Features
 
-A persistent, collapsible **profile** (age, sex, bodyweight, height, resting
-HR) auto-fills every calculator, and a single **metric/imperial toggle**
-converts the whole app. Dark mode is the default with a light toggle.
+Every calculator is standalone (type your own stats), with one global
+**metric/imperial** unit toggle. Dark mode is the default with a light toggle.
 
 | Group | Tools |
 | --- | --- |
-| **Sports** | Sports build rater (rate your build & strength for a sport + position) |
-| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Wilks/DOTS, Strength standards (age/weight/sex/sport) |
+| **Sports** | Sports build rater (rate your build, strength & performance for a sport + position) |
+| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (age/weight/sex/sport) |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel) |
 | **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Calorie burn (METs) |
-| **Health** | Blood pressure (ACC/AHA), Waist-to-hip ratio, Body surface area (Mosteller / Du Bois) |
 | **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |
 
-The **Sports build rater** combines anthropometry (height & BMI vs the
-position's typical range) with relative strength (your lifts & pull-ups vs
-target ratios), weighting the two by what the role demands — a basketball
-centre is mostly height, a powerlifter almost all strength.
+The **Sports build rater** scores four attribute groups — **physique**
+(height & BMI vs the role's range), **strength** (relative lifts & pull-ups),
+**power** (100 m sprint & vertical jump) and **endurance** (VO₂max). Each of 13
+sports' positions weights the groups by what it demands, with per-metric
+emphasis on signature lifts (bench for a lineman, deadlift/squat & sprint for a
+sprinter, vertical for a volleyball middle blocker). Every performance input is
+optional — the overall is the weighted average over only the groups you fill
+in, so the more you enter, the more accurate it gets. The model + data live in
+[`lib/buildRater.ts`](lib/buildRater.ts).
 
 Tools that offer multiple methods (Rep-max formula, VO₂ max test, HR-zone
 method) show an inline **“which should I use?”** recommendation.

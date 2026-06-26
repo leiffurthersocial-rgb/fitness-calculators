@@ -13,7 +13,8 @@ import {
   Stat,
   Badge,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import { ffmi, ffmiCategory } from "@/lib/formulas";
 import {
   weightFromKg,
@@ -26,21 +27,21 @@ import {
 } from "@/lib/units";
 
 export default function Ffmi() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
-  const lu = lengthUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
+  const lu = lengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(profile.sex);
+  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
   const [weight, setWeight] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
   const [height, setHeight] = useState(
-    Math.round(lengthFromCm(profile.heightCm, profile.units))
+    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
   );
   const [bodyFat, setBodyFat] = useState(15);
 
-  const kg = weightToKg(weight, profile.units);
-  const cm = lengthToCm(height, profile.units);
+  const kg = weightToKg(weight, units);
+  const cm = lengthToCm(height, units);
   const r = ffmi(kg, cm, bodyFat);
   const category = ffmiCategory(r.normalizedFfmi, sex);
 
@@ -87,7 +88,7 @@ export default function Ffmi() {
           <Result label="Normalised FFMI" value={fmt(r.normalizedFfmi)} sub={category} />
           <div className="grid grid-cols-2 gap-3">
             <Stat label="Raw FFMI" value={fmt(r.ffmi)} />
-            <Stat label="Lean mass" value={fmt(weightFromKg(r.leanMassKg, profile.units))} unit={wu} />
+            <Stat label="Lean mass" value={fmt(weightFromKg(r.leanMassKg, units))} unit={wu} />
           </div>
           <div>
             <Badge tone={category === "Beyond natural limits" ? "warn" : "accent"}>

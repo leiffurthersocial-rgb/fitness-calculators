@@ -13,7 +13,8 @@ import {
   Badge,
   Tip,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import {
   LIFTS,
   STRENGTH_LEVELS,
@@ -43,19 +44,19 @@ const SEED_RATIO: Record<Lift, number> = {
 };
 
 export default function StrengthStandards() {
-  const { profile } = useProfile();
-  const unit = weightUnit(profile.units);
+  const { units } = useUnits();
+  const unit = weightUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(profile.sex);
-  const [age, setAge] = useState(profile.age);
+  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
+  const [age, setAge] = useState(DEFAULTS.age);
   const [bw, setBw] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
   const [sportKey, setSportKey] = useState("general");
 
   // Per-lift 1RM inputs, in the display unit.
   const [lifts, setLifts] = useState<Record<Lift, number>>(() => {
-    const bwDisp = weightFromKg(profile.bodyweightKg, profile.units);
+    const bwDisp = weightFromKg(DEFAULTS.bodyweightKg, units);
     return {
       squat: Math.round(bwDisp * SEED_RATIO.squat),
       bench: Math.round(bwDisp * SEED_RATIO.bench),
@@ -65,7 +66,7 @@ export default function StrengthStandards() {
   });
 
   const sport = SPORTS.find((s) => s.key === sportKey)!;
-  const bwKg = weightToKg(bw, profile.units);
+  const bwKg = weightToKg(bw, units);
 
   return (
     <CalcGrid>
@@ -144,7 +145,7 @@ export default function StrengthStandards() {
         <div className="mt-4 space-y-5">
           {LIFTS.map((lift) => {
             const isKey = sport.lifts.includes(lift.key);
-            const oneRMkg = weightToKg(lifts[lift.key], profile.units);
+            const oneRMkg = weightToKg(lifts[lift.key], units);
             const c = classifyLift(oneRMkg, lift.key, sex, bwKg, age);
 
             // Marker position between Beginner (0%) and Elite (100%).
@@ -199,7 +200,7 @@ export default function StrengthStandards() {
                   </span>
                   <span className="text-zinc-500">
                     {c.next
-                      ? `${fmt(weightFromKg(c.toNextKg, profile.units))} ${unit} to ${c.next.level}`
+                      ? `${fmt(weightFromKg(c.toNextKg, units))} ${unit} to ${c.next.level}`
                       : "Top tier 💪"}
                   </span>
                 </div>

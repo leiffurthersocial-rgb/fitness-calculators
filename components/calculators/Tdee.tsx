@@ -13,7 +13,8 @@ import {
   SegmentedControl,
   Stat,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import { bmrMifflin, tdee, ACTIVITY_LEVELS } from "@/lib/formulas";
 import {
   weightFromKg,
@@ -26,23 +27,23 @@ import {
 } from "@/lib/units";
 
 export default function Tdee() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
-  const lu = lengthUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
+  const lu = lengthUnit(units);
 
   // Auto-fill from profile, allow per-tool override.
-  const [age, setAge] = useState(profile.age);
-  const [sex, setSex] = useState<"male" | "female">(profile.sex);
+  const [age, setAge] = useState(DEFAULTS.age);
+  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
   const [weight, setWeight] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
   const [height, setHeight] = useState(
-    Math.round(lengthFromCm(profile.heightCm, profile.units))
+    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
   );
   const [activity, setActivity] = useState<string>("moderate");
 
-  const kg = weightToKg(weight, profile.units);
-  const cm = lengthToCm(height, profile.units);
+  const kg = weightToKg(weight, units);
+  const cm = lengthToCm(height, units);
   const bmr = bmrMifflin(kg, cm, age, sex);
   const mult =
     ACTIVITY_LEVELS.find((a) => a.key === activity)?.multiplier ?? 1.55;

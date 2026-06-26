@@ -12,16 +12,17 @@ import {
   Result,
   Tip,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import { maxHRTanaka, maxHRClassic, hrZones } from "@/lib/formulas";
 import { fmt } from "@/lib/units";
 
 const ZONE_COLORS = ["#94a3b8", "#22c55e", "#10b981", "#f59e0b", "#ef4444"];
 
 export default function HeartRateZones() {
-  const { profile } = useProfile();
-  const [age, setAge] = useState(profile.age);
-  const [restingHR, setRestingHR] = useState(profile.restingHR);
+  const { units } = useUnits();
+  const [age, setAge] = useState(DEFAULTS.age);
+  const [restingHR, setRestingHR] = useState(DEFAULTS.restingHR);
   const [maxFormula, setMaxFormula] = useState<"tanaka" | "classic">("tanaka");
   const [method, setMethod] = useState<"karvonen" | "percent">("karvonen");
 

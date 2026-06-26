@@ -19,7 +19,8 @@ import {
   SegmentedControl,
   Stat,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import {
   bmrMifflin,
   tdee,
@@ -32,14 +33,14 @@ import { weightFromKg, weightToKg, weightUnit, fmt } from "@/lib/units";
 const COLORS = { protein: "#10b981", carbs: "#f59e0b", fat: "#6366f1" };
 
 export default function Macros() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
 
   // Estimate maintenance from the profile so this works standalone, but let
   // the user override calories directly.
   const estMaintenance = Math.round(
     tdee(
-      bmrMifflin(profile.bodyweightKg, profile.heightCm, profile.age, profile.sex),
+      bmrMifflin(DEFAULTS.bodyweightKg, DEFAULTS.heightCm, DEFAULTS.age, DEFAULTS.sex),
       1.55
     )
   );
@@ -47,12 +48,12 @@ export default function Macros() {
   const [calories, setCalories] = useState(estMaintenance);
   const [goal, setGoal] = useState<MacroGoal>("maintain");
   const [bw, setBw] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
   const [proteinPerKg, setProteinPerKg] = useState(1.8);
 
   const target = calorieTarget(calories, goal);
-  const bwKg = weightToKg(bw, profile.units);
+  const bwKg = weightToKg(bw, units);
   const m = macroSplit(target, bwKg, proteinPerKg);
 
   const pieData = [

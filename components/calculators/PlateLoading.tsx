@@ -10,14 +10,14 @@ import {
   CalcGrid,
   Badge,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
 import { platesPerSide } from "@/lib/formulas";
 import { weightUnit, fmt } from "@/lib/units";
 
 // Standard plate sets per unit system.
 const PLATES: Record<string, number[]> = {
-  metric: [25, 20, 15, 10, 5, 2.5, 1.25],
-  imperial: [45, 35, 25, 10, 5, 2.5],
+  metric: [25, 20, 15, 10, 5, 2.5, 1.25, 0.5],
+  imperial: [45, 35, 25, 10, 5, 2.5, 1.25],
 };
 
 // A rough color per plate so the bar reads at a glance.
@@ -37,16 +37,16 @@ const plateColor = (p: number) => {
 };
 
 export default function PlateLoading() {
-  const { profile } = useProfile();
-  const unit = weightUnit(profile.units);
-  const defaultBar = profile.units === "metric" ? 20 : 45;
-  const [target, setTarget] = useState(profile.units === "metric" ? 100 : 225);
+  const { units } = useUnits();
+  const unit = weightUnit(units);
+  const defaultBar = units === "metric" ? 20 : 45;
+  const [target, setTarget] = useState(units === "metric" ? 100 : 225);
   const [bar, setBar] = useState(defaultBar);
   const [enabled, setEnabled] = useState<Record<number, boolean>>(
-    Object.fromEntries(PLATES[profile.units].map((p) => [p, true]))
+    Object.fromEntries(PLATES[units].map((p) => [p, true]))
   );
 
-  const available = PLATES[profile.units].filter((p) => enabled[p]);
+  const available = PLATES[units].filter((p) => enabled[p]);
   const { plates, achievable, loadedTotal } = platesPerSide(target, bar, available);
 
   return (
@@ -62,7 +62,7 @@ export default function PlateLoading() {
           </Field>
           <Field label="Available plates (per side)">
             <div className="flex flex-wrap gap-2">
-              {PLATES[profile.units].map((p) => (
+              {PLATES[units].map((p) => (
                 <button
                   key={p}
                   type="button"

@@ -12,8 +12,10 @@ import {
   CalcGrid,
   Badge,
   Tip,
+  SegmentedControl,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import {
   vo2maxCooper,
   vo2maxRestingHR,
@@ -21,39 +23,56 @@ import {
   vo2maxCategory,
   maxHRTanaka,
 } from "@/lib/formulas";
-import { milesToM, fmt, distanceUnit, lengthFromCm } from "@/lib/units";
+import { milesToM, fmt } from "@/lib/units";
 
 type Method = "cooper" | "resting" | "mile15";
 
 export default function Vo2Max() {
-  const { profile } = useProfile();
+  const { units } = useUnits();
   const [method, setMethod] = useState<Method>("cooper");
+  const [age, setAge] = useState(DEFAULTS.age);
+  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
 
   // Cooper: distance covered in 12 min. Stored in display distance unit.
-  const [coopDist, setCoopDist] = useState(profile.units === "metric" ? 2400 : 1.5);
+  const [coopDist, setCoopDist] = useState(units === "metric" ? 2400 : 1.5);
   // 1.5-mile run time in minutes.
   const [mileTime, setMileTime] = useState(11);
-  // Resting method uses profile resting HR + estimated max HR.
-  const [restingHR, setRestingHR] = useState(profile.restingHR);
+  // Resting method uses your resting HR + estimated max HR.
+  const [restingHR, setRestingHR] = useState(DEFAULTS.restingHR);
 
   let vo2 = 0;
   if (method === "cooper") {
     // Cooper formula needs meters; convert if imperial (entered as miles).
-    const meters = profile.units === "metric" ? coopDist : milesToM(coopDist);
+    const meters = units === "metric" ? coopDist : milesToM(coopDist);
     vo2 = vo2maxCooper(meters);
   } else if (method === "mile15") {
     vo2 = vo2maxMileAndHalf(mileTime);
   } else {
-    vo2 = vo2maxRestingHR(maxHRTanaka(profile.age), restingHR);
+    vo2 = vo2maxRestingHR(maxHRTanaka(age), restingHR);
   }
 
-  const category = vo2maxCategory(vo2, profile.age, profile.sex);
+  const category = vo2maxCategory(vo2, age, sex);
 
   return (
     <CalcGrid>
       <Card>
         <CardTitle>Test</CardTitle>
         <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Age">
+              <NumberInput value={age} onChange={setAge} />
+            </Field>
+            <Field label="Sex">
+              <SegmentedControl
+                value={sex}
+                onChange={setSex}
+                options={[
+                  { value: "male", label: "M" },
+                  { value: "female", label: "F" },
+                ]}
+              />
+            </Field>
+          </div>
           <Field label="Method">
             <Select
               value={method}
@@ -76,13 +95,13 @@ export default function Vo2Max() {
           {method === "cooper" && (
             <Field
               label={`Distance in 12 min (${
-                profile.units === "metric" ? "m" : "mi"
+                units === "metric" ? "m" : "mi"
               })`}
             >
               <NumberInput
                 value={coopDist}
                 onChange={setCoopDist}
-                step={profile.units === "metric" ? 50 : 0.1}
+                step={units === "metric" ? 50 : 0.1}
               />
             </Field>
           )}
@@ -95,12 +114,12 @@ export default function Vo2Max() {
 
           {method === "resting" && (
             <>
-              <Field label="Resting HR (bpm)" hint="from profile">
+              <Field label="Resting HR (bpm)">
                 <NumberInput value={restingHR} onChange={setRestingHR} suffix="bpm" />
               </Field>
               <p className="text-xs text-zinc-500">
-                Uses estimated max HR of {fmt(maxHRTanaka(profile.age), 0)} bpm
-                (Tanaka, from your age {profile.age}).
+                Uses estimated max HR of {fmt(maxHRTanaka(age), 0)} bpm (Tanaka,
+                from your age {age}).
               </p>
             </>
           )}
@@ -109,7 +128,7 @@ export default function Vo2Max() {
             label="Estimated VO₂max"
             value={fmt(vo2)}
             unit="ml/kg/min"
-            sub={`Category for ${profile.sex}, age ${profile.age}`}
+            sub={`Category for ${sex}, age ${age}`}
           />
           <div>
             <Badge tone={category === "Poor" || category === "Very poor" ? "warn" : "accent"}>
@@ -151,9 +170,8 @@ export default function Vo2Max() {
           ))}
         </div>
         <p className="mt-3 text-xs text-zinc-400">
-          Current display units: {distanceUnit(profile.units)}. Height on file:{" "}
-          {fmt(lengthFromCm(profile.heightCm, profile.units), 0)}{" "}
-          {profile.units === "metric" ? "cm" : "in"}.
+          Tip: a higher VO₂max means your heart and lungs deliver more oxygen to
+          working muscles — the clearest single marker of aerobic fitness.
         </p>
       </Card>
     </CalcGrid>

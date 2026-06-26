@@ -2,13 +2,29 @@
 
 import { useState } from "react";
 import { TOOL_GROUPS, findTool, ALL_TOOLS } from "@/lib/tools";
-import ProfilePanel from "@/components/ProfilePanel";
 import { useTheme } from "@/lib/theme";
+import { useUnits } from "@/lib/settings";
+import { SegmentedControl } from "@/components/ui";
 
 export default function Home() {
   const [activeId, setActiveId] = useState(ALL_TOOLS[0].id);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, toggle } = useTheme();
+  const { units, setUnits } = useUnits();
+
+  const UnitsToggle = () => (
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
+      <span className="text-xs font-medium text-zinc-500">Units</span>
+      <SegmentedControl
+        value={units}
+        onChange={setUnits}
+        options={[
+          { value: "metric", label: "Metric" },
+          { value: "imperial", label: "Imperial" },
+        ]}
+      />
+    </div>
+  );
 
   const active = findTool(activeId)!;
   const ActiveComponent = active.Component;
@@ -56,7 +72,7 @@ export default function Home() {
       {/* ---- Sidebar (desktop) ---- */}
       <aside className="hidden w-72 shrink-0 flex-col gap-5 border-r border-zinc-200 p-5 dark:border-zinc-800 lg:flex">
         <Brand theme={theme} onToggleTheme={toggle} />
-        <ProfilePanel />
+        <UnitsToggle />
         <NavList />
         <Footer />
       </aside>
@@ -75,7 +91,7 @@ export default function Home() {
       {/* ---- Mobile slide-down nav ---- */}
       {mobileNavOpen && (
         <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
-          <ProfilePanel />
+          <UnitsToggle />
           <div className="mt-4">
             <NavList onPick={() => setMobileNavOpen(false)} />
           </div>

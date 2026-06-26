@@ -14,7 +14,8 @@ import {
   Badge,
   Tip,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import {
   idealWeightFormulas,
   healthyWeightRange,
@@ -33,20 +34,20 @@ import {
 } from "@/lib/units";
 
 export default function IdealWeight() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
-  const lu = lengthUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
+  const lu = lengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(profile.sex);
+  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
   const [height, setHeight] = useState(
-    Math.round(lengthFromCm(profile.heightCm, profile.units))
+    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
   );
   const [weight, setWeight] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
 
-  const heightCm = lengthToCm(height, profile.units);
-  const kg = weightToKg(weight, profile.units);
+  const heightCm = lengthToCm(height, units);
+  const kg = weightToKg(weight, units);
 
   const formulas = idealWeightFormulas(heightCm, sex);
   const avgKg = formulas.reduce((s, f) => s + f.kg, 0) / formulas.length;
@@ -58,7 +59,7 @@ export default function IdealWeight() {
   const status =
     kg < range.minKg ? "below" : kg > range.maxKg ? "above" : "within";
 
-  const disp = (k: number) => fmt(weightFromKg(k, profile.units));
+  const disp = (k: number) => fmt(weightFromKg(k, units));
 
   return (
     <CalcGrid>

@@ -12,22 +12,23 @@ import {
   CalcGrid,
   Stat,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import { caloriesFromMet, MET_ACTIVITIES } from "@/lib/formulas";
 import { weightFromKg, weightToKg, weightUnit, fmt } from "@/lib/units";
 
 export default function CalorieBurn() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
 
   const [activity, setActivity] = useState<string>("run_easy");
   const [minutes, setMinutes] = useState(45);
   const [weight, setWeight] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
 
   const met = MET_ACTIVITIES.find((a) => a.key === activity)?.met ?? 5;
-  const kg = weightToKg(weight, profile.units);
+  const kg = weightToKg(weight, units);
   const kcal = caloriesFromMet(met, kg, minutes);
   const perHour = caloriesFromMet(met, kg, 60);
 

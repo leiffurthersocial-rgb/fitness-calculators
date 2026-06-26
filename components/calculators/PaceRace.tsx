@@ -12,7 +12,7 @@ import {
   InfoNote,
   CalcGrid,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
 import { riegelPredict, paceSecPerKm } from "@/lib/formulas";
 import {
   parseTimeToSeconds,
@@ -32,8 +32,8 @@ const RACES = [
 ] as const;
 
 export default function PaceRace() {
-  const { profile } = useProfile();
-  const metric = profile.units === "metric";
+  const { units } = useUnits();
+  const metric = units === "metric";
 
   // --- Pace calculator: enter distance + time, get pace. ---
   const [distance, setDistance] = useState(metric ? 10 : 6.2); // km or mi
@@ -59,7 +59,7 @@ export default function PaceRace() {
           <Field label="Time (h:mm:ss or mm:ss)">
             <TextInput value={timeStr} onChange={setTimeStr} placeholder="50:00" />
           </Field>
-          <Result label="Pace" value={fmtPace(pace, profile.units)} />
+          <Result label="Pace" value={fmtPace(pace, units)} />
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
               <div className="text-xs text-zinc-500">Speed</div>
@@ -125,7 +125,7 @@ export default function PaceRace() {
                       <td className="px-4 py-2 font-medium">{r.label}</td>
                       <td className="px-4 py-2">{fmtTime(predicted)}</td>
                       <td className="px-4 py-2 text-zinc-500">
-                        {fmtPace(paceSecPerKm(predicted, r.meters), profile.units)}
+                        {fmtPace(paceSecPerKm(predicted, r.meters), units)}
                       </td>
                     </tr>
                   );

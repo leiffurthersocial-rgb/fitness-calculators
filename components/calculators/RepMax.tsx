@@ -13,13 +13,13 @@ import {
   Badge,
   Tip,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
 import { estimate1RM, repMaxTable, type OneRMFormula } from "@/lib/formulas";
 import { weightUnit, fmt } from "@/lib/units";
 
 export default function RepMax() {
-  const { profile } = useProfile();
-  const unit = weightUnit(profile.units);
+  const { units } = useUnits();
+  const unit = weightUnit(units);
   const [weight, setWeight] = useState(100);
   const [reps, setReps] = useState(5);
   const [formula, setFormula] = useState<OneRMFormula>("average");

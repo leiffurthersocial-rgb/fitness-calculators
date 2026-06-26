@@ -12,7 +12,8 @@ import {
   CalcGrid,
   Badge,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import { SPORTS_DB, rateBuild, type BuildInput } from "@/lib/buildRater";
 import {
   weightFromKg,
@@ -21,6 +22,7 @@ import {
   lengthToCm,
   weightUnit,
   lengthUnit,
+  smallLengthUnit,
   fmt,
 } from "@/lib/units";
 
@@ -34,45 +36,51 @@ function scoreColor(s: number): string {
 }
 
 export default function SportsBuildRater() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
-  const lu = lengthUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
+  const lu = lengthUnit(units);
+  const su = smallLengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(profile.sex);
+  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
   const [height, setHeight] = useState(
-    Math.round(lengthFromCm(profile.heightCm, profile.units))
+    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
   );
   const [weight, setWeight] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
   const [sportKey, setSportKey] = useState("basketball");
   const sport = SPORTS_DB.find((s) => s.key === sportKey)!;
   const [posKey, setPosKey] = useState(sport.positions[0].key);
 
-  // Lift inputs (display units; 0 = not provided). Pull-ups are reps.
+  // Optional performance inputs (0 = not provided).
   const [squat, setSquat] = useState(0);
   const [bench, setBench] = useState(0);
   const [deadlift, setDeadlift] = useState(0);
   const [ohp, setOhp] = useState(0);
   const [pullups, setPullups] = useState(0);
+  const [sprint100, setSprint100] = useState(0); // seconds
+  const [vertical, setVertical] = useState(0); // display small-length unit
+  const [vo2max, setVo2max] = useState(0); // ml/kg/min
 
-  // Keep the position valid when the sport changes.
   const position =
     sport.positions.find((p) => p.key === posKey) ?? sport.positions[0];
 
   const result = useMemo(() => {
     const input: BuildInput = {
       sex,
-      heightCm: lengthToCm(height, profile.units),
-      weightKg: weightToKg(weight, profile.units),
-      squat: squat ? weightToKg(squat, profile.units) : 0,
-      bench: bench ? weightToKg(bench, profile.units) : 0,
-      deadlift: deadlift ? weightToKg(deadlift, profile.units) : 0,
-      ohp: ohp ? weightToKg(ohp, profile.units) : 0,
+      heightCm: lengthToCm(height, units),
+      weightKg: weightToKg(weight, units),
+      squat: squat ? weightToKg(squat, units) : 0,
+      bench: bench ? weightToKg(bench, units) : 0,
+      deadlift: deadlift ? weightToKg(deadlift, units) : 0,
+      ohp: ohp ? weightToKg(ohp, units) : 0,
       pullups,
+      sprint100,
+      vertical: vertical ? lengthToCm(vertical, units) : 0,
+      vo2max,
     };
     return rateBuild(input, position);
-  }, [sex, height, weight, squat, bench, deadlift, ohp, pullups, position, profile.units]);
+  }, [sex, height, weight, squat, bench, deadlift, ohp, pullups, sprint100, vertical, vo2max, position, units]);
 
   const onSport = (key: string) => {
     setSportKey(key);
@@ -129,7 +137,10 @@ export default function SportsBuildRater() {
 
           <div>
             <div className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Your lifts <span className="font-normal text-zinc-400">(optional — leave 0 to skip)</span>
+              Performance{" "}
+              <span className="font-normal text-zinc-400">
+                (all optional — leave 0 to skip)
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label={`Squat 1RM (${wu})`}>
@@ -147,20 +158,30 @@ export default function SportsBuildRater() {
               <Field label="Max pull-ups">
                 <NumberInput value={pullups} onChange={setPullups} suffix="reps" />
               </Field>
+              <Field label="100 m sprint">
+                <NumberInput value={sprint100} onChange={setSprint100} step={0.1} suffix="s" />
+              </Field>
+              <Field label={`Vertical jump (${su})`}>
+                <NumberInput value={vertical} onChange={setVertical} suffix={su} />
+              </Field>
+              <Field label="VO₂max">
+                <NumberInput value={vo2max} onChange={setVo2max} suffix="ml/kg/min" />
+              </Field>
             </div>
           </div>
         </div>
         <InfoNote>
           <p>
-            Two halves: <strong>anthropometry</strong> (how close your height &
-            BMI sit to the role&apos;s typical range) and <strong>strength</strong>{" "}
-            (your relative lifts vs target ratios). Each position weights the two
-            differently — a centre is mostly height, a powerlifter is almost all
-            strength.
+            Four groups are scored: <strong>physique</strong> (height & BMI vs the
+            role&apos;s range), <strong>strength</strong> (relative lifts &
+            pull-ups), <strong>power</strong> (100 m &amp; vertical) and{" "}
+            <strong>endurance</strong> (VO₂max).
           </p>
           <p>
-            Norms are approximate elite-athlete averages, shifted for sex. It&apos;s
-            a directional guide, not destiny.
+            Each position weights the groups by what it demands, and the overall
+            is the weighted average over only the groups you fill in — so the more
+            you enter, the more accurate it gets. Norms are approximate
+            elite-athlete averages, shifted for sex.
           </p>
         </InfoNote>
       </Card>
@@ -168,7 +189,7 @@ export default function SportsBuildRater() {
       <Card>
         <CardTitle>Your rating</CardTitle>
 
-        {/* Overall gauge */}
+        {/* Overall gauge + group scores */}
         <div className="flex items-center gap-5">
           <div className="relative h-32 w-32 shrink-0">
             <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
@@ -185,19 +206,22 @@ export default function SportsBuildRater() {
               <span className="text-xs text-zinc-400">/ 100</span>
             </div>
           </div>
-          <div>
+          <div className="flex-1">
             <Badge tone={result.overall >= 58 ? "accent" : "warn"}>{result.verdict}</Badge>
             <div className="mt-2 space-y-1 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="w-24 text-zinc-500">Anthropometry</span>
-                <span className="font-semibold">{result.anthropometryScore}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-24 text-zinc-500">Strength</span>
-                <span className="font-semibold">
-                  {result.strengthScore == null ? "—" : result.strengthScore}
-                </span>
-              </div>
+              {result.groups.map((g) => (
+                <div key={g.group} className="flex items-center gap-2">
+                  <span className="w-20 text-zinc-500">{g.label}</span>
+                  <span className="font-semibold tabular-nums">
+                    {g.score == null ? "—" : g.score}
+                  </span>
+                  {g.score != null && g.weight > 0 && (
+                    <span className="text-xs text-zinc-400">
+                      ·{Math.round(g.weight * 100)}% weight
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -234,9 +258,9 @@ export default function SportsBuildRater() {
         </div>
 
         <p className="mt-3 text-xs text-zinc-400">
-          Typical for this role: {fmt(
-            sex === "female" ? position.heightCm[0] - 11 : position.heightCm[0]
-          ).replace(".0", "")}–
+          Typical for this role:{" "}
+          {fmt(sex === "female" ? position.heightCm[0] - 11 : position.heightCm[0]).replace(".0", "")}
+          –
           {fmt(sex === "female" ? position.heightCm[1] - 11 : position.heightCm[1]).replace(".0", "")} cm,
           BMI {position.bmi[0]}–{position.bmi[1]}.
         </p>

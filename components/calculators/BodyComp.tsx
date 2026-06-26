@@ -13,7 +13,8 @@ import {
   Stat,
   Badge,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import {
   navyBodyFat,
   bmi,
@@ -32,27 +33,27 @@ import {
 } from "@/lib/units";
 
 export default function BodyComp() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
-  const su = smallLengthUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
+  const su = smallLengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(profile.sex);
+  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
   const [weight, setWeight] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
   const [height, setHeight] = useState(
-    Math.round(lengthFromCm(profile.heightCm, profile.units))
+    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
   );
   // Tape measurements, stored in display unit.
-  const [neck, setNeck] = useState(profile.units === "metric" ? 38 : 15);
-  const [waist, setWaist] = useState(profile.units === "metric" ? 85 : 33);
-  const [hip, setHip] = useState(profile.units === "metric" ? 95 : 37);
+  const [neck, setNeck] = useState(units === "metric" ? 38 : 15);
+  const [waist, setWaist] = useState(units === "metric" ? 85 : 33);
+  const [hip, setHip] = useState(units === "metric" ? 95 : 37);
 
-  const kg = weightToKg(weight, profile.units);
-  const heightCm = lengthToCm(height, profile.units);
-  const neckCm = lengthToCm(neck, profile.units);
-  const waistCm = lengthToCm(waist, profile.units);
-  const hipCm = lengthToCm(hip, profile.units);
+  const kg = weightToKg(weight, units);
+  const heightCm = lengthToCm(height, units);
+  const neckCm = lengthToCm(neck, units);
+  const waistCm = lengthToCm(waist, units);
+  const hipCm = lengthToCm(hip, units);
 
   const bf = navyBodyFat({ sex, heightCm, neckCm, waistCm, hipCm });
   const bmiVal = bmi(kg, heightCm);

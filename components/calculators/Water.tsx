@@ -11,7 +11,8 @@ import {
   CalcGrid,
   Stat,
 } from "../ui";
-import { useProfile } from "@/lib/profile";
+import { useUnits } from "@/lib/settings";
+import { DEFAULTS } from "@/lib/defaults";
 import { waterTargetMl } from "@/lib/formulas";
 import {
   weightFromKg,
@@ -22,16 +23,16 @@ import {
 } from "@/lib/units";
 
 export default function Water() {
-  const { profile } = useProfile();
-  const wu = weightUnit(profile.units);
+  const { units } = useUnits();
+  const wu = weightUnit(units);
 
   const [bw, setBw] = useState(
-    Math.round(weightFromKg(profile.bodyweightKg, profile.units))
+    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
   );
   const [exerciseHours, setExerciseHours] = useState(1);
   const [hot, setHot] = useState(false);
 
-  const bwKg = weightToKg(bw, profile.units);
+  const bwKg = weightToKg(bw, units);
   const ml = waterTargetMl({ bodyweightKg: bwKg, exerciseHours, hotClimate: hot });
   const liters = ml / 1000;
   const oz = mlToOz(ml);
