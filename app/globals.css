@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode (Tailwind v4 uses `@custom-variant`).
+   We toggle the `dark` class on <html> ourselves so we can offer a manual
+   light/dark switch that defaults to dark. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Single tasteful accent color (emerald). */
+  --color-accent-50: #ecfdf5;
+  --color-accent-100: #d1fae5;
+  --color-accent-200: #a7f3d0;
+  --color-accent-300: #6ee7b7;
+  --color-accent-400: #34d399;
+  --color-accent-500: #10b981;
+  --color-accent-600: #059669;
+  --color-accent-700: #047857;
+  --color-accent-800: #065f46;
+  --color-accent-900: #064e3b;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+/* Subtle scrollbar styling so the sidebar feels clean. */
+* {
+  scrollbar-width: thin;
+}
+
+/* Range slider accent. */
+input[type="range"] {
+  accent-color: var(--color-accent-500);
+}
