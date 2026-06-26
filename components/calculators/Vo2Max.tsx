@@ -11,6 +11,7 @@ import {
   InfoNote,
   CalcGrid,
   Badge,
+  Tip,
 } from "../ui";
 import { useProfile } from "@/lib/profile";
 import {
@@ -58,12 +59,19 @@ export default function Vo2Max() {
               value={method}
               onChange={setMethod}
               options={[
-                { value: "cooper", label: "Cooper 12-minute test" },
+                { value: "cooper", label: "Cooper 12-minute test (most accurate)" },
                 { value: "mile15", label: "1.5-mile run" },
-                { value: "resting", label: "Resting HR method" },
+                { value: "resting", label: "Resting HR (no running needed)" },
               ]}
             />
           </Field>
+          <Tip>
+            {method === "cooper"
+              ? "Cooper is the most accurate field test if you have a track or measured route — run as far as you can in 12 minutes."
+              : method === "mile15"
+              ? "The 1.5-mile run is a fixed-distance alternative to Cooper — good if you'd rather pace a set distance than chase distance against a clock."
+              : "The resting-HR method needs no exercise, just an accurate resting heart rate — handy for a quick estimate, but less precise than a run test."}
+          </Tip>
 
           {method === "cooper" && (
             <Field

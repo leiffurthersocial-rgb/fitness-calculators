@@ -13,7 +13,6 @@ import Caffeine from "@/components/calculators/Caffeine";
 import Sleep from "@/components/calculators/Sleep";
 import Water from "@/components/calculators/Water";
 import Pomodoro from "@/components/calculators/Pomodoro";
-import Habits from "@/components/calculators/Habits";
 
 export interface Tool {
   id: string;
@@ -72,7 +71,6 @@ export const TOOL_GROUPS: ToolGroup[] = [
     emoji: "⏱️",
     tools: [
       { id: "pomodoro", name: "Pomodoro timer", blurb: "Focus intervals + tally", Component: Pomodoro },
-      { id: "habits", name: "Habit tracker", blurb: "Streaks + calendar heatmap", Component: Habits },
     ],
   },
 ];

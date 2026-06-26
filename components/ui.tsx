@@ -267,6 +267,16 @@ export function Badge({
   );
 }
 
+/** An inline "which should I use?" recommendation line. */
+export function Tip({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="flex gap-1.5 rounded-lg bg-accent-50 px-2.5 py-1.5 text-xs leading-relaxed text-accent-800 dark:bg-accent-900/20 dark:text-accent-300">
+      <span aria-hidden>💡</span>
+      <span>{children}</span>
+    </p>
+  );
+}
+
 export function Button({
   children,
   onClick,

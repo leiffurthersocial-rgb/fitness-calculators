@@ -11,6 +11,7 @@ import {
   InfoNote,
   CalcGrid,
   Badge,
+  Tip,
 } from "../ui";
 import { useProfile } from "@/lib/profile";
 import { estimate1RM, repMaxTable, type OneRMFormula } from "@/lib/formulas";
@@ -52,6 +53,12 @@ export default function RepMax() {
             />
           </Field>
           <Result label="Estimated 1RM" value={fmt(oneRM)} unit={unit} />
+          <Tip>
+            Keep <strong>Average</strong> for everyday use — it&apos;s the most
+            reliable across rep ranges. Brzycki reads a touch lower at high reps,
+            Epley a touch higher. For the best estimate, test a set of{" "}
+            <strong>5 reps or fewer</strong>.
+          </Tip>
         </div>
         <InfoNote>
           <p>Epley: 1RM = w × (1 + reps/30).</p>

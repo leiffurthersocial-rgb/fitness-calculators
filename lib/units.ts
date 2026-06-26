@@ -94,6 +94,20 @@ export function parseTimeToSeconds(input: string): number {
   return 0;
 }
 
+/**
+ * Parse a clock time "HH:MM" (24h) into minutes since midnight.
+ * Distinct from parseTimeToSeconds, which reads mm:ss durations — here the
+ * first field is HOURS, not minutes. Returns 0 on bad input.
+ */
+export function parseClockToMinutes(input: string): number {
+  if (!input) return 0;
+  const parts = input.split(":").map((p) => parseInt(p, 10));
+  if (parts.some((p) => isNaN(p))) return 0;
+  const h = parts[0] ?? 0;
+  const m = parts[1] ?? 0;
+  return (((h * 60 + m) % 1440) + 1440) % 1440;
+}
+
 /** Format a clock time (minutes since midnight) as "h:mm AM/PM". */
 export function fmtClock(minutesSinceMidnight: number): string {
   let m = ((minutesSinceMidnight % 1440) + 1440) % 1440;

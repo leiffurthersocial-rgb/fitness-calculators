@@ -10,6 +10,7 @@ import {
   CalcGrid,
   SegmentedControl,
   Result,
+  Tip,
 } from "../ui";
 import { useProfile } from "@/lib/profile";
 import { maxHRTanaka, maxHRClassic, hrZones } from "@/lib/formulas";
@@ -59,6 +60,12 @@ export default function HeartRateZones() {
             />
           </Field>
           <Result label="Estimated max HR" value={fmt(maxHR, 0)} unit="bpm" />
+          <Tip>
+            Use <strong>Karvonen</strong> with <strong>Tanaka</strong> — it
+            factors in your resting HR, so the zones match your actual fitness.
+            Switch to “% of max” only if you don&apos;t know your resting HR, and
+            to “220 − age” only to compare with older charts.
+          </Tip>
         </div>
         <InfoNote>
           <p>Tanaka: maxHR = 208 − 0.7 × age (more accurate than 220 − age).</p>
