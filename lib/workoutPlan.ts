@@ -112,7 +112,8 @@ const E = {
   lunge: { name: "Walking lunge", db: "DB walking lunge", bw: "Reverse lunge", pattern: "lunge", role: "accessory", primary: ["Quads"], secondary: ["Glutes"] } as ExDef,
   splitSquat: { name: "Bulgarian split squat", db: "DB split squat", bw: "Bulgarian split squat", pattern: "lunge", role: "accessory", primary: ["Quads"], secondary: ["Glutes"] } as ExDef,
   core: { name: "Hanging leg raise + plank", db: "Weighted plank + leg raise", bw: "Hollow hold + plank", pattern: "core", role: "accessory", primary: ["Core"] } as ExDef,
-  arms: { name: "Biceps curl + triceps pushdown", db: "DB curl + overhead extension", bw: "Chin-up + dip", pattern: "arms", role: "accessory", primary: ["Arms"] } as ExDef,
+  bicepCurl: { name: "Biceps curl", db: "DB curl", bw: "Chin-up (supinated)", pattern: "arms", role: "accessory", primary: ["Arms"] } as ExDef,
+  tricepExt: { name: "Triceps pushdown", db: "DB overhead extension", bw: "Dip", pattern: "arms", role: "accessory", primary: ["Arms"] } as ExDef,
 };
 
 type DayTemplate = { label: string; exercises: ExDef[] };
@@ -128,13 +129,13 @@ const SPLIT_DEFS: Record<Split, { label: string; days: number; make: () => DayTe
     make: () => [
       { label: "Full body A", exercises: [E.squat, E.bench, E.row, E.core] },
       { label: "Full body B", exercises: [E.deadlift, E.ohp, E.pullup, E.lunge] },
-      { label: "Full body C", exercises: [E.frontSquat, E.incline, E.row, E.arms] },
+      { label: "Full body C", exercises: [E.frontSquat, E.incline, E.row, E.bicepCurl, E.tricepExt] },
     ],
   },
   ppl3: {
     label: "Push / Pull / Legs", days: 3,
     make: () => [
-      { label: "Push", exercises: [E.bench, E.ohp, E.dbPress, E.arms] },
+      { label: "Push", exercises: [E.bench, E.ohp, E.dbPress, E.bicepCurl, E.tricepExt] },
       { label: "Pull", exercises: [E.deadlift, E.row, E.pullup, E.facepull] },
       { label: "Legs", exercises: [E.squat, E.rdl, E.lunge, E.core] },
     ],
@@ -143,7 +144,7 @@ const SPLIT_DEFS: Record<Split, { label: string; days: number; make: () => DayTe
     label: "Upper / Lower", days: 4,
     make: () => [
       { label: "Lower A", exercises: [E.squat, E.rdl, E.lunge, E.core] },
-      { label: "Upper A", exercises: [E.bench, E.ohp, E.row, E.arms] },
+      { label: "Upper A", exercises: [E.bench, E.ohp, E.row, E.bicepCurl, E.tricepExt] },
       { label: "Lower B", exercises: [E.deadlift, E.frontSquat, E.splitSquat, E.core] },
       { label: "Upper B", exercises: [E.incline, E.pullup, E.dbPress, E.facepull] },
     ],
@@ -160,17 +161,17 @@ const SPLIT_DEFS: Record<Split, { label: string; days: number; make: () => DayTe
   pushPull: {
     label: "Push / Pull", days: 4,
     make: () => [
-      { label: "Push A", exercises: [E.bench, E.ohp, E.squat, E.arms] },
+      { label: "Push A", exercises: [E.bench, E.ohp, E.squat, E.bicepCurl, E.tricepExt] },
       { label: "Pull A", exercises: [E.deadlift, E.row, E.pullup, E.rdl] },
-      { label: "Push B", exercises: [E.incline, E.dbPress, E.lunge, E.arms] },
+      { label: "Push B", exercises: [E.incline, E.dbPress, E.lunge, E.bicepCurl, E.tricepExt] },
       { label: "Pull B", exercises: [E.pullup, E.row, E.facepull, E.core] },
     ],
   },
   pplUL: {
     label: "PPL + Upper / Lower", days: 5,
     make: () => [
-      { label: "Push", exercises: [E.bench, E.ohp, E.dbPress, E.arms] },
-      { label: "Pull", exercises: [E.row, E.pullup, E.facepull, E.arms] },
+      { label: "Push", exercises: [E.bench, E.ohp, E.dbPress, E.bicepCurl, E.tricepExt] },
+      { label: "Pull", exercises: [E.row, E.pullup, E.facepull, E.bicepCurl, E.tricepExt] },
       { label: "Legs", exercises: [E.squat, E.rdl, E.lunge, E.core] },
       { label: "Upper", exercises: [E.incline, E.pullup, E.ohp, E.facepull] },
       { label: "Lower", exercises: [E.deadlift, E.frontSquat, E.splitSquat, E.core] },
@@ -181,7 +182,7 @@ const SPLIT_DEFS: Record<Split, { label: string; days: number; make: () => DayTe
     make: () => [
       { label: "Upper A", exercises: [E.bench, E.row, E.ohp, E.pullup] },
       { label: "Lower A", exercises: [E.squat, E.rdl, E.lunge, E.core] },
-      { label: "Full body", exercises: [E.deadlift, E.incline, E.pullup, E.arms] },
+      { label: "Full body", exercises: [E.deadlift, E.incline, E.pullup, E.bicepCurl, E.tricepExt] },
       { label: "Upper B", exercises: [E.incline, E.pullup, E.dbPress, E.facepull] },
       { label: "Lower B", exercises: [E.frontSquat, E.rdl, E.splitSquat, E.core] },
     ],
