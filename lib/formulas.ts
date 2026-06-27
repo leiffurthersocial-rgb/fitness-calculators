@@ -979,6 +979,118 @@ export function ffmi(
   };
 }
 
+/* ========================================================================
+ * MUSCLE-GAIN POTENTIAL
+ * ----------------------------------------------------------------------
+ * How much muscle you can realistically add, as a range, from two
+ * well-known models that keep each other honest:
+ *   1. Rate of gain — Alan Aragon's model: realistic monthly muscle gain
+ *      as a % of bodyweight, tiered by training experience.
+ *   2. Genetic ceiling — the FFMI limit for drug-free lifters (~25
+ *      normalised for men, ~21.5 for women; Kouri et al.). Remaining lean
+ *      mass to that ceiling CAPS the rate projection, so an already-muscular
+ *      lifter gets an honest small number instead of gaining forever.
+ * Numbers assume good training, diet, sleep and a slight surplus — they're
+ * an upper-bound guide to what's possible, not a promise.
+ * ====================================================================== */
+
+export type TrainingLevel = "beginner" | "intermediate" | "advanced";
+
+export const TRAINING_LEVELS: {
+  key: TrainingLevel;
+  label: string;
+  years: string;
+  /** Aragon monthly muscle gain as a % of bodyweight (men). */
+  loPctPerMonth: number;
+  hiPctPerMonth: number;
+}[] = [
+  { key: "beginner", label: "Beginner", years: "< 1 year", loPctPerMonth: 1.0, hiPctPerMonth: 1.5 },
+  { key: "intermediate", label: "Intermediate", years: "1–3 years", loPctPerMonth: 0.5, hiPctPerMonth: 1.0 },
+  { key: "advanced", label: "Advanced", years: "3+ years", loPctPerMonth: 0.25, hiPctPerMonth: 0.5 },
+];
+
+/**
+ * Age taper on muscle-building rate. Response is full to ~30, then declines
+ * gently with anabolic resistance — a mild ~1.2%/yr, floored at 0.5 so older
+ * lifters are slowed, not written off.
+ */
+export function ageMuscleFactor(age: number): number {
+  if (age <= 30) return 1;
+  return Math.max(0.5, 1 - (age - 30) * 0.012);
+}
+
+export interface MuscleGainTimeframe {
+  months: number;
+  loKg: number;
+  highKg: number;
+  /** True once the range is limited by the genetic ceiling, not the rate. */
+  capped: boolean;
+}
+
+export interface MuscleGainResult {
+  leanMassKg: number;
+  normalizedFfmi: number;
+  ceilingNffmi: number;
+  ceilingLeanKg: number;
+  remainingKg: number; // lifetime lean mass left to the natural ceiling
+  pctOfPotential: number; // how far toward the ceiling you already are (0–100+)
+  ratePerMonthLoKg: number;
+  ratePerMonthHiKg: number;
+  timeframes: MuscleGainTimeframe[];
+}
+
+/**
+ * Estimate realistic muscle-gain ranges over 3/6/12 months plus lifetime
+ * remaining potential, from stats + training experience.
+ */
+export function muscleGainPotential(args: {
+  sex: "male" | "female";
+  age: number;
+  heightCm: number;
+  weightKg: number;
+  bodyFatPct: number;
+  level: TrainingLevel;
+}): MuscleGainResult {
+  const { sex, age, heightCm, weightKg, bodyFatPct, level } = args;
+  const m = heightCm / 100;
+  const { leanMassKg, normalizedFfmi } = ffmi(weightKg, heightCm, bodyFatPct);
+
+  // Natural ceiling, converted from normalised FFMI back to this person's
+  // height so the remaining-mass figure is in real kg.
+  const ceilingNffmi = sex === "male" ? 25 : 21.5;
+  const ceilingRawFfmi = ceilingNffmi - 6.1 * (1.8 - m);
+  const ceilingLeanKg = m > 0 ? ceilingRawFfmi * m * m : 0;
+  const remainingKg = Math.max(0, ceilingLeanKg - leanMassKg);
+  const pctOfPotential =
+    ceilingLeanKg > 0 ? Math.min(150, (leanMassKg / ceilingLeanKg) * 100) : 0;
+
+  const tier = TRAINING_LEVELS.find((t) => t.key === level)!;
+  const sexFactor = sex === "male" ? 1 : 0.5;
+  const ageFactor = ageMuscleFactor(age);
+  const ratePerMonthLoKg = weightKg * (tier.loPctPerMonth / 100) * sexFactor * ageFactor;
+  const ratePerMonthHiKg = weightKg * (tier.hiPctPerMonth / 100) * sexFactor * ageFactor;
+
+  const timeframes: MuscleGainTimeframe[] = [3, 6, 12].map((months) => {
+    const rawLo = ratePerMonthLoKg * months;
+    const rawHi = ratePerMonthHiKg * months;
+    const loKg = Math.min(rawLo, remainingKg);
+    const highKg = Math.min(rawHi, remainingKg);
+    return { months, loKg, highKg, capped: rawHi > remainingKg };
+  });
+
+  return {
+    leanMassKg,
+    normalizedFfmi,
+    ceilingNffmi,
+    ceilingLeanKg,
+    remainingKg,
+    pctOfPotential,
+    ratePerMonthLoKg,
+    ratePerMonthHiKg,
+    timeframes,
+  };
+}
+
 /** Rough interpretation of normalised FFMI by sex. */
 export function ffmiCategory(nffmi: number, sex: "male" | "female"): string {
   // Women carry less lean mass, so the bands sit lower.

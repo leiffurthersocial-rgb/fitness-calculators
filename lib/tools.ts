@@ -14,6 +14,7 @@ import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
 import IdealWeight from "@/components/calculators/IdealWeight";
 import Ffmi from "@/components/calculators/Ffmi";
+import MuscleGain from "@/components/calculators/MuscleGain";
 import CalorieBurn from "@/components/calculators/CalorieBurn";
 import Caffeine from "@/components/calculators/Caffeine";
 import Sleep from "@/components/calculators/Sleep";
@@ -71,6 +72,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
       { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },
       { id: "ffmi", name: "FFMI", blurb: "Fat-free mass index", Component: Ffmi },
+      { id: "muscle-gain", name: "Muscle-gain potential", blurb: "How much muscle you can gain & by when", Component: MuscleGain },
       { id: "calorie-burn", name: "Calorie burn", blurb: "Energy used by activity (METs)", Component: CalorieBurn },
     ],
   },
