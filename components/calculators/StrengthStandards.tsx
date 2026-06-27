@@ -147,6 +147,13 @@ export default function StrengthStandards() {
             to a higher bar, heavier lifters a lower one, like Wilks/DOTS.
           </p>
           <p>
+            For pull-ups specifically, bodyweight <em>is</em> the resistance, so
+            it&apos;s weighted even more heavily than the barbell lifts — the
+            &quot;relative&quot; figure converts your reps to what a reference
+            80&nbsp;kg (male) / 65&nbsp;kg (female) lifter would&apos;ve needed to
+            match you, so e.g. 9 reps at 70&nbsp;kg outranks 10 reps at 40&nbsp;kg.
+          </p>
+          <p>
             Levels run Beginner → Novice → Intermediate → Advanced → Elite.
             Figures are approximate, synthesised from common public tables — a
             guide, not a verdict.
@@ -250,7 +257,7 @@ export default function StrengthStandards() {
                   >
                     {c.level}
                     {isReps
-                      ? ` · ${lifts[lift.key]} reps`
+                      ? ` · ${lifts[lift.key]} reps (≈${fmt(c.relativeReps ?? 0, 1)} relative)`
                       : ` · ${fmt(c.ratio, 2)}×BW`}
                   </span>
                   <span className="text-zinc-500">

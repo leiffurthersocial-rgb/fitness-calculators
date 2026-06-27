@@ -510,6 +510,24 @@ export function bodyweightStrengthFactor(
 }
 
 /**
+ * Bodyweight scaling for pull-up rep standards. For a bodyweight exercise the
+ * resistance IS your bodyweight, so each rep is intrinsically harder the more
+ * you weigh — a stronger relationship than an external load lifted off the
+ * floor, hence the bigger exponent than bodyweightStrengthFactor. 10 reps at
+ * 40 kg and 9 reps at 70 kg are NOT equally impressive: the 70 kg lifter
+ * moved far more total weight per rep, so they need fewer reps for the same
+ * level and their reps carry more weight (literally) in the rating.
+ */
+export function pullupBodyweightFactor(
+  bodyweightKg: number,
+  sex: "male" | "female"
+): number {
+  const ref = sex === "male" ? 80 : 65;
+  const bw = Math.min(Math.max(bodyweightKg, 40), 140);
+  return Math.pow(ref / bw, 0.55);
+}
+
+/**
  * The five level thresholds for one lift, age- & bodyweight-adjusted. Weight
  * lifts return a required 1RM in kg (plus the ×BW ratio); pull-ups return a
  * required rep count.
@@ -520,13 +538,14 @@ export function liftStandards(
   bodyweightKg: number,
   age: number
 ): StandardRow[] {
-  const factor = ageStrengthFactor(age) * bodyweightStrengthFactor(bodyweightKg, sex);
   if (lift === "pullup") {
+    const factor = ageStrengthFactor(age) * pullupBodyweightFactor(bodyweightKg, sex);
     return PULLUP_REP_STANDARDS[sex].map((baseReps, i) => ({
       level: STRENGTH_LEVELS[i],
       value: Math.max(1, Math.round(baseReps * factor)),
     }));
   }
+  const factor = ageStrengthFactor(age) * bodyweightStrengthFactor(bodyweightKg, sex);
   return STRENGTH_RATIOS[sex][lift].map((baseRatio, i) => {
     const ratio = baseRatio * factor;
     return {
@@ -545,6 +564,13 @@ export interface LiftClassification {
   ratio: number; // user's lift as a multiple of bodyweight (0 for rep lifts)
   next: StandardRow | null;
   toNext: number; // kg (weight) or reps (rep lift) still needed for the next level
+  /**
+   * Pull-ups only: your reps converted to the equivalent rep count a
+   * reference-bodyweight (80 kg male / 65 kg female) lifter would need to
+   * match your performance — i.e. how impressive your reps are once your
+   * bodyweight is accounted for. Undefined for weight lifts.
+   */
+  relativeReps?: number;
 }
 
 /**
@@ -565,6 +591,10 @@ export function classifyLift(
     if (value >= rows[i].value) levelIndex = i;
   }
   const next = levelIndex + 1 < rows.length ? rows[levelIndex + 1] : null;
+  const relativeReps =
+    unit === "reps"
+      ? value / (ageStrengthFactor(age) * pullupBodyweightFactor(bodyweightKg, sex))
+      : undefined;
   return {
     unit,
     rows,
@@ -573,6 +603,7 @@ export function classifyLift(
     ratio: unit === "weight" && bodyweightKg > 0 ? value / bodyweightKg : 0,
     next,
     toNext: next ? Math.max(0, next.value - value) : 0,
+    relativeReps,
   };
 }
 
