@@ -407,13 +407,19 @@ export function vo2maxCategory(
  * STRENGTH STANDARDS  (bodyweight-, sex-, age- and sport-aware)
  * ====================================================================== */
 
-export type Lift = "squat" | "bench" | "deadlift" | "ohp";
+export type Lift = "squat" | "bench" | "deadlift" | "ohp" | "pullup" | "row";
 
-export const LIFTS: { key: Lift; label: string }[] = [
+export const LIFTS: { key: Lift; label: string; hint?: string }[] = [
   { key: "squat", label: "Back squat" },
   { key: "bench", label: "Bench press" },
   { key: "deadlift", label: "Deadlift" },
   { key: "ohp", label: "Overhead press" },
+  {
+    key: "pullup",
+    label: "Weighted pull-up",
+    hint: "Total load for 1 rep: your bodyweight + any added weight",
+  },
+  { key: "row", label: "Barbell row" },
 ];
 
 export type StrengthLevel =
@@ -444,12 +450,18 @@ const STRENGTH_RATIOS: Record<"male" | "female", Record<Lift, number[]>> = {
     bench: [0.5, 0.75, 1.0, 1.4, 1.8],
     deadlift: [0.75, 1.25, 1.75, 2.25, 2.75],
     ohp: [0.35, 0.55, 0.8, 1.05, 1.3],
+    // Weighted pull-up as TOTAL system load (bodyweight + added) ÷ bodyweight,
+    // so 1.0 = a single strict bodyweight rep. Elite ≈ +100% bodyweight added.
+    pullup: [1.0, 1.15, 1.4, 1.7, 2.05],
+    row: [0.5, 0.7, 0.95, 1.25, 1.6],
   },
   female: {
     squat: [0.5, 0.75, 1.2, 1.6, 2.0],
     bench: [0.3, 0.45, 0.65, 0.9, 1.15],
     deadlift: [0.5, 1.0, 1.4, 1.85, 2.3],
     ohp: [0.2, 0.32, 0.47, 0.62, 0.8],
+    pullup: [0.8, 0.95, 1.15, 1.45, 1.75],
+    row: [0.3, 0.45, 0.62, 0.82, 1.05],
   },
 };
 

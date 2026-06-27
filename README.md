@@ -13,7 +13,7 @@ Every calculator is standalone (type your own stats), with one global
 | Group | Tools |
 | --- | --- |
 | **Sports** | Sports build rater (rate your build, strength & performance for a sport + position), Workout plan generator |
-| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (age/weight/sex/sport) |
+| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (6 lifts incl. weighted pull-up & barbell row; age/weight/sex/sport) |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel) |
 | **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Calorie burn (METs) |
 | **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |
@@ -25,8 +25,10 @@ lifts & pull-ups), **power** (100 m sprint & vertical jump) and **endurance**
 with per-metric emphasis on signature lifts (bench for a lineman, deadlift/squat
 & sprint for a sprinter, vertical for a volleyball middle blocker). Targets are
 **age-adjusted** and sex-shifted, every input is optional, and the overall is
-the weighted average over only the groups you fill in. It also calls out your
-**biggest limiter** and **standout**. Model + data in
+the weighted average over only the groups you fill in. Every metric shows its
+**0–100 score** next to its bar, it calls out your **biggest limiter** and
+**standout**, and a **body-composition target** tells you exactly how many kg to
+gain or lose to land in the role's ideal build. Model + data in
 [`lib/buildRater.ts`](lib/buildRater.ts).
 
 The **Workout plan generator** turns that into action using current training

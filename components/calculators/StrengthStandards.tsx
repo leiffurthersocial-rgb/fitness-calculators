@@ -36,11 +36,14 @@ const EMPHASIS_LABEL: Record<Emphasis, string> = {
 };
 
 // Sensible starting 1RMs as a multiple of bodyweight, so the tool isn't empty.
+// Pull-up is the total system load (bodyweight + added), so ~1× bodyweight.
 const SEED_RATIO: Record<Lift, number> = {
   squat: 1.0,
   bench: 0.75,
   deadlift: 1.25,
   ohp: 0.5,
+  pullup: 1.0,
+  row: 0.6,
 };
 
 export default function StrengthStandards() {
@@ -57,12 +60,9 @@ export default function StrengthStandards() {
   // Per-lift 1RM inputs, in the display unit.
   const [lifts, setLifts] = useState<Record<Lift, number>>(() => {
     const bwDisp = weightFromKg(DEFAULTS.bodyweightKg, units);
-    return {
-      squat: Math.round(bwDisp * SEED_RATIO.squat),
-      bench: Math.round(bwDisp * SEED_RATIO.bench),
-      deadlift: Math.round(bwDisp * SEED_RATIO.deadlift),
-      ohp: Math.round(bwDisp * SEED_RATIO.ohp),
-    };
+    return Object.fromEntries(
+      LIFTS.map((l) => [l.key, Math.round(bwDisp * SEED_RATIO[l.key])])
+    ) as Record<Lift, number>;
   });
 
   const sport = SPORTS.find((s) => s.key === sportKey)!;
@@ -194,9 +194,14 @@ export default function StrengthStandards() {
             return (
               <div key={lift.key}>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-sm font-medium">
-                    {lift.label}
-                    {isKey && <Badge>key lift</Badge>}
+                  <span className="flex flex-col">
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      {lift.label}
+                      {isKey && <Badge>key lift</Badge>}
+                    </span>
+                    {lift.hint && (
+                      <span className="text-xs text-zinc-400">{lift.hint}</span>
+                    )}
                   </span>
                   <div className="w-28">
                     <NumberInput

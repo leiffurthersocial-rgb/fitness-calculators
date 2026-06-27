@@ -264,6 +264,50 @@ export default function SportsBuildRater() {
           </div>
         </div>
 
+        {/* Body-composition target — gain/lose to reach the role's build */}
+        {(() => {
+          const bc = result.bodyComp;
+          const lo = Math.round(weightFromKg(bc.amountLoKg, units));
+          const hi = Math.round(weightFromKg(bc.amountHiKg, units));
+          const min = Math.round(weightFromKg(bc.optimalMinKg, units));
+          const max = Math.round(weightFromKg(bc.optimalMaxKg, units));
+          const ideal = bc.direction === "ideal";
+          const verb = bc.direction === "gain" ? "Gain" : "Lose";
+          // Collapse a 0–n range to a single number for a cleaner read.
+          const range = lo === hi || lo === 0 ? `${Math.max(lo, hi)}` : `${lo}–${hi}`;
+          return (
+            <div
+              className={`mt-4 rounded-xl border px-4 py-3 ${
+                ideal
+                  ? "border-accent-200 bg-accent-50 dark:border-accent-800 dark:bg-accent-900/20"
+                  : "border-zinc-200 dark:border-zinc-800"
+              }`}
+            >
+              <div className="text-xs text-zinc-500">Body-composition target</div>
+              <div className="mt-0.5 text-sm font-semibold">
+                {ideal ? (
+                  <span className="text-accent-700 dark:text-accent-300">
+                    Your weight is dialled in for this role 🎯
+                  </span>
+                ) : (
+                  <span>
+                    {verb}{" "}
+                    <span className="text-accent-600 dark:text-accent-400">
+                      {range} {wu}
+                    </span>{" "}
+                    for an optimal build
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 text-xs text-zinc-500">
+                Ideal at your height: {min}–{max} {wu} (BMI{" "}
+                {fmt(position.bmi[0]).replace(".0", "")}–
+                {fmt(position.bmi[1]).replace(".0", "")})
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Limiter / standout insight */}
         {(result.limiter || result.standout) && (
           <div className="mt-4 grid grid-cols-2 gap-3">
@@ -288,23 +332,34 @@ export default function SportsBuildRater() {
 
         {/* Per-metric bars */}
         <div className="mt-5 space-y-2.5">
-          {result.metrics.map((m) => (
-            <div key={m.key}>
-              <div className="mb-0.5 flex items-center justify-between text-xs">
-                <span className="font-medium">{m.label}</span>
-                <span className="text-zinc-400">{m.detail}</span>
+          {result.metrics.map((m) => {
+            const shown = Math.round(Math.min(100, m.score));
+            return (
+              <div key={m.key}>
+                <div className="mb-0.5 flex items-center justify-between text-xs">
+                  <span className="font-medium">{m.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-zinc-400">{m.detail}</span>
+                    <span
+                      className="w-6 text-right font-semibold tabular-nums"
+                      style={{ color: scoreColor(m.score) }}
+                    >
+                      {shown}
+                    </span>
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.min(100, m.score)}%`,
+                      backgroundColor: scoreColor(m.score),
+                    }}
+                  />
+                </div>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${Math.min(100, m.score)}%`,
-                    backgroundColor: scoreColor(m.score),
-                  }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Feedback */}

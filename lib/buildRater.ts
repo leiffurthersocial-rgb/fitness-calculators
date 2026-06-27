@@ -273,6 +273,15 @@ export interface GroupScore {
   weight: number; // effective (normalised) weight in the overall
 }
 
+export interface BodyCompTarget {
+  optimalMinKg: number; // lower bound of the role's ideal weight at your height
+  optimalMaxKg: number; // upper bound
+  currentKg: number;
+  direction: "gain" | "lose" | "ideal";
+  amountLoKg: number; // smaller end of the gain/lose range (0 if ideal)
+  amountHiKg: number; // larger end of the gain/lose range (0 if ideal)
+}
+
 export interface BuildResult {
   overall: number; // 0..100
   verdict: string;
@@ -282,6 +291,7 @@ export interface BuildResult {
   enteredGroups: number;
   limiter: { label: string; score: number } | null; // weakest attribute
   standout: { label: string; score: number } | null; // strongest attribute
+  bodyComp: BodyCompTarget; // "gain/lose X–Y kg for an optimal build"
 }
 
 /**
@@ -342,6 +352,31 @@ export function rateBuild(input: BuildInput, position: BuildPosition): BuildResu
   const heightM = input.heightCm / 100;
   const bmi = heightM > 0 ? input.weightKg / (heightM * heightM) : 0;
   const metrics: MetricScore[] = [];
+
+  // ---- Body-composition target: the weight range that puts your BMI in the
+  // role's typical band at your height, and how far you are from it. ----
+  const optimalMinKg = position.bmi[0] * heightM * heightM;
+  const optimalMaxKg = position.bmi[1] * heightM * heightM;
+  let bcDir: "gain" | "lose" | "ideal" = "ideal";
+  let bcLo = 0;
+  let bcHi = 0;
+  if (input.weightKg < optimalMinKg) {
+    bcDir = "gain";
+    bcLo = optimalMinKg - input.weightKg;
+    bcHi = optimalMaxKg - input.weightKg;
+  } else if (input.weightKg > optimalMaxKg) {
+    bcDir = "lose";
+    bcLo = input.weightKg - optimalMaxKg;
+    bcHi = input.weightKg - optimalMinKg;
+  }
+  const bodyComp: BodyCompTarget = {
+    optimalMinKg,
+    optimalMaxKg,
+    currentKg: input.weightKg,
+    direction: bcDir,
+    amountLoKg: bcLo,
+    amountHiKg: bcHi,
+  };
 
   // ---- Physique (always present) ----
   const hLo = position.heightCm[0] + (female ? FEMALE_HEIGHT_SHIFT : 0);
@@ -491,5 +526,5 @@ export function rateBuild(input: BuildInput, position: BuildPosition): BuildResu
   const best = capped.length ? capped.reduce((a, b) => (b.score > a.score ? b : a)) : null;
   const standout = best && best.score >= 90 ? best : null;
 
-  return { overall, verdict, groups, metrics, feedback, enteredGroups, limiter, standout };
+  return { overall, verdict, groups, metrics, feedback, enteredGroups, limiter, standout, bodyComp };
 }
