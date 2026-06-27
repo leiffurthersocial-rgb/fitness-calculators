@@ -294,7 +294,17 @@ export function generatePlan(input: PlanInput): WorkoutPlan {
     : input.equipment === "bodyweight" ? ex.bw ?? ex.name
     : ex.name;
 
+  // Conditioning is limited to ~2 sessions/week (every other day) rather than
+  // every session — enough to build a base without blunting strength gains.
+  const condDays = new Set<number>();
+  if (scheme.conditioning) {
+    for (let i = 1; i < split.length && condDays.size < 2; i += 2) condDays.add(i);
+  }
+
   const days: PlanDay[] = split.map((day, dayIdx) => {
+    const isLegDay = day.exercises.some((e) => ["squat", "hinge", "lunge"].includes(e.pattern));
+    const hasPlyo = scheme.plyo && isLegDay;
+
     // First pass: build the lifts with their planned set counts.
     const built = day.exercises.map((ex, i) => {
       const isMain = ex.role === "main" || i === 0;
@@ -302,15 +312,22 @@ export function generatePlan(input: PlanInput): WorkoutPlan {
       const sets = (isMain ? scheme.mainSets : scheme.accSets) + (emphasised ? 1 : 0);
       return { ex, isMain, emphasised, sets };
     });
+    let plyoSets = hasPlyo ? 4 : 0;
 
-    // Apply the per-session set cap by trimming accessories first (min 2),
-    // then mains (min 3), so the hardest, most useful work survives.
-    let total = built.reduce((s, b) => s + b.sets, 0);
+    // Apply the per-session set cap. Plyometrics count toward the total. Trim
+    // accessories first (min 2), then plyos (min 2), then mains (min 3), so the
+    // hardest, most useful work survives.
+    let total = built.reduce((s, b) => s + b.sets, 0) + plyoSets;
     while (total > cap) {
       let trimmed = false;
       for (let j = built.length - 1; j >= 0; j--) {
-        const floor = built[j].isMain ? 3 : 2;
-        if (built[j].sets > floor) { built[j].sets--; total--; trimmed = true; break; }
+        if (!built[j].isMain && built[j].sets > 2) { built[j].sets--; total--; trimmed = true; break; }
+      }
+      if (!trimmed && plyoSets > 2) { plyoSets--; total--; trimmed = true; }
+      if (!trimmed) {
+        for (let j = built.length - 1; j >= 0; j--) {
+          if (built[j].isMain && built[j].sets > 3) { built[j].sets--; total--; trimmed = true; break; }
+        }
       }
       if (!trimmed) break;
     }
@@ -329,13 +346,12 @@ export function generatePlan(input: PlanInput): WorkoutPlan {
       return { name: exName(b.ex), kind: "lift" as const, sets: b.sets, reps, rir: scheme.rir, pct, weightKg, emphasised: b.emphasised };
     });
 
-    // Plyometrics go on leg-focused days, as their own row.
-    const isLegDay = day.exercises.some((e) => ["squat", "hinge", "lunge"].includes(e.pattern));
+    // Plyometrics go first on leg-focused days, as their own (set-counted) row.
     const rows: PlanExercise[] = [];
-    if (scheme.plyo && isLegDay)
-      rows.push({ name: "Box / broad jumps", kind: "plyo", sets: 4, reps: "3", rir: "max intent", prescription: "4×3, full rest — explode every rep" });
+    if (plyoSets > 0)
+      rows.push({ name: "Box / broad jumps", kind: "plyo", sets: plyoSets, reps: "3", rir: "max intent", prescription: `${plyoSets}×3, full rest — explode every rep` });
     rows.push(...lifts);
-    if (scheme.conditioning)
+    if (condDays.has(dayIdx))
       rows.push({ name: "Conditioning", kind: "cardio", prescription: "12–18 min intervals (30s hard / 90s easy)" });
 
     return { label: day.label, exercises: rows };
@@ -348,7 +364,9 @@ export function generatePlan(input: PlanInput): WorkoutPlan {
   notes.push(`Every muscle is trained ~2× per week — at matched volume that out-grows once-weekly splits. ${vt.label}.`);
   notes.push(`Take most sets to ${scheme.rir} (stop a rep or two short of failure); push the last set of an exercise closest to failure.`);
   notes.push(`Main lifts: ${scheme.mainSets}×${scheme.mainReps}${input.equipment === "full" ? ` at ~${Math.round(scheme.mainPct * 100)}% 1RM` : ""}; rest ~${scheme.restSec >= 60 ? scheme.restSec / 60 + " min" : scheme.restSec + "s"} on compounds.`);
-  if (cap !== Infinity) notes.push(`Capped at ${cap} working sets per session — accessories were trimmed first to fit.`);
+  if (scheme.plyo || scheme.conditioning)
+    notes.push(`${scheme.plyo ? "Plyometrics open the leg days" : ""}${scheme.plyo && scheme.conditioning ? "; " : ""}${scheme.conditioning ? "conditioning runs on ~2 days" : ""} — both count toward your per-session set total.`);
+  if (cap !== Infinity) notes.push(`Capped at ${cap} working sets per session — accessories were trimmed first, then plyos, then main lifts.`);
   if (weak.size) notes.push(`Extra set added to your weak lift${weak.size > 1 ? "s" : ""}: ${[...weak].join(", ")}.`);
   notes.push("Progress weekly: add reps until you reach the top of the range on all sets, then add ~2.5 kg / 5 lb.");
   notes.push("Deload every 4–6 weeks (halve the sets, drop intensity) to manage fatigue.");

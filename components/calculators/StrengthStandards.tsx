@@ -68,6 +68,19 @@ export default function StrengthStandards() {
   const sport = SPORTS.find((s) => s.key === sportKey)!;
   const bwKg = weightToKg(bw, units);
 
+  // Classify every lift once, then derive an overall level and big-3 total.
+  const classed = LIFTS.map((lift) => ({
+    lift,
+    c: classifyLift(weightToKg(lifts[lift.key], units), lift.key, sex, bwKg, age),
+  }));
+  const avgIdx = classed.reduce((s, x) => s + x.c.levelIndex, 0) / classed.length;
+  const overallIdx = Math.round(avgIdx);
+  const overallLevel = overallIdx < 0 ? "Untrained" : STRENGTH_LEVELS[Math.min(4, overallIdx)];
+  const overallColor = overallIdx < 0 ? "#71717a" : LEVEL_COLORS[Math.min(4, overallIdx)];
+  const big3Keys: Lift[] = ["squat", "bench", "deadlift"];
+  const big3Total = big3Keys.reduce((s, k) => s + (lifts[k] || 0), 0);
+  const big3Kg = weightToKg(big3Total, units);
+
   return (
     <CalcGrid>
       <Card>
@@ -119,7 +132,9 @@ export default function StrengthStandards() {
         <InfoNote>
           <p>
             Standards are a 1RM as a multiple of bodyweight, adjusted for your
-            age (strength peaks ~23–30, then declines gradually).
+            age (strength peaks ~23–30, then declines) and your bodyweight —
+            lighter lifters are held to a higher multiple, heavier lifters a
+            lower one, like Wilks/DOTS.
           </p>
           <p>
             Levels run Beginner → Novice → Intermediate → Advanced → Elite.
@@ -142,11 +157,29 @@ export default function StrengthStandards() {
             : "level."}
         </Tip>
 
+        {/* Overall summary */}
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div>
+            <div className="text-xs text-zinc-500">Overall strength level</div>
+            <div className="text-lg font-bold" style={{ color: overallColor }}>
+              {overallLevel}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-zinc-500">Squat + bench + deadlift</div>
+            <div className="text-lg font-semibold">
+              {fmt(big3Total)} {unit}
+              <span className="ml-1 text-sm font-normal text-zinc-400">
+                · {fmt(big3Kg / bwKg, 2)}×BW
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div className="mt-4 space-y-5">
-          {LIFTS.map((lift) => {
+          {classed.map(({ lift, c }) => {
             const isKey = sport.lifts.includes(lift.key);
             const oneRMkg = weightToKg(lifts[lift.key], units);
-            const c = classifyLift(oneRMkg, lift.key, sex, bwKg, age);
 
             // Marker position between Beginner (0%) and Elite (100%).
             const beg = c.rows[0].weight;

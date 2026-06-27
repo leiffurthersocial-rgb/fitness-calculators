@@ -468,7 +468,23 @@ export function ageStrengthFactor(age: number): number {
 export interface StandardRow {
   level: StrengthLevel;
   weight: number; // required 1RM in kg
-  ratio: number; // multiple of bodyweight (age-adjusted)
+  ratio: number; // multiple of bodyweight (age- & bodyweight-adjusted)
+}
+
+/**
+ * Bodyweight scaling for strength standards. Lighter lifters are held to a
+ * higher multiple of bodyweight and heavier lifters to a lower one — the same
+ * pound-for-pound idea behind Wilks/DOTS, baked straight into the ratio so an
+ * 80 kg and a 120 kg "Advanced" don't both sit at exactly 2× bodyweight.
+ * Reference is ~80 kg (men) / 65 kg (women); the exponent keeps it gentle.
+ */
+export function bodyweightStrengthFactor(
+  bodyweightKg: number,
+  sex: "male" | "female"
+): number {
+  const ref = sex === "male" ? 80 : 65;
+  const bw = Math.min(Math.max(bodyweightKg, 45), 160);
+  return Math.pow(ref / bw, 0.33);
 }
 
 /** The five level thresholds for one lift, in kg, age- & bodyweight-adjusted. */
@@ -478,7 +494,7 @@ export function liftStandards(
   bodyweightKg: number,
   age: number
 ): StandardRow[] {
-  const factor = ageStrengthFactor(age);
+  const factor = ageStrengthFactor(age) * bodyweightStrengthFactor(bodyweightKg, sex);
   return STRENGTH_RATIOS[sex][lift].map((baseRatio, i) => {
     const ratio = baseRatio * factor;
     return {
