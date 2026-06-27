@@ -20,9 +20,12 @@ import {
   generatePlan,
   goalForSport,
   volumeTarget,
+  availableSplits,
+  defaultSplit,
   type Goal,
   type MainLift,
   type Equipment,
+  type Split,
 } from "@/lib/workoutPlan";
 import { SPORTS_DB } from "@/lib/buildRater";
 import {
@@ -47,8 +50,18 @@ export default function WorkoutPlan() {
 
   const [goal, setGoal] = useState<Goal>("athletic");
   const [days, setDays] = useState(4);
+  const [split, setSplit] = useState<Split>("upperLower");
   const [equipment, setEquipment] = useState<Equipment>("full");
+  const [maxSets, setMaxSets] = useState(0); // 0 = no cap
   const [tailor, setTailor] = useState(false);
+  const isEndurance = goal === "endurance";
+
+  // Switching frequency resets the split to a valid default for that day count.
+  const changeDays = (d: number) => {
+    setDays(d);
+    setSplit(defaultSplit(d));
+  };
+  const splitOptions = availableSplits(days);
   const [sportKey, setSportKey] = useState("basketball");
   const sport = SPORTS_DB.find((s) => s.key === sportKey)!;
   const [posKey, setPosKey] = useState(sport.positions[0].key);
@@ -91,12 +104,14 @@ export default function WorkoutPlan() {
     return generatePlan({
       goal,
       daysPerWeek: days,
+      split,
       equipment,
       incrementKg: inc,
+      maxSets,
       oneRMs: rmKg,
       weakLifts,
     });
-  }, [goal, days, equipment, inc, oneRMs, weakLifts, units]);
+  }, [goal, days, split, equipment, inc, maxSets, oneRMs, weakLifts, units]);
 
   const vt = volumeTarget(goal);
 
@@ -116,7 +131,7 @@ export default function WorkoutPlan() {
             <Field label="Training days per week">
               <SegmentedControl
                 value={String(days)}
-                onChange={(v) => setDays(parseInt(v))}
+                onChange={(v) => changeDays(parseInt(v))}
                 options={[
                   { value: "3", label: "3 days" },
                   { value: "4", label: "4 days" },
@@ -124,6 +139,15 @@ export default function WorkoutPlan() {
                 ]}
               />
             </Field>
+            {!isEndurance && (
+              <Field label="Split style" hint={`${splitOptions.length} for ${days} days`}>
+                <Select
+                  value={split}
+                  onChange={setSplit}
+                  options={splitOptions.map((s) => ({ value: s.key, label: s.label }))}
+                />
+              </Field>
+            )}
             <Field label="Equipment">
               <Select
                 value={equipment}
@@ -131,6 +155,22 @@ export default function WorkoutPlan() {
                 options={EQUIPMENT.map((e) => ({ value: e.key, label: e.label }))}
               />
             </Field>
+            {!isEndurance && (
+              <Field label="Max sets per session" hint="caps total work">
+                <Select
+                  value={String(maxSets)}
+                  onChange={(v) => setMaxSets(parseInt(v))}
+                  options={[
+                    { value: "0", label: "No limit" },
+                    { value: "12", label: "12 sets" },
+                    { value: "15", label: "15 sets" },
+                    { value: "18", label: "18 sets" },
+                    { value: "20", label: "20 sets" },
+                    { value: "25", label: "25 sets" },
+                  ]}
+                />
+              </Field>
+            )}
             <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
               <input
                 type="checkbox"
@@ -234,6 +274,14 @@ export default function WorkoutPlan() {
         </InfoNote>
       </Card>
 
+      {/* Plan summary */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge>{days} days / week</Badge>
+        <Badge tone="neutral">{plan.splitLabel}</Badge>
+        <Badge tone="neutral">{GOALS.find((g) => g.key === goal)?.label}</Badge>
+        <Badge tone="neutral">{EQUIPMENT.find((e) => e.key === equipment)?.label}</Badge>
+      </div>
+
       {/* The plan */}
       <div className="grid gap-5 md:grid-cols-2">
         {plan.days.map((day, i) => (
@@ -254,40 +302,55 @@ export default function WorkoutPlan() {
                   </tr>
                 </thead>
                 <tbody>
-                  {day.exercises.map((ex, j) => (
-                    <tr key={j} className="border-t border-zinc-100 dark:border-zinc-800">
-                      <td className="px-3 py-2 font-medium">
-                        {ex.name}
-                        {ex.emphasised && (
-                          <span className="ml-1.5">
-                            <Badge tone="warn">focus</Badge>
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2 tabular-nums">
-                        {ex.sets}×{ex.reps}
-                        <div className="text-xs font-normal text-zinc-400">{ex.rir}</div>
-                      </td>
-                      <td className="px-3 py-2 text-zinc-500">
-                        {ex.weightKg
-                          ? `${fmt(weightFromKg(ex.weightKg, units))} ${wu}`
-                          : ex.pct
-                          ? `${Math.round(ex.pct * 100)}% 1RM`
-                          : "hard effort"}
-                      </td>
-                    </tr>
-                  ))}
+                  {day.exercises.map((ex, j) => {
+                    // Cardio & plyo rows show a single prescription spanning the
+                    // sets/load columns, with an icon to set them apart.
+                    if (ex.kind !== "lift") {
+                      return (
+                        <tr key={j} className="border-t border-zinc-100 dark:border-zinc-800">
+                          <td className="px-3 py-2 font-medium">
+                            <span className="mr-1">{ex.kind === "plyo" ? "⚡" : "🫀"}</span>
+                            {ex.name}
+                          </td>
+                          <td className="px-3 py-2 text-zinc-500" colSpan={2}>
+                            {ex.prescription}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return (
+                      <tr key={j} className="border-t border-zinc-100 dark:border-zinc-800">
+                        <td className="px-3 py-2 font-medium">
+                          {ex.name}
+                          {ex.emphasised && (
+                            <span className="ml-1.5">
+                              <Badge tone="warn">focus</Badge>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 tabular-nums">
+                          {ex.sets}×{ex.reps}
+                          <div className="text-xs font-normal text-zinc-400">{ex.rir}</div>
+                        </td>
+                        <td className="px-3 py-2 text-zinc-500">
+                          {ex.weightKg
+                            ? `${fmt(weightFromKg(ex.weightKg, units))} ${wu}`
+                            : ex.pct
+                            ? `${Math.round(ex.pct * 100)}% 1RM`
+                            : "hard effort"}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-            {day.finisher && (
-              <p className="mt-2 text-xs text-zinc-500">🔥 {day.finisher}</p>
-            )}
           </Card>
         ))}
       </div>
 
-      {/* Weekly volume per muscle */}
+      {/* Weekly volume per muscle — only when there's lifting volume to show */}
+      {!isEndurance && plan.volume.length > 0 && (
       <Card>
         <CardTitle>Weekly volume</CardTitle>
         <p className="mb-3 text-sm text-zinc-500">{vt.label}.</p>
@@ -327,6 +390,7 @@ export default function WorkoutPlan() {
           Every muscle is hit at least 2×/week.
         </p>
       </Card>
+      )}
 
       <Card>
         <CardTitle>Coaching notes</CardTitle>

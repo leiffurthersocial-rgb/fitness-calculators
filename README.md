@@ -21,7 +21,7 @@ Every calculator is standalone (type your own stats), with one global
 The **Sports build rater** scores four attribute groups — **physique**
 (height, BMI & wingspan/ape-index vs the role's range), **strength** (relative
 lifts & pull-ups), **power** (100 m sprint & vertical jump) and **endurance**
-(VO₂max). Each of 13 sports' positions weights the groups by what it demands,
+(VO₂max). Each of 18 sports' positions weights the groups by what it demands,
 with per-metric emphasis on signature lifts (bench for a lineman, deadlift/squat
 & sprint for a sprinter, vertical for a volleyball middle blocker). Targets are
 **age-adjusted** and sex-shifted, every input is optional, and the overall is
@@ -30,13 +30,17 @@ the weighted average over only the groups you fill in. It also calls out your
 [`lib/buildRater.ts`](lib/buildRater.ts).
 
 The **Workout plan generator** turns that into action using current training
-science: choose a goal (or let a sport/position suggest one), pick 3–5 days and
-your equipment (barbell / dumbbell / bodyweight), and it builds a split that
-**trains every muscle ~2×/week**, applies a goal-based set/rep/intensity scheme
-with **RIR (reps-in-reserve)** targets, computes working weights from your 1RMs,
-adds a set to any lift below your sport's target ratio, and reports **weekly set
-volume per muscle** against evidence-based landmarks (10–20 sets/week for
-hypertrophy, counting secondary movers as half-sets). Logic in
+science. Choose a goal — max strength, power, hypertrophy, all-round athletic,
+or an **endurance / running program** (runs, intervals + strength support) —
+pick 3–5 days, a **split style** that fits those days (Full body, PPL,
+Upper/Lower, Anterior/Posterior, Push/Pull, …), your equipment (barbell /
+dumbbell / bodyweight), and an optional **max sets per session** cap. It builds
+a split that **trains every muscle ~2×/week**, applies a goal-based
+set/rep/intensity scheme with **RIR (reps-in-reserve)** targets, lists
+plyometrics and conditioning as their own rows, computes working weights from
+your 1RMs, adds a set to any lift below your sport's target ratio, and reports
+**weekly set volume per muscle** against evidence-based landmarks (10–20
+sets/week for hypertrophy, counting secondary movers as half-sets). Logic in
 [`lib/workoutPlan.ts`](lib/workoutPlan.ts).
 
 Tools that offer multiple methods (Rep-max formula, VO₂ max test, HR-zone

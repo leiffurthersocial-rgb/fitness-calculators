@@ -26,6 +26,15 @@ import {
   fmt,
 } from "@/lib/units";
 
+// A small section divider for grouping the optional performance inputs.
+function SubLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="border-t border-zinc-100 pt-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:border-zinc-800">
+      {children}
+    </div>
+  );
+}
+
 // Score → colour for the gauge and bars.
 function scoreColor(s: number): string {
   if (s >= 85) return "#a855f7";
@@ -147,13 +156,15 @@ export default function SportsBuildRater() {
             </Field>
           </div>
 
-          <div>
-            <div className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Performance{" "}
               <span className="font-normal text-zinc-400">
                 (all optional — leave 0 to skip)
               </span>
             </div>
+
+            <SubLabel>💪 Strength</SubLabel>
             <div className="grid grid-cols-2 gap-3">
               <Field label={`Squat 1RM (${wu})`}>
                 <NumberInput value={squat} onChange={setSquat} step={2.5} suffix={wu} />
@@ -170,12 +181,20 @@ export default function SportsBuildRater() {
               <Field label="Max pull-ups">
                 <NumberInput value={pullups} onChange={setPullups} suffix="reps" />
               </Field>
+            </div>
+
+            <SubLabel>⚡ Power</SubLabel>
+            <div className="grid grid-cols-2 gap-3">
               <Field label="100 m sprint">
                 <NumberInput value={sprint100} onChange={setSprint100} step={0.1} suffix="s" />
               </Field>
               <Field label={`Vertical jump (${su})`}>
                 <NumberInput value={vertical} onChange={setVertical} suffix={su} />
               </Field>
+            </div>
+
+            <SubLabel>🫀 Endurance &amp; reach</SubLabel>
+            <div className="grid grid-cols-2 gap-3">
               <Field label="VO₂max">
                 <NumberInput value={vo2max} onChange={setVo2max} suffix="ml/kg/min" />
               </Field>
