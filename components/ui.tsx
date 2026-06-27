@@ -84,6 +84,12 @@ export function NumberInput({
         min={min}
         max={max}
         placeholder={placeholder}
+        // Select the current value on focus so you can just start typing
+        // instead of clearing the seeded number first.
+        onFocusCapture={(e) => e.target.select()}
+        // Stop the mouse wheel from silently changing the value while
+        // scrolling the page over a focused input — a classic annoyance.
+        onWheel={(e) => e.currentTarget.blur()}
         onChange={(e) =>
           onChange(e.target.value === "" ? 0 : parseFloat(e.target.value))
         }
