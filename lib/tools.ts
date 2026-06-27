@@ -8,6 +8,7 @@ import SportsBuildRater from "@/components/calculators/SportsBuildRater";
 import Vo2Max from "@/components/calculators/Vo2Max";
 import HeartRateZones from "@/components/calculators/HeartRateZones";
 import PaceRace from "@/components/calculators/PaceRace";
+import RunPaces from "@/components/calculators/RunPaces";
 import Tdee from "@/components/calculators/Tdee";
 import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
@@ -58,6 +59,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "vo2max", name: "VO₂ max", blurb: "Cooper, run & resting-HR methods", Component: Vo2Max },
       { id: "hr-zones", name: "Heart-rate zones", blurb: "5 zones, Karvonen / % max", Component: HeartRateZones },
       { id: "pace-race", name: "Pace & race predictor", blurb: "Pace + Riegel predictions", Component: PaceRace },
+      { id: "run-paces", name: "Run training paces", blurb: "Zone paces from a race or test (VDOT)", Component: RunPaces },
     ],
   },
   {

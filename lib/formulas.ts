@@ -224,6 +224,152 @@ export function paceSecPerKm(timeSec: number, distM: number): number {
 }
 
 /* ========================================================================
+ * RUNNING — VDOT & TRAINING PACES (Jack Daniels)
+ * ----------------------------------------------------------------------
+ * From a single race or field-test result we derive VDOT, a VO2max-like
+ * fitness score, then turn it into training-zone paces. The two core
+ * equations are Daniels & Gilbert's: the oxygen cost of running at a
+ * velocity, and the fraction of VO2max a runner can sustain for a given
+ * duration. Paces below are a percentage of velocity at VO2max (vVO2max),
+ * calibrated to reproduce Daniels' published tables within a few sec/km —
+ * a guide to train "around", not lab-exact prescriptions.
+ * ====================================================================== */
+
+/** Oxygen cost (ml/kg/min) of running at v meters/minute (Daniels–Gilbert). */
+function danielsVO2(vMetersPerMin: number): number {
+  return -4.6 + 0.182258 * vMetersPerMin + 0.000104 * vMetersPerMin * vMetersPerMin;
+}
+
+/** Fraction of VO2max sustainable for a race of t minutes (Daniels–Gilbert). */
+function danielsPercentMax(tMinutes: number): number {
+  return (
+    0.8 +
+    0.1894393 * Math.exp(-0.012778 * tMinutes) +
+    0.2989558 * Math.exp(-0.1932605 * tMinutes)
+  );
+}
+
+/** Invert the VO2 polynomial: the velocity (m/min) that costs `vo2` ml/kg/min. */
+function velocityForVO2(vo2: number): number {
+  // 0.000104 v² + 0.182258 v − (4.6 + vo2) = 0  → positive quadratic root.
+  const a = 0.000104;
+  const b = 0.182258;
+  const c = -(4.6 + vo2);
+  const disc = b * b - 4 * a * c;
+  if (disc <= 0) return 0;
+  return (-b + Math.sqrt(disc)) / (2 * a);
+}
+
+/**
+ * VDOT from a race/test performance. A Cooper 12-min test is just a race of
+ * 720 s, so it feeds straight in here too. Returns 0 on invalid input.
+ */
+export function vdotFromRace(distMeters: number, timeSec: number): number {
+  if (distMeters <= 0 || timeSec <= 0) return 0;
+  const tMin = timeSec / 60;
+  const v = distMeters / tMin; // m/min
+  const pct = danielsPercentMax(tMin);
+  if (pct <= 0) return 0;
+  return danielsVO2(v) / pct;
+}
+
+/** Velocity at VO2max (m/min) for a given VDOT. */
+export function vVO2max(vdot: number): number {
+  return velocityForVO2(vdot);
+}
+
+/** Training pace (sec/km) at a fraction of vVO2max for the given VDOT. */
+export function runPaceForFraction(vdot: number, fraction: number): number {
+  const v = vVO2max(vdot) * fraction;
+  if (v <= 0) return 0;
+  return (1000 / v) * 60;
+}
+
+/**
+ * The race time (seconds) that would yield this VDOT at a given distance.
+ * Solved by bisection since the sustainable %VO2max depends on duration.
+ */
+export function timeForVdotAtDistance(vdot: number, distMeters: number): number {
+  if (vdot <= 0 || distMeters <= 0) return 0;
+  let lo = 20; // 20 s — faster than any human
+  let hi = 6 * 3600; // 6 h — slower than any finish we predict
+  // VDOT decreases monotonically as the time for a fixed distance grows.
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (vdotFromRace(distMeters, mid) > vdot) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+export interface RunZone {
+  key: string;
+  name: string;
+  /** What the zone develops / how to use it. */
+  trains: string;
+  /** Fraction-of-vVO2max bounds (faster = higher fraction). */
+  lowFrac: number;
+  highFrac: number;
+}
+
+/**
+ * The five Daniels training intensities, as fractions of vVO2max. Bounds are
+ * tuned so the resulting paces track his published VDOT tables closely.
+ */
+export const RUN_ZONES: RunZone[] = [
+  {
+    key: "easy",
+    name: "Easy / Long",
+    trains: "Most weekly miles. Conversational — builds the aerobic base and aids recovery.",
+    lowFrac: 0.74,
+    highFrac: 0.79,
+  },
+  {
+    key: "marathon",
+    name: "Marathon",
+    trains: "Steady long efforts at marathon goal pace.",
+    lowFrac: 0.84,
+    highFrac: 0.88,
+  },
+  {
+    key: "threshold",
+    name: "Threshold",
+    trains: "Comfortably hard tempo, ~20–40 min. Lifts your lactate threshold.",
+    lowFrac: 0.9,
+    highFrac: 0.92,
+  },
+  {
+    key: "interval",
+    name: "Interval",
+    trains: "3–5 min hard reps with equal jog recovery. Develops VO₂max.",
+    lowFrac: 0.97,
+    highFrac: 1.0,
+  },
+  {
+    key: "repetition",
+    name: "Repetition",
+    trains: "Short 200–400 m reps with full recovery. Sharpens speed & economy.",
+    lowFrac: 1.02,
+    highFrac: 1.06,
+  },
+];
+
+export interface RunZonePace {
+  zone: RunZone;
+  fastSecPerKm: number; // at the high fraction
+  slowSecPerKm: number; // at the low fraction
+}
+
+/** Training paces for every zone, derived from a VDOT. */
+export function runTrainingPaces(vdot: number): RunZonePace[] {
+  return RUN_ZONES.map((zone) => ({
+    zone,
+    fastSecPerKm: runPaceForFraction(vdot, zone.highFrac),
+    slowSecPerKm: runPaceForFraction(vdot, zone.lowFrac),
+  }));
+}
+
+/* ========================================================================
  * BODY & NUTRITION
  * ====================================================================== */
 
