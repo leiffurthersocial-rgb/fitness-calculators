@@ -91,6 +91,16 @@ export default function StrengthStandards() {
   const big3Total = big3Keys.reduce((s, k) => s + (lifts[k] || 0), 0);
   const big3Kg = weightToKg(big3Total, units);
 
+  // Sport-specific level: same averaging, but only over the sport's key lifts.
+  const sportClassed = classed.filter((x) => sport.lifts.includes(x.lift.key));
+  const sportAvgIdx =
+    sportClassed.reduce((s, x) => s + x.c.levelIndex, 0) / sportClassed.length;
+  const sportIdx = Math.round(sportAvgIdx);
+  const sportLevel = sportIdx < 0 ? "Untrained" : STRENGTH_LEVELS[Math.min(4, sportIdx)];
+  const sportColor = sportIdx < 0 ? "#71717a" : LEVEL_COLORS[Math.min(4, sportIdx)];
+  const sportTargetIdx = STRENGTH_LEVELS.indexOf(sport.target);
+  const meetsSportTarget = sportIdx >= sportTargetIdx;
+
   return (
     <CalcGrid>
       <Card>
@@ -158,6 +168,13 @@ export default function StrengthStandards() {
             Figures are approximate, synthesised from common public tables — a
             guide, not a verdict.
           </p>
+          <p>
+            The &quot;top X%&quot; figure estimates where you sit among people
+            who train that lift, interpolated between the level thresholds.
+            The sport-specific level above your lifts only averages the
+            lifts that actually matter for your chosen sport, so it can read
+            differently from your overall level.
+          </p>
         </InfoNote>
       </Card>
 
@@ -193,22 +210,24 @@ export default function StrengthStandards() {
           </div>
         </div>
 
+        {/* Sport-specific summary, based only on the sport's key lifts */}
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div>
+            <div className="text-xs text-zinc-500">{sport.label} level (key lifts)</div>
+            <div className="text-lg font-bold" style={{ color: sportColor }}>
+              {sportLevel}
+            </div>
+          </div>
+          <Badge tone={meetsSportTarget ? "accent" : "warn"}>
+            {meetsSportTarget ? `Meets ${sport.target} target` : `Target: ${sport.target}`}
+          </Badge>
+        </div>
+
         <div className="mt-4 space-y-5">
           {classed.map(({ lift, c }) => {
             const isKey = sport.lifts.includes(lift.key);
             const isReps = lift.unit === "reps";
-            // The user's value in the same unit as the standards (kg or reps).
-            const userVal = isReps
-              ? lifts[lift.key]
-              : weightToKg(lifts[lift.key], units);
 
-            // Marker position between Beginner (0%) and Elite (100%).
-            const beg = c.rows[0].value;
-            const elite = c.rows[4].value;
-            const pct =
-              elite > beg
-                ? Math.min(1, Math.max(0, (userVal - beg) / (elite - beg)))
-                : 0;
             const levelColor =
               c.levelIndex < 0 ? "#71717a" : LEVEL_COLORS[c.levelIndex];
 
@@ -246,7 +265,7 @@ export default function StrengthStandards() {
                   {/* User marker */}
                   <div
                     className="absolute top-1/2 h-5 w-1 -translate-y-1/2 rounded bg-zinc-900 ring-2 ring-white dark:bg-white dark:ring-zinc-900"
-                    style={{ left: `calc(${pct * 100}% - 2px)` }}
+                    style={{ left: `calc(${c.barPct * 100}% - 2px)` }}
                   />
                 </div>
 
@@ -259,6 +278,9 @@ export default function StrengthStandards() {
                     {isReps
                       ? ` · ${lifts[lift.key]} reps (≈${fmt(c.relativeReps ?? 0, 1)} relative)`
                       : ` · ${fmt(c.ratio, 2)}×BW`}
+                    <span className="ml-1 font-normal text-zinc-400">
+                      · top {fmt(100 - c.percentile, 1)}%
+                    </span>
                   </span>
                   <span className="text-zinc-500">
                     {c.next
@@ -268,6 +290,19 @@ export default function StrengthStandards() {
                       : "Top tier 💪"}
                   </span>
                 </div>
+                {isKey && (
+                  <div className="mt-1 text-xs">
+                    {c.levelIndex >= sportTargetIdx ? (
+                      <span className="text-accent-600 dark:text-accent-400">
+                        Meets the {sport.target} target for {sport.label.toLowerCase()} ✓
+                      </span>
+                    ) : (
+                      <span className="text-amber-600 dark:text-amber-400">
+                        Below the {sport.target} target for {sport.label.toLowerCase()}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

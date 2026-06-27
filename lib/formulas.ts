@@ -571,6 +571,61 @@ export interface LiftClassification {
    * bodyweight is accounted for. Undefined for weight lifts.
    */
   relativeReps?: number;
+  /** Estimated percentile (0–99.5) among people who train this lift, age/bodyweight-adjusted. */
+  percentile: number;
+  /** Position (0–1) of the user's value along the Beginner→Elite bar, matched to the level boundaries. */
+  barPct: number;
+}
+
+/**
+ * Percentile assigned to each level threshold (Beginner..Elite), roughly
+ * matching the spread on public 1RM databases — most "Beginner" lifters sit
+ * well below the median trainee, "Advanced" is already top-15%, "Elite" is
+ * the high-90s. Used to turn a discrete level into a continuous percentile.
+ */
+const PERCENTILE_AT_LEVEL = [15, 40, 60, 85, 97];
+
+/**
+ * Maps a value to an estimated percentile by piecewise-linear interpolation
+ * between the level thresholds, extrapolating gently below Beginner and
+ * above Elite (capped just short of 100 — there's always someone stronger).
+ */
+function percentileForValue(value: number, rows: StandardRow[]): number {
+  const vs = rows.map((r) => r.value);
+  if (value <= 0) return 0;
+  if (value <= vs[0]) {
+    return Math.max(0, (value / vs[0]) * PERCENTILE_AT_LEVEL[0]);
+  }
+  for (let i = 0; i < vs.length - 1; i++) {
+    if (value <= vs[i + 1]) {
+      const t = (value - vs[i]) / (vs[i + 1] - vs[i]);
+      return PERCENTILE_AT_LEVEL[i] + t * (PERCENTILE_AT_LEVEL[i + 1] - PERCENTILE_AT_LEVEL[i]);
+    }
+  }
+  const over = (value - vs[4]) / vs[4];
+  return Math.min(99.5, 97 + Math.min(2.5, over * 10));
+}
+
+/**
+ * Position (0–1) of a value along the Beginner→Elite bar. The bar is drawn
+ * as 5 equal-width colour segments, one per level, so this interpolates
+ * piecewise between the level thresholds (rather than a single linear
+ * Beginner-to-Elite span) — otherwise the marker drifts out of sync with
+ * the segment it's actually classified into whenever the gaps between level
+ * thresholds aren't equal (which they never are).
+ */
+function barPctForValue(value: number, rows: StandardRow[]): number {
+  const vs = rows.map((r) => r.value);
+  const xs = [0, 0.2, 0.4, 0.6, 0.8, 1];
+  const breakpoints = [...vs, vs[4] * 1.25]; // headroom past Elite
+  if (value <= breakpoints[0]) return 0;
+  for (let i = 0; i < breakpoints.length - 1; i++) {
+    if (value <= breakpoints[i + 1]) {
+      const t = (value - breakpoints[i]) / (breakpoints[i + 1] - breakpoints[i]);
+      return xs[i] + t * (xs[i + 1] - xs[i]);
+    }
+  }
+  return 1;
 }
 
 /**
@@ -604,6 +659,8 @@ export function classifyLift(
     next,
     toNext: next ? Math.max(0, next.value - value) : 0,
     relativeReps,
+    percentile: percentileForValue(value, rows),
+    barPct: barPctForValue(value, rows),
   };
 }
 
