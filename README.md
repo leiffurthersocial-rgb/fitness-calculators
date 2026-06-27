@@ -13,7 +13,7 @@ Every calculator is standalone (type your own stats), with one global
 | Group | Tools |
 | --- | --- |
 | **Sports** | Sports build rater (rate your build, strength & performance for a sport + position), Workout plan generator |
-| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (6 lifts incl. weighted pull-up & barbell row; age/weight/sex/sport) |
+| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (squat/bench/deadlift/OHP + max-rep pull-ups; age/weight/sex/sport) |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel) |
 | **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Calorie burn (METs) |
 | **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |

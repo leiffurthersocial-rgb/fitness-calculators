@@ -35,16 +35,15 @@ const EMPHASIS_LABEL: Record<Emphasis, string> = {
   balanced: "Balanced",
 };
 
-// Sensible starting 1RMs as a multiple of bodyweight, so the tool isn't empty.
-// Pull-up is the total system load (bodyweight + added), so ~1× bodyweight.
-const SEED_RATIO: Record<Lift, number> = {
+// Sensible starting values so the tool isn't empty: weight lifts as a multiple
+// of bodyweight, pull-ups as an absolute rep count.
+const SEED_WEIGHT_RATIO: Record<Exclude<Lift, "pullup">, number> = {
   squat: 1.0,
   bench: 0.75,
   deadlift: 1.25,
   ohp: 0.5,
-  pullup: 1.0,
-  row: 0.6,
 };
+const SEED_PULLUP_REPS = 8;
 
 export default function StrengthStandards() {
   const { units } = useUnits();
@@ -57,11 +56,16 @@ export default function StrengthStandards() {
   );
   const [sportKey, setSportKey] = useState("general");
 
-  // Per-lift 1RM inputs, in the display unit.
+  // Per-lift inputs: weight lifts in the display unit, pull-ups in reps.
   const [lifts, setLifts] = useState<Record<Lift, number>>(() => {
     const bwDisp = weightFromKg(DEFAULTS.bodyweightKg, units);
     return Object.fromEntries(
-      LIFTS.map((l) => [l.key, Math.round(bwDisp * SEED_RATIO[l.key])])
+      LIFTS.map((l) => [
+        l.key,
+        l.unit === "reps"
+          ? SEED_PULLUP_REPS
+          : Math.round(bwDisp * SEED_WEIGHT_RATIO[l.key as Exclude<Lift, "pullup">]),
+      ])
     ) as Record<Lift, number>;
   });
 
@@ -71,7 +75,13 @@ export default function StrengthStandards() {
   // Classify every lift once, then derive an overall level and big-3 total.
   const classed = LIFTS.map((lift) => ({
     lift,
-    c: classifyLift(weightToKg(lifts[lift.key], units), lift.key, sex, bwKg, age),
+    c: classifyLift(
+      lift.unit === "reps" ? lifts[lift.key] : weightToKg(lifts[lift.key], units),
+      lift.key,
+      sex,
+      bwKg,
+      age
+    ),
   }));
   const avgIdx = classed.reduce((s, x) => s + x.c.levelIndex, 0) / classed.length;
   const overallIdx = Math.round(avgIdx);
@@ -131,10 +141,10 @@ export default function StrengthStandards() {
         </div>
         <InfoNote>
           <p>
-            Standards are a 1RM as a multiple of bodyweight, adjusted for your
-            age (strength peaks ~23–30, then declines) and your bodyweight —
-            lighter lifters are held to a higher multiple, heavier lifters a
-            lower one, like Wilks/DOTS.
+            Barbell standards are a 1RM as a multiple of bodyweight; pull-ups
+            are max strict reps. Both are adjusted for your age (strength peaks
+            ~23–30, then declines) and your bodyweight — lighter lifters are held
+            to a higher bar, heavier lifters a lower one, like Wilks/DOTS.
           </p>
           <p>
             Levels run Beginner → Novice → Intermediate → Advanced → Elite.
@@ -179,14 +189,18 @@ export default function StrengthStandards() {
         <div className="mt-4 space-y-5">
           {classed.map(({ lift, c }) => {
             const isKey = sport.lifts.includes(lift.key);
-            const oneRMkg = weightToKg(lifts[lift.key], units);
+            const isReps = lift.unit === "reps";
+            // The user's value in the same unit as the standards (kg or reps).
+            const userVal = isReps
+              ? lifts[lift.key]
+              : weightToKg(lifts[lift.key], units);
 
             // Marker position between Beginner (0%) and Elite (100%).
-            const beg = c.rows[0].weight;
-            const elite = c.rows[4].weight;
+            const beg = c.rows[0].value;
+            const elite = c.rows[4].value;
             const pct =
               elite > beg
-                ? Math.min(1, Math.max(0, (oneRMkg - beg) / (elite - beg)))
+                ? Math.min(1, Math.max(0, (userVal - beg) / (elite - beg)))
                 : 0;
             const levelColor =
               c.levelIndex < 0 ? "#71717a" : LEVEL_COLORS[c.levelIndex];
@@ -209,8 +223,8 @@ export default function StrengthStandards() {
                       onChange={(v) =>
                         setLifts((prev) => ({ ...prev, [lift.key]: v }))
                       }
-                      step={2.5}
-                      suffix={unit}
+                      step={isReps ? 1 : 2.5}
+                      suffix={isReps ? "reps" : unit}
                     />
                   </div>
                 </div>
@@ -234,11 +248,16 @@ export default function StrengthStandards() {
                     className="font-semibold"
                     style={{ color: levelColor }}
                   >
-                    {c.level} · {fmt(c.ratio, 2)}×BW
+                    {c.level}
+                    {isReps
+                      ? ` · ${lifts[lift.key]} reps`
+                      : ` · ${fmt(c.ratio, 2)}×BW`}
                   </span>
                   <span className="text-zinc-500">
                     {c.next
-                      ? `${fmt(weightFromKg(c.toNextKg, units))} ${unit} to ${c.next.level}`
+                      ? isReps
+                        ? `${Math.ceil(c.toNext)} ${Math.ceil(c.toNext) === 1 ? "rep" : "reps"} to ${c.next.level}`
+                        : `${fmt(weightFromKg(c.toNext, units))} ${unit} to ${c.next.level}`
                       : "Top tier 💪"}
                   </span>
                 </div>

@@ -407,19 +407,22 @@ export function vo2maxCategory(
  * STRENGTH STANDARDS  (bodyweight-, sex-, age- and sport-aware)
  * ====================================================================== */
 
-export type Lift = "squat" | "bench" | "deadlift" | "ohp" | "pullup" | "row";
+export type Lift = "squat" | "bench" | "deadlift" | "ohp" | "pullup";
 
-export const LIFTS: { key: Lift; label: string; hint?: string }[] = [
-  { key: "squat", label: "Back squat" },
-  { key: "bench", label: "Bench press" },
-  { key: "deadlift", label: "Deadlift" },
-  { key: "ohp", label: "Overhead press" },
+/** A lift's standards are measured either by load (kg) or by rep count. */
+export type LiftUnit = "weight" | "reps";
+
+export const LIFTS: { key: Lift; label: string; unit: LiftUnit; hint?: string }[] = [
+  { key: "squat", label: "Back squat", unit: "weight" },
+  { key: "bench", label: "Bench press", unit: "weight" },
+  { key: "deadlift", label: "Deadlift", unit: "weight" },
+  { key: "ohp", label: "Overhead press", unit: "weight" },
   {
     key: "pullup",
-    label: "Weighted pull-up",
-    hint: "Total load for 1 rep: your bodyweight + any added weight",
+    label: "Pull-ups",
+    unit: "reps",
+    hint: "Max strict bodyweight reps in a single set",
   },
-  { key: "row", label: "Barbell row" },
 ];
 
 export type StrengthLevel =
@@ -444,25 +447,32 @@ export const STRENGTH_LEVELS: StrengthLevel[] = [
  * (ExRx / Strength Level averages) — real tables also vary with bodyweight,
  * so treat these as a guide, not a verdict.
  */
-const STRENGTH_RATIOS: Record<"male" | "female", Record<Lift, number[]>> = {
+type WeightLift = Exclude<Lift, "pullup">;
+
+const STRENGTH_RATIOS: Record<"male" | "female", Record<WeightLift, number[]>> = {
   male: {
     squat: [0.6, 1.0, 1.5, 2.0, 2.5],
     bench: [0.5, 0.75, 1.0, 1.4, 1.8],
     deadlift: [0.75, 1.25, 1.75, 2.25, 2.75],
     ohp: [0.35, 0.55, 0.8, 1.05, 1.3],
-    // Weighted pull-up as TOTAL system load (bodyweight + added) ÷ bodyweight,
-    // so 1.0 = a single strict bodyweight rep. Elite ≈ +100% bodyweight added.
-    pullup: [1.0, 1.15, 1.4, 1.7, 2.05],
-    row: [0.5, 0.7, 0.95, 1.25, 1.6],
   },
   female: {
     squat: [0.5, 0.75, 1.2, 1.6, 2.0],
     bench: [0.3, 0.45, 0.65, 0.9, 1.15],
     deadlift: [0.5, 1.0, 1.4, 1.85, 2.3],
     ohp: [0.2, 0.32, 0.47, 0.62, 0.8],
-    pullup: [0.8, 0.95, 1.15, 1.45, 1.75],
-    row: [0.3, 0.45, 0.62, 0.82, 1.05],
   },
+};
+
+/**
+ * Strict bodyweight pull-up standards as a max-rep count, ordered
+ * [Beginner, Novice, Intermediate, Advanced, Elite]. Reps are the natural,
+ * easy-to-test unit; the targets are then bodyweight- and age-adjusted in
+ * liftStandards() — heavier lifters are held to fewer reps for the same level.
+ */
+const PULLUP_REP_STANDARDS: Record<"male" | "female", number[]> = {
+  male: [1, 5, 11, 18, 27],
+  female: [1, 3, 7, 12, 19],
 };
 
 /**
@@ -479,8 +489,8 @@ export function ageStrengthFactor(age: number): number {
 
 export interface StandardRow {
   level: StrengthLevel;
-  weight: number; // required 1RM in kg
-  ratio: number; // multiple of bodyweight (age- & bodyweight-adjusted)
+  value: number; // required performance: kg for weight lifts, reps for rep lifts
+  ratio?: number; // multiple of bodyweight (weight lifts only)
 }
 
 /**
@@ -499,7 +509,11 @@ export function bodyweightStrengthFactor(
   return Math.pow(ref / bw, 0.33);
 }
 
-/** The five level thresholds for one lift, in kg, age- & bodyweight-adjusted. */
+/**
+ * The five level thresholds for one lift, age- & bodyweight-adjusted. Weight
+ * lifts return a required 1RM in kg (plus the ×BW ratio); pull-ups return a
+ * required rep count.
+ */
 export function liftStandards(
   lift: Lift,
   sex: "male" | "female",
@@ -507,46 +521,58 @@ export function liftStandards(
   age: number
 ): StandardRow[] {
   const factor = ageStrengthFactor(age) * bodyweightStrengthFactor(bodyweightKg, sex);
+  if (lift === "pullup") {
+    return PULLUP_REP_STANDARDS[sex].map((baseReps, i) => ({
+      level: STRENGTH_LEVELS[i],
+      value: Math.max(1, Math.round(baseReps * factor)),
+    }));
+  }
   return STRENGTH_RATIOS[sex][lift].map((baseRatio, i) => {
     const ratio = baseRatio * factor;
     return {
       level: STRENGTH_LEVELS[i],
       ratio,
-      weight: ratio * bodyweightKg,
+      value: ratio * bodyweightKg,
     };
   });
 }
 
 export interface LiftClassification {
+  unit: LiftUnit;
   rows: StandardRow[];
   levelIndex: number; // -1 = below Beginner
   level: StrengthLevel | "Untrained";
-  ratio: number; // user's lift as a multiple of bodyweight
+  ratio: number; // user's lift as a multiple of bodyweight (0 for rep lifts)
   next: StandardRow | null;
-  toNextKg: number; // kg still needed to reach the next level (0 if Elite)
+  toNext: number; // kg (weight) or reps (rep lift) still needed for the next level
 }
 
-/** Classify a user's 1RM against the standards for a lift. */
+/**
+ * Classify a user's performance against the standards for a lift. `value` is a
+ * 1RM in kg for weight lifts, or a max-rep count for pull-ups.
+ */
 export function classifyLift(
-  oneRMkg: number,
+  value: number,
   lift: Lift,
   sex: "male" | "female",
   bodyweightKg: number,
   age: number
 ): LiftClassification {
+  const unit: LiftUnit = lift === "pullup" ? "reps" : "weight";
   const rows = liftStandards(lift, sex, bodyweightKg, age);
   let levelIndex = -1;
   for (let i = 0; i < rows.length; i++) {
-    if (oneRMkg >= rows[i].weight) levelIndex = i;
+    if (value >= rows[i].value) levelIndex = i;
   }
   const next = levelIndex + 1 < rows.length ? rows[levelIndex + 1] : null;
   return {
+    unit,
     rows,
     levelIndex,
     level: levelIndex < 0 ? "Untrained" : rows[levelIndex].level,
-    ratio: bodyweightKg > 0 ? oneRMkg / bodyweightKg : 0,
+    ratio: unit === "weight" && bodyweightKg > 0 ? value / bodyweightKg : 0,
     next,
-    toNextKg: next ? Math.max(0, next.weight - oneRMkg) : 0,
+    toNext: next ? Math.max(0, next.value - value) : 0,
   };
 }
 

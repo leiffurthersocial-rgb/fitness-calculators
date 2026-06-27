@@ -490,8 +490,8 @@ export function rateBuild(input: BuildInput, position: BuildPosition): BuildResu
 
   // ---- Verdict & feedback ----
   const verdict =
-    overall >= 85 ? "Elite-level build"
-    : overall >= 70 ? "Excellent fit"
+    overall >= 88 ? "Elite-level build"
+    : overall >= 73 ? "Excellent fit"
     : overall >= 58 ? "Good fit"
     : overall >= 45 ? "Developing"
     : "Different build";
