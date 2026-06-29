@@ -12,23 +12,15 @@ import {
   Stat,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useWeightField } from "@/lib/profile";
 import { waterTargetMl } from "@/lib/formulas";
-import {
-  weightFromKg,
-  weightToKg,
-  weightUnit,
-  mlToOz,
-  fmt,
-} from "@/lib/units";
+import { weightToKg, weightUnit, mlToOz, fmt } from "@/lib/units";
 
 export default function Water() {
   const { units } = useUnits();
   const wu = weightUnit(units);
 
-  const [bw, setBw] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
+  const [bw, setBw] = useWeightField(units);
   const [exerciseHours, setExerciseHours] = useState(1);
   const [hot, setHot] = useState(false);
 

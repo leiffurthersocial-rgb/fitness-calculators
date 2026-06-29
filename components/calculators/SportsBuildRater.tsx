@@ -13,12 +13,11 @@ import {
   Badge,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile, useWeightField, useHeightField } from "@/lib/profile";
 import { SPORTS_DB, rateBuild, type BuildInput } from "@/lib/buildRater";
 import {
   weightFromKg,
   weightToKg,
-  lengthFromCm,
   lengthToCm,
   weightUnit,
   lengthUnit,
@@ -50,14 +49,10 @@ export default function SportsBuildRater() {
   const lu = lengthUnit(units);
   const su = smallLengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
-  const [age, setAge] = useState(DEFAULTS.age);
-  const [height, setHeight] = useState(
-    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
-  );
-  const [weight, setWeight] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
+  const { profile, patch } = useProfile();
+  const { sex, age } = profile;
+  const [height, setHeight] = useHeightField(units);
+  const [weight, setWeight] = useWeightField(units);
   const [wingspan, setWingspan] = useState(0); // display length unit
   const [sportKey, setSportKey] = useState("basketball");
   const sport = SPORTS_DB.find((s) => s.key === sportKey)!;
@@ -138,7 +133,7 @@ export default function SportsBuildRater() {
             <Field label="Sex">
               <SegmentedControl
                 value={sex}
-                onChange={setSex}
+                onChange={(v) => patch({ sex: v })}
                 options={[
                   { value: "male", label: "M" },
                   { value: "female", label: "F" },
@@ -146,7 +141,7 @@ export default function SportsBuildRater() {
               />
             </Field>
             <Field label="Age">
-              <NumberInput value={age} onChange={setAge} />
+              <NumberInput value={age} onChange={(v) => patch({ age: v })} />
             </Field>
             <Field label={`Height (${lu})`}>
               <NumberInput value={height} onChange={setHeight} suffix={lu} />

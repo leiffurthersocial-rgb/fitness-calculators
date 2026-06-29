@@ -15,6 +15,7 @@ import {
 } from "../ui";
 import { useUnits } from "@/lib/settings";
 import { DEFAULTS } from "@/lib/defaults";
+import { useProfile, useWeightField } from "@/lib/profile";
 import {
   LIFTS,
   STRENGTH_LEVELS,
@@ -49,11 +50,9 @@ export default function StrengthStandards() {
   const { units } = useUnits();
   const unit = weightUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
-  const [age, setAge] = useState(DEFAULTS.age);
-  const [bw, setBw] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
+  const { profile, patch } = useProfile();
+  const { sex, age } = profile;
+  const [bw, setBw] = useWeightField(units);
   const [sportKey, setSportKey] = useState("general");
 
   // Per-lift inputs: weight lifts in the display unit, pull-ups in reps.
@@ -108,12 +107,12 @@ export default function StrengthStandards() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Age">
-              <NumberInput value={age} onChange={setAge} />
+              <NumberInput value={age} onChange={(v) => patch({ age: v })} />
             </Field>
             <Field label="Sex">
               <SegmentedControl
                 value={sex}
-                onChange={setSex}
+                onChange={(v) => patch({ sex: v })}
                 options={[
                   { value: "male", label: "M" },
                   { value: "female", label: "F" },
@@ -124,6 +123,7 @@ export default function StrengthStandards() {
           <Field label={`Bodyweight (${unit})`}>
             <NumberInput value={bw} onChange={setBw} suffix={unit} />
           </Field>
+          {/* bw is the shared profile weight; setBw writes back to it. */}
           <Field label="Sport / goal">
             <Select
               value={sportKey}

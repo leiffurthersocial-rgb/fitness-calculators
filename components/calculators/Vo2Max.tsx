@@ -15,7 +15,7 @@ import {
   SegmentedControl,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile } from "@/lib/profile";
 import {
   vo2maxCooper,
   vo2maxRestingHR,
@@ -29,16 +29,14 @@ type Method = "cooper" | "resting" | "mile15";
 
 export default function Vo2Max() {
   const { units } = useUnits();
+  const { profile, patch } = useProfile();
+  const { age, sex, restingHR } = profile;
   const [method, setMethod] = useState<Method>("cooper");
-  const [age, setAge] = useState(DEFAULTS.age);
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
 
   // Cooper: distance covered in 12 min. Stored in display distance unit.
   const [coopDist, setCoopDist] = useState(units === "metric" ? 2400 : 1.5);
   // 1.5-mile run time in minutes.
   const [mileTime, setMileTime] = useState(11);
-  // Resting method uses your resting HR + estimated max HR.
-  const [restingHR, setRestingHR] = useState(DEFAULTS.restingHR);
 
   let vo2 = 0;
   if (method === "cooper") {
@@ -60,12 +58,12 @@ export default function Vo2Max() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Age">
-              <NumberInput value={age} onChange={setAge} />
+              <NumberInput value={age} onChange={(v) => patch({ age: v })} />
             </Field>
             <Field label="Sex">
               <SegmentedControl
                 value={sex}
-                onChange={setSex}
+                onChange={(v) => patch({ sex: v })}
                 options={[
                   { value: "male", label: "M" },
                   { value: "female", label: "F" },
@@ -115,7 +113,11 @@ export default function Vo2Max() {
           {method === "resting" && (
             <>
               <Field label="Resting HR (bpm)">
-                <NumberInput value={restingHR} onChange={setRestingHR} suffix="bpm" />
+                <NumberInput
+                  value={restingHR}
+                  onChange={(v) => patch({ restingHR: v })}
+                  suffix="bpm"
+                />
               </Field>
               <p className="text-xs text-zinc-500">
                 Uses estimated max HR of {fmt(maxHRTanaka(age), 0)} bpm (Tanaka,

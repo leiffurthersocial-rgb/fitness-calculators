@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* Shared, minimal UI primitives so every calculator looks consistent:
    rounded cards, clean inputs, labeled results, and an expandable
@@ -56,10 +56,23 @@ export function Field({
 const inputBase =
   "w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
 
+/** Keep only digits and a single decimal point (no native number sanitising). */
+function cleanDecimal(raw: string): string {
+  let s = raw.replace(/[^0-9.]/g, "");
+  const dot = s.indexOf(".");
+  if (dot !== -1) {
+    s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, "");
+  }
+  return s;
+}
+
+const numToBuf = (v: number | "") =>
+  v === "" || !Number.isFinite(v as number) ? "" : String(v);
+
 export function NumberInput({
   value,
   onChange,
-  step = 1,
+  step,
   min,
   max,
   placeholder,
@@ -67,32 +80,73 @@ export function NumberInput({
 }: {
   value: number | "";
   onChange: (v: number) => void;
+  /** Accepted for API compatibility; ignored (input is free-form decimal). */
   step?: number;
   min?: number;
   max?: number;
   placeholder?: string;
   suffix?: string;
 }) {
+  // A text buffer holds exactly what you type — including transient states
+  // like "1." or "" — which a native type=number input would discard, making
+  // decimals impossible to enter. We still report a parsed number upward.
+  const [buf, setBuf] = useState(() => numToBuf(value));
+  const editing = useRef(false);
+
+  // Reflect external value changes (unit switch, shared-profile sync) into the
+  // buffer, but never while the user is actively editing this field.
+  useEffect(() => {
+    if (!editing.current && parseFloat(buf) !== value) {
+      setBuf(numToBuf(value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const handle = (raw: string) => {
+    const s = cleanDecimal(raw);
+    setBuf(s);
+    if (s === "" || s === ".") {
+      onChange(0);
+      return;
+    }
+    const n = parseFloat(s);
+    if (!Number.isNaN(n)) {
+      const clamped =
+        (min != null && n < min) || (max != null && n > max)
+          ? n // don't fight mid-typing; clamp on blur instead
+          : n;
+      onChange(clamped);
+    }
+  };
+
   return (
     <div className="relative">
       <input
-        type="number"
+        type="text"
         inputMode="decimal"
         className={inputBase + (suffix ? " pr-12" : "")}
-        value={value}
-        step={step}
-        min={min}
-        max={max}
+        value={buf}
         placeholder={placeholder}
         // Select the current value on focus so you can just start typing
         // instead of clearing the seeded number first.
-        onFocusCapture={(e) => e.target.select()}
+        onFocus={(e) => {
+          editing.current = true;
+          e.target.select();
+        }}
+        onBlur={() => {
+          editing.current = false;
+          // Normalise: clamp to range and drop partial input like "1." → "1".
+          let n = parseFloat(buf);
+          if (Number.isNaN(n)) n = 0;
+          if (min != null && n < min) n = min;
+          if (max != null && n > max) n = max;
+          setBuf(numToBuf(n));
+          if (n !== value) onChange(n);
+        }}
         // Stop the mouse wheel from silently changing the value while
         // scrolling the page over a focused input — a classic annoyance.
         onWheel={(e) => e.currentTarget.blur()}
-        onChange={(e) =>
-          onChange(e.target.value === "" ? 0 : parseFloat(e.target.value))
-        }
+        onChange={(e) => handle(e.target.value)}
       />
       {suffix && (
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">

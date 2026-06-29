@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Card,
   CardTitle,
@@ -16,16 +15,11 @@ import {
   Tip,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
-import {
-  muscleGainPotential,
-  TRAINING_LEVELS,
-  type TrainingLevel,
-} from "@/lib/formulas";
+import { useProfile, useWeightField, useHeightField } from "@/lib/profile";
+import { muscleGainPotential, TRAINING_LEVELS } from "@/lib/formulas";
 import {
   weightFromKg,
   weightToKg,
-  lengthFromCm,
   lengthToCm,
   weightUnit,
   lengthUnit,
@@ -37,16 +31,11 @@ export default function MuscleGain() {
   const wu = weightUnit(units);
   const lu = lengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
-  const [age, setAge] = useState(DEFAULTS.age);
-  const [height, setHeight] = useState(
-    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
-  );
-  const [weight, setWeight] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
-  const [bodyFat, setBodyFat] = useState(15);
-  const [level, setLevel] = useState<TrainingLevel>("intermediate");
+  const { profile, patch } = useProfile();
+  const { age, sex, experience: level } = profile;
+  const [height, setHeight] = useHeightField(units);
+  const [weight, setWeight] = useWeightField(units);
+  const bodyFat = profile.bodyFatPct;
 
   const r = muscleGainPotential({
     sex,
@@ -77,7 +66,7 @@ export default function MuscleGain() {
             <Field label="Sex">
               <SegmentedControl
                 value={sex}
-                onChange={setSex}
+                onChange={(v) => patch({ sex: v })}
                 options={[
                   { value: "male", label: "M" },
                   { value: "female", label: "F" },
@@ -85,7 +74,7 @@ export default function MuscleGain() {
               />
             </Field>
             <Field label="Age">
-              <NumberInput value={age} onChange={setAge} />
+              <NumberInput value={age} onChange={(v) => patch({ age: v })} />
             </Field>
             <Field label={`Height (${lu})`}>
               <NumberInput value={height} onChange={setHeight} suffix={lu} />
@@ -95,12 +84,16 @@ export default function MuscleGain() {
             </Field>
           </div>
           <Field label="Body fat %" hint="from Body composition tool">
-            <NumberInput value={bodyFat} onChange={setBodyFat} step={0.5} suffix="%" />
+            <NumberInput
+              value={bodyFat}
+              onChange={(v) => patch({ bodyFatPct: v })}
+              suffix="%"
+            />
           </Field>
           <Field label="Training experience">
             <Select
               value={level}
-              onChange={setLevel}
+              onChange={(v) => patch({ experience: v })}
               options={TRAINING_LEVELS.map((t) => ({
                 value: t.key,
                 label: `${t.label} (${t.years})`,

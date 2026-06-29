@@ -13,7 +13,7 @@ import {
   Tip,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useWeightField } from "@/lib/profile";
 import {
   GOALS,
   EQUIPMENT,
@@ -66,9 +66,7 @@ export default function WorkoutPlan() {
   const sport = SPORTS_DB.find((s) => s.key === sportKey)!;
   const [posKey, setPosKey] = useState(sport.positions[0].key);
 
-  const [bw, setBw] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
+  const [bw, setBw] = useWeightField(units);
   const [oneRMs, setOneRMs] = useState<Record<MainLift, number>>({
     squat: 0,
     bench: 0,

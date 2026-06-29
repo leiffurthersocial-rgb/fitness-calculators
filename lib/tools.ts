@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import MyNumbers from "@/components/calculators/MyNumbers";
 import RepMax from "@/components/calculators/RepMax";
 import TrainingMax from "@/components/calculators/TrainingMax";
 import PlateLoading from "@/components/calculators/PlateLoading";
@@ -35,6 +36,13 @@ export interface ToolGroup {
 
 /** The full navigation registry: groups, in display order, with their tools. */
 export const TOOL_GROUPS: ToolGroup[] = [
+  {
+    group: "Overview",
+    emoji: "📊",
+    tools: [
+      { id: "my-numbers", name: "My numbers", blurb: "Your key metrics at a glance, from your saved stats", Component: MyNumbers },
+    ],
+  },
   {
     group: "Sports",
     emoji: "🏅",

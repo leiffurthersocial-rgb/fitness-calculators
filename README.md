@@ -7,11 +7,18 @@ CSS**. No backend — each tool is self-contained and any logs live in
 
 ## Features
 
-Every calculator is standalone (type your own stats), with one global
-**metric/imperial** unit toggle. Dark mode is the default with a light toggle.
+An opt-in **shared profile** (age, sex, height, weight, body-fat %, resting HR,
+training experience) is saved on your device and auto-fills every calculator —
+enter your stats once in the sidebar and edits anywhere sync everywhere. The
+**My numbers** dashboard summarises your key metrics (maintenance calories, BMI,
+FFMI, muscle-gain potential, healthy-weight range, HR zones, water) at a glance,
+each card linking to the full tool. Every calculator still works standalone, with
+one global **metric/imperial** unit toggle and a light/dark theme (dark default).
+Number fields accept decimals.
 
 | Group | Tools |
 | --- | --- |
+| **Overview** | My numbers (key metrics at a glance from your saved stats) |
 | **Sports** | Sports build rater (rate your build, strength & performance for a sport + position), Workout plan generator |
 | **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (squat/bench/deadlift/OHP + max-rep pull-ups; age/weight/sex/sport) |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel), Run training paces (Daniels VDOT zone paces + race-time equivalents from a race, Cooper test or VO₂max) |

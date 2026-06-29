@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Card,
   CardTitle,
@@ -14,12 +13,11 @@ import {
   Badge,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile, useWeightField, useHeightField } from "@/lib/profile";
 import { ffmi, ffmiCategory } from "@/lib/formulas";
 import {
   weightFromKg,
   weightToKg,
-  lengthFromCm,
   lengthToCm,
   weightUnit,
   lengthUnit,
@@ -31,14 +29,12 @@ export default function Ffmi() {
   const wu = weightUnit(units);
   const lu = lengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
-  const [weight, setWeight] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
-  const [height, setHeight] = useState(
-    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
-  );
-  const [bodyFat, setBodyFat] = useState(15);
+  const { profile, patch } = useProfile();
+  const { sex } = profile;
+  const [weight, setWeight] = useWeightField(units);
+  const [height, setHeight] = useHeightField(units);
+  const bodyFat = profile.bodyFatPct;
+  const setBodyFat = (v: number) => patch({ bodyFatPct: v });
 
   const kg = weightToKg(weight, units);
   const cm = lengthToCm(height, units);
@@ -53,7 +49,7 @@ export default function Ffmi() {
           <Field label="Sex">
             <SegmentedControl
               value={sex}
-              onChange={setSex}
+              onChange={(v) => patch({ sex: v })}
               options={[
                 { value: "male", label: "Male" },
                 { value: "female", label: "Female" },

@@ -13,7 +13,7 @@ import {
   Tip,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile } from "@/lib/profile";
 import { maxHRTanaka, maxHRClassic, hrZones } from "@/lib/formulas";
 import { fmt } from "@/lib/units";
 
@@ -21,8 +21,8 @@ const ZONE_COLORS = ["#94a3b8", "#22c55e", "#10b981", "#f59e0b", "#ef4444"];
 
 export default function HeartRateZones() {
   const { units } = useUnits();
-  const [age, setAge] = useState(DEFAULTS.age);
-  const [restingHR, setRestingHR] = useState(DEFAULTS.restingHR);
+  const { profile, patch } = useProfile();
+  const { age, restingHR } = profile;
   const [maxFormula, setMaxFormula] = useState<"tanaka" | "classic">("tanaka");
   const [method, setMethod] = useState<"karvonen" | "percent">("karvonen");
 
@@ -35,10 +35,14 @@ export default function HeartRateZones() {
         <CardTitle>Inputs</CardTitle>
         <div className="space-y-4">
           <Field label="Age">
-            <NumberInput value={age} onChange={setAge} />
+            <NumberInput value={age} onChange={(v) => patch({ age: v })} />
           </Field>
           <Field label="Resting HR (bpm)" hint="needed for Karvonen">
-            <NumberInput value={restingHR} onChange={setRestingHR} suffix="bpm" />
+            <NumberInput
+              value={restingHR}
+              onChange={(v) => patch({ restingHR: v })}
+              suffix="bpm"
+            />
           </Field>
           <Field label="Max HR formula">
             <SegmentedControl

@@ -5,6 +5,7 @@ import { TOOL_GROUPS, findTool, ALL_TOOLS } from "@/lib/tools";
 import { useTheme } from "@/lib/theme";
 import { useUnits } from "@/lib/settings";
 import { SegmentedControl } from "@/components/ui";
+import ProfilePanel from "@/components/ProfilePanel";
 import type { UnitSystem } from "@/lib/units";
 
 export default function Home() {
@@ -57,6 +58,7 @@ export default function Home() {
       <aside className="hidden w-72 shrink-0 flex-col gap-5 border-r border-zinc-200 p-5 dark:border-zinc-800 lg:flex">
         <Brand theme={theme} onToggleTheme={toggle} />
         <UnitsToggle units={units} setUnits={setUnits} />
+        <ProfilePanel />
         <NavList
           activeId={activeId}
           query={query}
@@ -83,6 +85,9 @@ export default function Home() {
       {mobileNavOpen && (
         <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
           <UnitsToggle units={units} setUnits={setUnits} />
+          <div className="mt-4">
+            <ProfilePanel />
+          </div>
           <div className="mt-4">
             <NavList
               activeId={activeId}

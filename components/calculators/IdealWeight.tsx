@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Card,
   CardTitle,
@@ -15,7 +14,7 @@ import {
   Tip,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile, useWeightField, useHeightField } from "@/lib/profile";
 import {
   idealWeightFormulas,
   healthyWeightRange,
@@ -26,7 +25,6 @@ import {
 import {
   weightFromKg,
   weightToKg,
-  lengthFromCm,
   lengthToCm,
   weightUnit,
   lengthUnit,
@@ -38,13 +36,10 @@ export default function IdealWeight() {
   const wu = weightUnit(units);
   const lu = lengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
-  const [height, setHeight] = useState(
-    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
-  );
-  const [weight, setWeight] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
+  const { profile, patch } = useProfile();
+  const { sex } = profile;
+  const [height, setHeight] = useHeightField(units);
+  const [weight, setWeight] = useWeightField(units);
 
   const heightCm = lengthToCm(height, units);
   const kg = weightToKg(weight, units);
@@ -69,7 +64,7 @@ export default function IdealWeight() {
           <Field label="Sex">
             <SegmentedControl
               value={sex}
-              onChange={setSex}
+              onChange={(v) => patch({ sex: v })}
               options={[
                 { value: "male", label: "Male" },
                 { value: "female", label: "Female" },

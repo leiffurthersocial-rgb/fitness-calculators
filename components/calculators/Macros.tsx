@@ -20,7 +20,7 @@ import {
   Stat,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile, useWeightField } from "@/lib/profile";
 import {
   bmrMifflin,
   tdee,
@@ -28,7 +28,7 @@ import {
   macroSplit,
   type MacroGoal,
 } from "@/lib/formulas";
-import { weightFromKg, weightToKg, weightUnit, fmt } from "@/lib/units";
+import { weightToKg, weightUnit, fmt } from "@/lib/units";
 
 const COLORS = { protein: "#10b981", carbs: "#f59e0b", fat: "#6366f1" };
 
@@ -36,20 +36,19 @@ export default function Macros() {
   const { units } = useUnits();
   const wu = weightUnit(units);
 
-  // Estimate maintenance from the profile so this works standalone, but let
-  // the user override calories directly.
+  // Estimate maintenance from the shared profile so this works standalone, but
+  // let the user override calories directly.
+  const { profile } = useProfile();
   const estMaintenance = Math.round(
     tdee(
-      bmrMifflin(DEFAULTS.bodyweightKg, DEFAULTS.heightCm, DEFAULTS.age, DEFAULTS.sex),
+      bmrMifflin(profile.weightKg, profile.heightCm, profile.age, profile.sex),
       1.55
     )
   );
 
   const [calories, setCalories] = useState(estMaintenance);
   const [goal, setGoal] = useState<MacroGoal>("maintain");
-  const [bw, setBw] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
+  const [bw, setBw] = useWeightField(units);
   const [proteinPerKg, setProteinPerKg] = useState(1.8);
 
   const target = calorieTarget(calories, goal);

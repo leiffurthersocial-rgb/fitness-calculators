@@ -13,9 +13,9 @@ import {
   Stat,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useWeightField } from "@/lib/profile";
 import { caloriesFromMet, MET_ACTIVITIES } from "@/lib/formulas";
-import { weightFromKg, weightToKg, weightUnit, fmt } from "@/lib/units";
+import { weightToKg, weightUnit, fmt } from "@/lib/units";
 
 export default function CalorieBurn() {
   const { units } = useUnits();
@@ -23,9 +23,7 @@ export default function CalorieBurn() {
 
   const [activity, setActivity] = useState<string>("run_easy");
   const [minutes, setMinutes] = useState(45);
-  const [weight, setWeight] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
+  const [weight, setWeight] = useWeightField(units);
 
   const met = MET_ACTIVITIES.find((a) => a.key === activity)?.met ?? 5;
   const kg = weightToKg(weight, units);

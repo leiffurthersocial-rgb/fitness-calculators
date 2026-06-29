@@ -14,12 +14,10 @@ import {
   Stat,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile, useWeightField, useHeightField } from "@/lib/profile";
 import { bmrMifflin, tdee, ACTIVITY_LEVELS } from "@/lib/formulas";
 import {
-  weightFromKg,
   weightToKg,
-  lengthFromCm,
   lengthToCm,
   weightUnit,
   lengthUnit,
@@ -31,15 +29,11 @@ export default function Tdee() {
   const wu = weightUnit(units);
   const lu = lengthUnit(units);
 
-  // Auto-fill from profile, allow per-tool override.
-  const [age, setAge] = useState(DEFAULTS.age);
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
-  const [weight, setWeight] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
-  const [height, setHeight] = useState(
-    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
-  );
+  // Auto-filled from the shared profile; edits here update it everywhere.
+  const { profile, patch } = useProfile();
+  const { age, sex } = profile;
+  const [weight, setWeight] = useWeightField(units);
+  const [height, setHeight] = useHeightField(units);
   const [activity, setActivity] = useState<string>("moderate");
 
   const kg = weightToKg(weight, units);
@@ -56,12 +50,12 @@ export default function Tdee() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Age">
-              <NumberInput value={age} onChange={setAge} />
+              <NumberInput value={age} onChange={(v) => patch({ age: v })} />
             </Field>
             <Field label="Sex">
               <SegmentedControl
                 value={sex}
-                onChange={setSex}
+                onChange={(v) => patch({ sex: v })}
                 options={[
                   { value: "male", label: "M" },
                   { value: "female", label: "F" },

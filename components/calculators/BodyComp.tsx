@@ -14,7 +14,7 @@ import {
   Badge,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { DEFAULTS } from "@/lib/defaults";
+import { useProfile, useWeightField, useHeightField } from "@/lib/profile";
 import {
   navyBodyFat,
   bmi,
@@ -23,9 +23,7 @@ import {
   whtrCategory,
 } from "@/lib/formulas";
 import {
-  weightFromKg,
   weightToKg,
-  lengthFromCm,
   lengthToCm,
   weightUnit,
   smallLengthUnit,
@@ -37,13 +35,10 @@ export default function BodyComp() {
   const wu = weightUnit(units);
   const su = smallLengthUnit(units);
 
-  const [sex, setSex] = useState<"male" | "female">(DEFAULTS.sex);
-  const [weight, setWeight] = useState(
-    Math.round(weightFromKg(DEFAULTS.bodyweightKg, units))
-  );
-  const [height, setHeight] = useState(
-    Math.round(lengthFromCm(DEFAULTS.heightCm, units))
-  );
+  const { profile, patch } = useProfile();
+  const { sex } = profile;
+  const [weight, setWeight] = useWeightField(units);
+  const [height, setHeight] = useHeightField(units);
   // Tape measurements, stored in display unit.
   const [neck, setNeck] = useState(units === "metric" ? 38 : 15);
   const [waist, setWaist] = useState(units === "metric" ? 85 : 33);
@@ -67,7 +62,7 @@ export default function BodyComp() {
           <Field label="Sex">
             <SegmentedControl
               value={sex}
-              onChange={setSex}
+              onChange={(v) => patch({ sex: v })}
               options={[
                 { value: "male", label: "Male" },
                 { value: "female", label: "Female" },
