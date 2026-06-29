@@ -2,6 +2,13 @@
 
 import { useMemo, useState } from "react";
 import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  ResponsiveContainer,
+} from "recharts";
+import {
   Card,
   CardTitle,
   Field,
@@ -14,7 +21,12 @@ import {
 } from "../ui";
 import { useUnits } from "@/lib/settings";
 import { useProfile, useWeightField, useHeightField } from "@/lib/profile";
-import { SPORTS_DB, rateBuild, type BuildInput } from "@/lib/buildRater";
+import {
+  SPORTS_DB,
+  rateBuild,
+  bestFitPositions,
+  type BuildInput,
+} from "@/lib/buildRater";
 import {
   weightFromKg,
   weightToKg,
@@ -66,16 +78,21 @@ export default function SportsBuildRater() {
   const [pullups, setPullups] = useState(0);
   const [sprint100, setSprint100] = useState(0); // seconds
   const [vertical, setVertical] = useState(0); // display small-length unit
+  const [broad, setBroad] = useState(0); // display small-length unit
+  const [agility, setAgility] = useState(0); // seconds (5-10-5 shuttle)
   const [vo2max, setVo2max] = useState(0); // ml/kg/min
 
   const position =
     sport.positions.find((p) => p.key === posKey) ?? sport.positions[0];
 
-  // Sports where a long wingspan (reach) is a genuine advantage.
-  const REACH_SPORTS = new Set(["basketball", "volleyball", "swimming", "combat"]);
+  // Whether this sport rewards reach — read from the data so the ape-index
+  // metric is scored consistently here and in the best-fit finder.
+  const sportRewardsReach = sport.reach ?? false;
 
-  const result = useMemo(() => {
-    const input: BuildInput = {
+  // Build a unit-normalised input once, shared by the rating and the best-fit
+  // finder (the finder fills in `reach` per sport itself).
+  const baseInput = useMemo<Omit<BuildInput, "reach">>(
+    () => ({
       sex,
       age,
       heightCm: lengthToCm(height, units),
@@ -87,18 +104,32 @@ export default function SportsBuildRater() {
       pullups,
       sprint100,
       vertical: vertical ? lengthToCm(vertical, units) : 0,
+      broad: broad ? lengthToCm(broad, units) : 0,
+      agility,
       vo2max,
       wingspanCm: wingspan ? lengthToCm(wingspan, units) : 0,
-      reach: REACH_SPORTS.has(sportKey),
-    };
-    return rateBuild(input, position);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sex, age, height, weight, wingspan, squat, bench, deadlift, ohp, pullups, sprint100, vertical, vo2max, position, sportKey, units]);
+    }),
+    [sex, age, height, weight, wingspan, squat, bench, deadlift, ohp, pullups, sprint100, vertical, broad, agility, vo2max, units]
+  );
+
+  const result = useMemo(
+    () => rateBuild({ ...baseInput, reach: sportRewardsReach }, position),
+    [baseInput, sportRewardsReach, position]
+  );
+
+  // Top matches across every sport & position for the entered stats.
+  const bestFit = useMemo(() => bestFitPositions(baseInput, 5), [baseInput]);
 
   const onSport = (key: string) => {
     setSportKey(key);
     const s = SPORTS_DB.find((x) => x.key === key)!;
     setPosKey(s.positions[0].key);
+  };
+
+  // Jump straight to a sport + position (used by the best-fit list).
+  const selectRole = (sk: string, pk: string) => {
+    setSportKey(sk);
+    setPosKey(pk);
   };
 
   const ring = scoreColor(result.overall);
@@ -186,6 +217,12 @@ export default function SportsBuildRater() {
               <Field label={`Vertical jump (${su})`}>
                 <NumberInput value={vertical} onChange={setVertical} suffix={su} />
               </Field>
+              <Field label={`Broad jump (${su})`} hint="standing long jump">
+                <NumberInput value={broad} onChange={setBroad} suffix={su} />
+              </Field>
+              <Field label="Agility 5-10-5" hint="pro-agility shuttle">
+                <NumberInput value={agility} onChange={setAgility} step={0.1} suffix="s" />
+              </Field>
             </div>
 
             <SubLabel>🫀 Endurance &amp; reach</SubLabel>
@@ -195,7 +232,7 @@ export default function SportsBuildRater() {
               </Field>
               <Field
                 label={`Wingspan (${lu})`}
-                hint={REACH_SPORTS.has(sportKey) ? "matters here" : undefined}
+                hint={sportRewardsReach ? "matters here" : undefined}
               >
                 <NumberInput value={wingspan} onChange={setWingspan} suffix={lu} />
               </Field>
@@ -206,8 +243,9 @@ export default function SportsBuildRater() {
           <p>
             Four groups are scored: <strong>physique</strong> (height, BMI &
             wingspan vs the role&apos;s range), <strong>strength</strong>{" "}
-            (relative lifts & pull-ups), <strong>power</strong> (100 m &amp;
-            vertical) and <strong>endurance</strong> (VO₂max).
+            (relative lifts & pull-ups), <strong>power</strong> (100 m,
+            vertical, broad jump &amp; agility) and <strong>endurance</strong>{" "}
+            (VO₂max).
           </p>
           <p>
             Each position weights the groups by what it demands, and the overall
@@ -240,7 +278,15 @@ export default function SportsBuildRater() {
             </div>
           </div>
           <div className="flex-1">
-            <Badge tone={result.overall >= 58 ? "accent" : "warn"}>{result.verdict}</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={result.overall >= 58 ? "accent" : "warn"}>{result.verdict}</Badge>
+              <span
+                className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                title="How much of what this role demands you've actually measured"
+              >
+                {result.confidence.label} · {result.confidence.pct}%
+              </span>
+            </div>
             <div className="mt-2 space-y-1 text-sm">
               {result.groups.map((g) => (
                 <div key={g.group} className="flex items-center gap-2">
@@ -257,6 +303,33 @@ export default function SportsBuildRater() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Attribute profile radar — the four groups at a glance */}
+        <div className="mt-4 h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart
+              data={result.groups.map((g) => ({
+                group: g.label,
+                score: g.score ?? 0,
+              }))}
+              outerRadius="72%"
+            >
+              <PolarGrid className="stroke-zinc-200 dark:stroke-zinc-700" />
+              <PolarAngleAxis
+                dataKey="group"
+                tick={{ fontSize: 12, fill: "currentColor" }}
+                className="text-zinc-500"
+              />
+              <Radar
+                dataKey="score"
+                stroke={ring}
+                fill={ring}
+                fillOpacity={0.35}
+                isAnimationActive={false}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Body-composition target — gain/lose to reach the role's build */}
@@ -365,6 +438,50 @@ export default function SportsBuildRater() {
               {f}
             </p>
           ))}
+        </div>
+
+        {/* Best-fit finder — top matching roles across every sport */}
+        <div className="mt-5 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Your best-fit roles
+            </span>
+            <span className="text-xs text-zinc-400">across all sports</span>
+          </div>
+          <div className="space-y-1.5">
+            {bestFit.map((b, i) => {
+              const active = b.sportKey === sportKey && b.posKey === posKey;
+              return (
+                <button
+                  key={`${b.sportKey}-${b.posKey}`}
+                  onClick={() => selectRole(b.sportKey, b.posKey)}
+                  className={`flex w-full items-center gap-3 rounded-lg border px-3 py-1.5 text-left text-sm transition-colors ${
+                    active
+                      ? "border-accent-300 bg-accent-50 dark:border-accent-700 dark:bg-accent-900/20"
+                      : "border-zinc-200 hover:border-accent-300 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:border-accent-700 dark:hover:bg-zinc-800/50"
+                  }`}
+                >
+                  <span className="w-4 shrink-0 text-xs font-semibold text-zinc-400">
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 truncate">
+                    <span className="font-medium">{b.sportLabel}</span>
+                    <span className="text-zinc-400"> · {b.posLabel}</span>
+                  </span>
+                  <span
+                    className="shrink-0 font-semibold tabular-nums"
+                    style={{ color: scoreColor(b.overall) }}
+                  >
+                    {b.overall}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs text-zinc-400">
+            Ranked from your stats — tap any role to load it. Add more
+            performance data for sharper matches.
+          </p>
         </div>
 
         <p className="mt-3 text-xs text-zinc-400">

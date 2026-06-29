@@ -31,9 +31,15 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
 
   "build-rater": {
     description:
-      "Rate how your height, weight, wingspan, strength and athleticism fit a chosen sport and position, with a 0–100 score and a body-composition target.",
+      "Rate how your height, weight, wingspan, strength and athleticism fit 30+ sports and positions, with a 0–100 score, a best-fit finder and a body-composition target.",
     sources: [
       { label: "ACSM — body composition & performance norms", url: "https://www.acsm.org/" },
+      { label: "NFL Combine athletic testing norms", url: "https://www.nfl.com/combine/" },
+    ],
+    faq: [
+      { q: "Which sport suits my build best?", a: "Fill in your height, weight and any performance numbers, and the best-fit finder scores you against every sport and position in the database — then ranks the top matches so you can tap straight into the one that fits you most." },
+      { q: "Do I need to enter all the performance fields?", a: "No. Everything except height and weight is optional. The rating only ever reflects what you enter, and a confidence read-out tells you how much of what the role demands you've actually measured — so add lifts, sprint, jumps or VO₂max for a sharper score." },
+      { q: "What are the broad jump and 5-10-5 agility tests?", a: "They're standard combine measures of explosive power and change-of-direction. The broad (standing long) jump is horizontal leg power; the 5-10-5 pro-agility shuttle times how fast you can decelerate and re-accelerate — both feed the power score for sports that reward quickness." },
     ],
   },
   "workout-plan": {
