@@ -29,5 +29,5 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function ToolPage({ params }: { params: Params }) {
   const { tool } = await params;
   if (!findTool(tool)) notFound();
-  return <Shell activeId={tool} />;
+  return <Shell initialId={tool} />;
 }

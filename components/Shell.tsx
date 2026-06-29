@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { TOOL_GROUPS, findTool, ALL_TOOLS } from "@/lib/tools";
 import { getToolContent } from "@/lib/toolContent";
 import { useTheme } from "@/lib/theme";
@@ -13,13 +12,50 @@ import Faq from "@/components/Faq";
 import ShareBar from "@/components/ShareBar";
 import type { UnitSystem } from "@/lib/units";
 
-const href = (id: string) => `/t/${id}`;
+/**
+ * The whole app runs on one page with client-side tool switching — clicking a
+ * tool never triggers a cross-page navigation that could fail. The URL is kept
+ * in sync (/t/<id>) via replaceState only, so links and refresh still work and
+ * each tool has its own server-rendered route for SEO, but day-to-day use never
+ * depends on it.
+ */
+function idFromLocation(fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const m = window.location.pathname.match(/\/t\/([^/?#]+)/);
+  if (m && findTool(m[1])) return m[1];
+  const hash = window.location.hash.replace(/^#/, "");
+  if (hash && findTool(hash)) return hash;
+  return fallback;
+}
 
-export default function Shell({ activeId }: { activeId: string }) {
+export default function Shell({ initialId }: { initialId: string }) {
+  const [activeId, setActiveId] = useState(initialId);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [query, setQuery] = useState("");
   const { theme, toggle } = useTheme();
   const { units, setUnits } = useUnits();
+
+  // On mount, reconcile with the real URL (covers legacy #hash links too).
+  useEffect(() => {
+    const id = idFromLocation(initialId);
+    if (id !== activeId) setActiveId(id);
+    const onPop = () => setActiveId(idFromLocation(initialId));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const select = (id: string) => {
+    setActiveId(id);
+    setMobileNavOpen(false);
+    try {
+      window.history.pushState(null, "", `/t/${id}`);
+    } catch {
+      /* ignore */
+    }
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  };
 
   const active = findTool(activeId) ?? ALL_TOOLS[0];
   const ActiveComponent = active.Component;
@@ -30,16 +66,16 @@ export default function Shell({ activeId }: { activeId: string }) {
     <div className="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
       {/* ---- Sidebar (desktop) ---- */}
       <aside className="hidden w-72 shrink-0 flex-col gap-5 border-r border-zinc-200 p-5 dark:border-zinc-800 lg:flex print:hidden">
-        <Brand theme={theme} onToggleTheme={toggle} />
+        <Brand theme={theme} onToggleTheme={toggle} onHome={() => select("my-numbers")} />
         <UnitsToggle units={units} setUnits={setUnits} />
         <ProfilePanel />
-        <NavList activeId={active.id} query={query} setQuery={setQuery} />
+        <NavList activeId={active.id} query={query} setQuery={setQuery} onSelect={select} />
         <Footer />
       </aside>
 
       {/* ---- Mobile top bar ---- */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90 lg:hidden print:hidden">
-        <Brand theme={theme} onToggleTheme={toggle} compact />
+        <Brand theme={theme} onToggleTheme={toggle} onHome={() => select("my-numbers")} compact />
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
           aria-expanded={mobileNavOpen}
@@ -58,12 +94,7 @@ export default function Shell({ activeId }: { activeId: string }) {
             <ProfilePanel />
           </div>
           <div className="mt-4">
-            <NavList
-              activeId={active.id}
-              query={query}
-              setQuery={setQuery}
-              onPick={() => setMobileNavOpen(false)}
-            />
+            <NavList activeId={active.id} query={query} setQuery={setQuery} onSelect={select} />
           </div>
         </div>
       )}
@@ -114,12 +145,12 @@ function NavList({
   activeId,
   query,
   setQuery,
-  onPick,
+  onSelect,
 }: {
   activeId: string;
   query: string;
   setQuery: (q: string) => void;
-  onPick?: () => void;
+  onSelect: (id: string) => void;
 }) {
   const norm = (s: string) => s.normalize("NFKD").toLowerCase();
   const q = norm(query.trim());
@@ -160,10 +191,9 @@ function NavList({
               {g.tools.map((t) => {
                 const isActive = t.id === activeId;
                 return (
-                  <Link
+                  <button
                     key={t.id}
-                    href={href(t.id)}
-                    onClick={onPick}
+                    onClick={() => onSelect(t.id)}
                     aria-current={isActive ? "page" : undefined}
                     className={
                       "block w-full rounded-xl px-3 py-2 text-left text-sm transition " +
@@ -173,7 +203,7 @@ function NavList({
                     }
                   >
                     {t.name}
-                  </Link>
+                  </button>
                 );
               })}
             </div>
@@ -187,15 +217,17 @@ function NavList({
 function Brand({
   theme,
   onToggleTheme,
+  onHome,
   compact,
 }: {
   theme: string;
   onToggleTheme: () => void;
+  onHome: () => void;
   compact?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between">
-      <Link href="/" className="flex items-center gap-2">
+      <button onClick={onHome} className="flex items-center gap-2 text-left">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-600 text-lg font-black text-white">
           V
         </div>
@@ -205,7 +237,7 @@ function Brand({
             <div className="text-xs text-zinc-400">Health &amp; fitness hub</div>
           </div>
         )}
-      </Link>
+      </button>
       <button
         onClick={onToggleTheme}
         className="rounded-xl border border-zinc-300 p-2 text-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
