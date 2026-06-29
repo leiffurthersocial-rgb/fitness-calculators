@@ -1,36 +1,27 @@
-// Minimal offline support for Vital: stale-while-revalidate for same-origin
-// GET requests. The app is fully client-side, so this makes it work offline
-// once visited and keeps it fast on repeat loads.
-const CACHE = "vital-v1";
-
+// Self-destroying service worker.
+//
+// A previous version cached the app shell; after the move to real per-tool
+// routes that cache could serve stale HTML pointing at JS chunks that no
+// longer exist, breaking navigation on click. This version takes over, purges
+// every cache, unregisters itself, and reloads open tabs so everyone gets the
+// live site. (No offline caching for now — correctness first.)
 self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-      )
-      .then(() => self.clients.claim())
+    (async () => {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+        await self.registration.unregister();
+        const clients = await self.clients.matchAll({ type: "window" });
+        for (const client of clients) client.navigate(client.url);
+      } catch {
+        /* best effort */
+      }
+    })()
   );
 });
 
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
-  if (new URL(req.url).origin !== self.location.origin) return;
-
-  event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const cached = await cache.match(req);
-      const network = fetch(req)
-        .then((res) => {
-          if (res && res.status === 200) cache.put(req, res.clone());
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
-  );
-});
+// Pass every request straight through to the network (no interception).
+self.addEventListener("fetch", () => {});
