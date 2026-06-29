@@ -6,6 +6,7 @@ import PlateLoading from "@/components/calculators/PlateLoading";
 import StrengthStandards from "@/components/calculators/StrengthStandards";
 import LiftBalance from "@/components/calculators/LiftBalance";
 import RpeConverter from "@/components/calculators/RpeConverter";
+import StrengthScore from "@/components/calculators/StrengthScore";
 import WorkoutPlan from "@/components/calculators/WorkoutPlan";
 import SportsBuildRater from "@/components/calculators/SportsBuildRater";
 import Vo2Max from "@/components/calculators/Vo2Max";
@@ -13,6 +14,9 @@ import HeartRateZones from "@/components/calculators/HeartRateZones";
 import PaceRace from "@/components/calculators/PaceRace";
 import RunPaces from "@/components/calculators/RunPaces";
 import FtpZones from "@/components/calculators/FtpZones";
+import SwimZones from "@/components/calculators/SwimZones";
+import TreadmillPace from "@/components/calculators/TreadmillPace";
+import RaceSplits from "@/components/calculators/RaceSplits";
 import Tdee from "@/components/calculators/Tdee";
 import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
@@ -64,6 +68,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "plate-loading", name: "Plate loading", blurb: "Plates per side for a target", Component: PlateLoading },
       { id: "standards", name: "Strength standards", blurb: "Rank your lifts by age, weight & sport", Component: StrengthStandards },
       { id: "lift-balance", name: "Lift balance", blurb: "Are your big lifts in proportion?", Component: LiftBalance },
+      { id: "strength-score", name: "Strength score", blurb: "One overall score & percentile across your lifts", Component: StrengthScore },
       { id: "rpe", name: "RPE / 1RM converter", blurb: "RPE ↔ %1RM ↔ reps in reserve", Component: RpeConverter },
     ],
   },
@@ -76,6 +81,9 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "pace-race", name: "Pace & race predictor", blurb: "Pace + Riegel predictions", Component: PaceRace },
       { id: "run-paces", name: "Run training paces", blurb: "Zone paces from a race or test (VDOT)", Component: RunPaces },
       { id: "ftp-zones", name: "Cycling power zones", blurb: "FTP-based watt zones + W/kg (Coggan)", Component: FtpZones },
+      { id: "swim-zones", name: "Swim pace zones", blurb: "Critical Swim Speed + pace zones", Component: SwimZones },
+      { id: "treadmill-pace", name: "Treadmill pace", blurb: "Incline → equivalent flat pace (ACSM)", Component: TreadmillPace },
+      { id: "race-splits", name: "Race-day splits", blurb: "Even / negative split sheet for your goal", Component: RaceSplits },
     ],
   },
   {

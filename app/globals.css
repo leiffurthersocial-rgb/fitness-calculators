@@ -42,6 +42,21 @@ input[type="range"] {
   accent-color: var(--color-accent-500);
 }
 
+/* Print: drop the app chrome and show just the result, edge to edge. */
+@media print {
+  aside,
+  header,
+  nav {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}
+
 /* Respect users who prefer less motion: drop the smooth scroll and collapse
    transitions/animations to near-instant. */
 @media (prefers-reduced-motion: reduce) {

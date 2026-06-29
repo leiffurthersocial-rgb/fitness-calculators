@@ -1495,3 +1495,158 @@ export function ftpWkgCategory(wkg: number, sex: "male" | "female"): string {
   if (wkg >= 1.8 + s) return "Fair";
   return "Beginner";
 }
+
+/* ========================================================================
+ * OVERALL STRENGTH SCORE
+ * ----------------------------------------------------------------------
+ * Collapses your main lifts into one number: the mean percentile across
+ * the lifts you provide (via classifyLift), plus an overall level.
+ * ====================================================================== */
+
+export interface StrengthScoreLift {
+  key: Lift;
+  label: string;
+  percentile: number;
+  levelIndex: number;
+  level: StrengthLevel | "Untrained";
+}
+
+export interface StrengthScoreResult {
+  score: number; // 0–100, mean percentile across provided lifts
+  level: StrengthLevel | "Untrained";
+  lifts: StrengthScoreLift[];
+}
+
+export function strengthScore(
+  values: Partial<Record<Lift, number>>,
+  sex: "male" | "female",
+  bodyweightKg: number,
+  age: number
+): StrengthScoreResult {
+  const lifts: StrengthScoreLift[] = LIFTS.filter(
+    (l) => (values[l.key] ?? 0) > 0
+  ).map((l) => {
+    const c = classifyLift(values[l.key]!, l.key, sex, bodyweightKg, age);
+    return {
+      key: l.key,
+      label: l.label,
+      percentile: c.percentile,
+      levelIndex: c.levelIndex,
+      level: c.levelIndex < 0 ? "Untrained" : STRENGTH_LEVELS[c.levelIndex],
+    };
+  });
+  if (lifts.length === 0) return { score: 0, level: "Untrained", lifts };
+  const score = lifts.reduce((s, x) => s + x.percentile, 0) / lifts.length;
+  const avgIdx = Math.round(
+    lifts.reduce((s, x) => s + x.levelIndex, 0) / lifts.length
+  );
+  const level = avgIdx < 0 ? "Untrained" : STRENGTH_LEVELS[Math.min(4, avgIdx)];
+  return { score, level, lifts };
+}
+
+/* ========================================================================
+ * SWIMMING — Critical Swim Speed & pace zones
+ * ----------------------------------------------------------------------
+ * CSS (Wakayoshi et al.) is the slope of two time trials — a practical
+ * proxy for swimming threshold. Zones are offsets in sec per 100 m from
+ * your CSS pace.
+ * ====================================================================== */
+
+/** Critical swim speed (m/s) from a long and short trial. */
+export function criticalSwimSpeed(
+  longDistM: number,
+  longTimeSec: number,
+  shortDistM: number,
+  shortTimeSec: number
+): number {
+  const dd = longDistM - shortDistM;
+  const dt = longTimeSec - shortTimeSec;
+  return dt > 0 ? dd / dt : 0;
+}
+
+export interface SwimZone {
+  name: string;
+  desc: string;
+  // Offset bounds in sec/100m relative to CSS (negative = faster).
+  fastOffset: number;
+  slowOffset: number;
+}
+
+export const SWIM_ZONES: SwimZone[] = [
+  { name: "Recovery", desc: "Easy technique & warm-up", fastOffset: 10, slowOffset: 16 },
+  { name: "Endurance", desc: "Aerobic base sets", fastOffset: 5, slowOffset: 10 },
+  { name: "Threshold (CSS)", desc: "Sustained, ~CSS pace", fastOffset: -1, slowOffset: 4 },
+  { name: "VO₂max", desc: "Hard intervals", fastOffset: -5, slowOffset: -1 },
+  { name: "Sprint", desc: "Short max efforts", fastOffset: -12, slowOffset: -5 },
+];
+
+export interface SwimZonePace {
+  zone: SwimZone;
+  fastSecPer100: number;
+  slowSecPer100: number;
+}
+
+/** Pace per 100 m (s) for each zone given CSS speed (m/s). */
+export function swimZones(cssMetersPerSec: number): SwimZonePace[] {
+  const cssPer100 = cssMetersPerSec > 0 ? 100 / cssMetersPerSec : 0;
+  return SWIM_ZONES.map((z) => ({
+    zone: z,
+    fastSecPer100: Math.max(0, cssPer100 + z.fastOffset),
+    slowSecPer100: Math.max(0, cssPer100 + z.slowOffset),
+  }));
+}
+
+/* ========================================================================
+ * TREADMILL — incline → equivalent flat pace (ACSM running equation)
+ * ----------------------------------------------------------------------
+ * VO2 = 0.2·v + 0.9·v·grade + 3.5 (v m/min). Matching that VO2 on flat
+ * ground gives v_flat = v·(1 + 4.5·grade), i.e. flat pace is faster by the
+ * same factor.
+ * ====================================================================== */
+
+export function inclineFlatPace(
+  treadmillPaceSecPerKm: number,
+  gradePercent: number
+): number {
+  return treadmillPaceSecPerKm / (1 + 4.5 * (gradePercent / 100));
+}
+
+/* ========================================================================
+ * RACE-DAY SPLITS
+ * ----------------------------------------------------------------------
+ * A per-segment split sheet from a goal time. negativePct ramps the pace
+ * linearly from slower early to faster late (0 = even splits), normalised
+ * so the total exactly hits the goal.
+ * ====================================================================== */
+
+export interface RaceSplit {
+  distM: number; // cumulative distance at end of this segment
+  segSec: number; // time for this segment
+  cumSec: number; // cumulative time
+}
+
+export function raceSplits(
+  goalSec: number,
+  distM: number,
+  segM: number,
+  negativePct: number
+): RaceSplit[] {
+  if (goalSec <= 0 || distM <= 0 || segM <= 0) return [];
+  const n = Math.ceil(distM / segM);
+  const avgPerSeg = goalSec / (distM / segM);
+  const raw: { dist: number; seg: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const frac = n > 1 ? i / (n - 1) : 0;
+    const factor = 1 + (negativePct / 100) * (0.5 - frac);
+    const segDist = Math.min(segM, distM - i * segM);
+    raw.push({ dist: i * segM + segDist, seg: avgPerSeg * factor * (segDist / segM) });
+  }
+  const total = raw.reduce((s, r) => s + r.seg, 0);
+  const scale = goalSec / total;
+  let cum = 0;
+  return raw.map((r) => {
+    const seg = r.seg * scale;
+    cum += seg;
+    return { distM: r.dist, segSec: seg, cumSec: cum };
+  });
+}

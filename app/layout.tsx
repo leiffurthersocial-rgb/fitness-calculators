@@ -17,9 +17,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vital — Health & Fitness Hub",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://vital-fitness.vercel.app"
+  ),
+  title: {
+    default: "Vital — Health & Fitness Hub",
+    template: "%s",
+  },
   description:
     "A suite of clean, science-based health & fitness calculators — strength, cardio, nutrition and recovery — all in your browser.",
+  applicationName: "Vital",
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",

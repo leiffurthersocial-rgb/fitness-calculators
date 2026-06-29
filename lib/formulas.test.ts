@@ -29,6 +29,11 @@ import {
   powerZones,
   ftpFrom20min,
   ftpWkgCategory,
+  strengthScore,
+  criticalSwimSpeed,
+  swimZones,
+  inclineFlatPace,
+  raceSplits,
 } from "./formulas";
 
 describe("rep max", () => {
@@ -211,5 +216,58 @@ describe("cycling power zones", () => {
   it("W/kg category bands", () => {
     expect(ftpWkgCategory(5.6, "male")).toBe("Exceptional");
     expect(ftpWkgCategory(3.2, "male")).toBe("Moderate");
+  });
+});
+
+describe("strength score", () => {
+  it("averages provided lifts into a 0–100 percentile + level", () => {
+    const r = strengthScore({ squat: 140, bench: 100, deadlift: 180 }, "male", 80, 28);
+    expect(r.lifts).toHaveLength(3);
+    expect(r.score).toBeGreaterThan(0);
+    expect(r.score).toBeLessThanOrEqual(100);
+    expect(r.level).not.toBe("Untrained");
+  });
+  it("ignores unentered lifts", () => {
+    const r = strengthScore({ squat: 100 }, "male", 80, 28);
+    expect(r.lifts).toHaveLength(1);
+  });
+});
+
+describe("swimming CSS", () => {
+  it("CSS is the slope of two trials", () => {
+    // 400m in 360s, 200m in 170s → (200)/(190) ≈ 1.0526 m/s
+    expect(criticalSwimSpeed(400, 360, 200, 170)).toBeCloseTo(200 / 190, 3);
+  });
+  it("zones are ordered fast→slow and centred on CSS", () => {
+    const css = criticalSwimSpeed(400, 360, 200, 170);
+    const z = swimZones(css);
+    expect(z).toHaveLength(5);
+    // threshold zone pace ≈ 100/CSS
+    const cssPer100 = 100 / css;
+    const thr = z[2];
+    expect(thr.fastSecPer100).toBeLessThan(cssPer100 + 4);
+    expect(z[0].slowSecPer100).toBeGreaterThan(z[4].fastSecPer100);
+  });
+});
+
+describe("treadmill incline equivalent", () => {
+  it("incline makes the flat-equivalent pace faster", () => {
+    // 5:00/km (300s) at 5% grade → 300/(1+0.225)=244.9s
+    expect(inclineFlatPace(300, 5)).toBeCloseTo(300 / 1.225, 1);
+    expect(inclineFlatPace(300, 0)).toBe(300);
+  });
+});
+
+describe("race splits", () => {
+  it("even splits sum to the goal time", () => {
+    const s = raceSplits(1500, 5000, 1000, 0);
+    expect(s).toHaveLength(5);
+    expect(s[s.length - 1].cumSec).toBeCloseTo(1500, 3);
+    expect(s[0].segSec).toBeCloseTo(s[4].segSec, 3); // even
+  });
+  it("negative split runs the back half faster, still summing to goal", () => {
+    const s = raceSplits(1500, 5000, 1000, 4);
+    expect(s[s.length - 1].cumSec).toBeCloseTo(1500, 2);
+    expect(s[4].segSec).toBeLessThan(s[0].segSec);
   });
 });

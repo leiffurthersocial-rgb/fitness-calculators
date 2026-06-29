@@ -20,8 +20,8 @@ Number fields accept decimals.
 | --- | --- |
 | **Overview** | My numbers (key metrics at a glance from your saved stats) |
 | **Sports** | Sports build rater (rate your build, strength & performance for a sport + position), Workout plan generator |
-| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (squat/bench/deadlift/OHP + max-rep pull-ups; age/weight/sex/sport), Lift balance (squat/bench/deadlift/OHP proportions + weak-point flag), RPE ↔ %1RM ↔ RIR converter (RTS chart) |
-| **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel), Run training paces (Daniels VDOT zone paces with HR cross-reference + race-time equivalents), Cycling power zones (Coggan FTP zones + W/kg) |
+| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (squat/bench/deadlift/OHP + max-rep pull-ups; age/weight/sex/sport), Lift balance (proportions + weak-point flag), Strength score (one percentile across all lifts), RPE ↔ %1RM ↔ RIR converter (RTS chart) |
+| **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel), Run training paces (Daniels VDOT + HR cross-reference + equivalents), Cycling power zones (Coggan FTP + W/kg), Swim pace zones (Critical Swim Speed), Treadmill pace (incline → flat equivalent, ACSM), Race-day splits (even / negative) |
 | **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Cut/bulk planner (calories, macros & a body-recomp timeline to a target body-fat %), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Muscle-gain potential (Aragon rate + FFMI ceiling), Calorie burn (METs) |
 | **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |
 
@@ -51,6 +51,13 @@ your 1RMs, adds a set to any lift below your sport's target ratio, and reports
 **weekly set volume per muscle** against evidence-based landmarks (10–20
 sets/week for hypertrophy, counting secondary movers as half-sets). Logic in
 [`lib/workoutPlan.ts`](lib/workoutPlan.ts).
+
+Every tool has its **own page and URL** (`/t/<id>`) with a unique title,
+meta description and canonical link, a generated **sitemap** and **robots**,
+and an Open Graph share image — so individual calculators are findable and
+linkable. Each tool lists its **sources & methods** (with a short FAQ where
+useful), and a **Copy link / Print** bar makes results easy to share or save
+as a PDF. The **/** landing page indexes everything.
 
 Tools that offer multiple methods (Rep-max formula, VO₂ max test, HR-zone
 method) show an inline **“which should I use?”** recommendation.

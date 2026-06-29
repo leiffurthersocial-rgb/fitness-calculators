@@ -50,6 +50,7 @@ export default function Macros() {
   const [goal, setGoal] = useState<MacroGoal>("maintain");
   const [bw, setBw] = useWeightField(units);
   const [proteinPerKg, setProteinPerKg] = useState(1.8);
+  const [meals, setMeals] = useState(4);
 
   const target = calorieTarget(calories, goal);
   const bwKg = weightToKg(bw, units);
@@ -135,6 +136,42 @@ export default function Macros() {
           <Stat label="Protein" value={fmt(m.proteinG, 0)} unit="g" />
           <Stat label="Carbs" value={fmt(m.carbsG, 0)} unit="g" />
           <Stat label="Fat" value={fmt(m.fatG, 0)} unit="g" />
+        </div>
+
+        {/* Per-meal breakdown */}
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium">Per meal</span>
+            <div className="w-28">
+              <NumberInput value={meals} onChange={setMeals} suffix="meals" />
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Each meal</th>
+                  <th className="px-4 py-2 font-medium">Protein</th>
+                  <th className="px-4 py-2 font-medium">Carbs</th>
+                  <th className="px-4 py-2 font-medium">Fat</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-zinc-100 dark:border-zinc-800">
+                  <td className="px-4 py-2 font-medium">
+                    {fmt(target / Math.max(1, meals), 0)} kcal
+                  </td>
+                  <td className="px-4 py-2">{fmt(m.proteinG / Math.max(1, meals), 0)} g</td>
+                  <td className="px-4 py-2">{fmt(m.carbsG / Math.max(1, meals), 0)} g</td>
+                  <td className="px-4 py-2">{fmt(m.fatG / Math.max(1, meals), 0)} g</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-xs text-zinc-400">
+            Split evenly. Aim for ~0.4 g/kg protein per meal across 3–5 meals to
+            maximise muscle-protein synthesis.
+          </p>
         </div>
       </Card>
     </CalcGrid>
