@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardTitle,
@@ -50,23 +50,29 @@ export default function StrengthStandards() {
   const { units } = useUnits();
   const unit = weightUnit(units);
 
-  const { profile, patch } = useProfile();
+  const { profile, patch, patchLifts } = useProfile();
   const { sex, age } = profile;
   const [bw, setBw] = useWeightField(units);
   const [sportKey, setSportKey] = useState("general");
 
-  // Per-lift inputs: weight lifts in the display unit, pull-ups in reps.
-  const [lifts, setLifts] = useState<Record<Lift, number>>(() => {
+  // Per-lift inputs: weight lifts in the display unit, pull-ups in reps —
+  // synced with the shared profile, falling back to a sensible seed before
+  // anything's been entered there.
+  const lifts: Record<Lift, number> = useMemo(() => {
     const bwDisp = weightFromKg(DEFAULTS.bodyweightKg, units);
     return Object.fromEntries(
-      LIFTS.map((l) => [
-        l.key,
-        l.unit === "reps"
-          ? SEED_PULLUP_REPS
-          : Math.round(bwDisp * SEED_WEIGHT_RATIO[l.key as Exclude<Lift, "pullup">]),
-      ])
+      LIFTS.map((l) => {
+        if (l.unit === "reps") return [l.key, profile.lifts.pullups || SEED_PULLUP_REPS];
+        const kg = profile.lifts[l.key as Exclude<Lift, "pullup">];
+        return [
+          l.key,
+          kg > 0
+            ? Number(weightFromKg(kg, units).toFixed(1))
+            : Math.round(bwDisp * SEED_WEIGHT_RATIO[l.key as Exclude<Lift, "pullup">]),
+        ];
+      })
     ) as Record<Lift, number>;
-  });
+  }, [profile.lifts, units]);
 
   const sport = SPORTS.find((s) => s.key === sportKey)!;
   const bwKg = weightToKg(bw, units);
@@ -247,7 +253,11 @@ export default function StrengthStandards() {
                     <NumberInput
                       value={lifts[lift.key]}
                       onChange={(v) =>
-                        setLifts((prev) => ({ ...prev, [lift.key]: v }))
+                        patchLifts(
+                          lift.unit === "reps"
+                            ? { pullups: v }
+                            : { [lift.key]: v ? weightToKg(v, units) : 0 }
+                        )
                       }
                       step={isReps ? 1 : 2.5}
                       suffix={isReps ? "reps" : unit}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Card,
   CardTitle,
@@ -22,7 +21,6 @@ const WEIGHT_LIFTS: { key: Lift; label: string }[] = [
   { key: "deadlift", label: "Deadlift" },
   { key: "ohp", label: "Overhead" },
 ];
-const SEED_KG: Record<string, number> = { squat: 140, bench: 100, deadlift: 180, ohp: 60 };
 
 function scoreColor(s: number): string {
   if (s >= 85) return "#a855f7";
@@ -35,22 +33,25 @@ function scoreColor(s: number): string {
 export default function StrengthScore() {
   const { units } = useUnits();
   const wu = weightUnit(units);
-  const { profile, patch } = useProfile();
+  const { profile, patch, patchLifts } = useProfile();
   const [bw, setBw] = useWeightField(units);
 
-  const [weights, setWeights] = useState<Record<string, number>>(() => ({
-    squat: Math.round(weightFromKg(SEED_KG.squat, units)),
-    bench: Math.round(weightFromKg(SEED_KG.bench, units)),
-    deadlift: Math.round(weightFromKg(SEED_KG.deadlift, units)),
-    ohp: Math.round(weightFromKg(SEED_KG.ohp, units)),
-  }));
-  const [pullups, setPullups] = useState(10);
+  const liftDisp = (kg: number) => (kg > 0 ? Number(weightFromKg(kg, units).toFixed(1)) : 0);
+  const weights: Record<Lift, number> = {
+    squat: liftDisp(profile.lifts.squat),
+    bench: liftDisp(profile.lifts.bench),
+    deadlift: liftDisp(profile.lifts.deadlift),
+    ohp: liftDisp(profile.lifts.ohp),
+    pullup: 0,
+  };
+  const pullups = profile.lifts.pullups;
+  const setPullups = (v: number) => patchLifts({ pullups: v });
 
   const values: Partial<Record<Lift, number>> = {
-    squat: weightToKg(weights.squat, units),
-    bench: weightToKg(weights.bench, units),
-    deadlift: weightToKg(weights.deadlift, units),
-    ohp: weightToKg(weights.ohp, units),
+    squat: profile.lifts.squat,
+    bench: profile.lifts.bench,
+    deadlift: profile.lifts.deadlift,
+    ohp: profile.lifts.ohp,
     pullup: pullups,
   };
   const r = strengthScore(values, profile.sex, weightToKg(bw, units), profile.age);
@@ -83,7 +84,7 @@ export default function StrengthScore() {
               <Field key={l.key} label={`${l.label} 1RM (${wu})`}>
                 <NumberInput
                   value={weights[l.key]}
-                  onChange={(v) => setWeights((p) => ({ ...p, [l.key]: v }))}
+                  onChange={(v) => patchLifts({ [l.key]: v ? weightToKg(v, units) : 0 })}
                   suffix={wu}
                 />
               </Field>

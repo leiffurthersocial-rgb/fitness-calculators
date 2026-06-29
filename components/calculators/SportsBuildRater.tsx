@@ -61,7 +61,7 @@ export default function SportsBuildRater() {
   const lu = lengthUnit(units);
   const su = smallLengthUnit(units);
 
-  const { profile, patch } = useProfile();
+  const { profile, patch, patchLifts } = useProfile();
   const { sex, age } = profile;
   const [height, setHeight] = useHeightField(units);
   const [weight, setWeight] = useWeightField(units);
@@ -70,16 +70,24 @@ export default function SportsBuildRater() {
   const sport = SPORTS_DB.find((s) => s.key === sportKey)!;
   const [posKey, setPosKey] = useState(sport.positions[0].key);
 
-  // Optional performance inputs (0 = not provided).
-  const [squat, setSquat] = useState(0);
-  const [bench, setBench] = useState(0);
-  const [deadlift, setDeadlift] = useState(0);
-  const [ohp, setOhp] = useState(0);
-  const [pullups, setPullups] = useState(0);
+  // Lifts, pull-ups and VO₂max are shared via the profile (kg / ml-kg-min in
+  // storage); these helpers convert to/from the display unit. 0 = not provided.
+  const liftDisp = (kg: number) => (kg > 0 ? Number(weightFromKg(kg, units).toFixed(1)) : 0);
+  const squat = liftDisp(profile.lifts.squat);
+  const bench = liftDisp(profile.lifts.bench);
+  const deadlift = liftDisp(profile.lifts.deadlift);
+  const ohp = liftDisp(profile.lifts.ohp);
+  const pullups = profile.lifts.pullups;
+  const vo2max = profile.vo2max;
+  const setSquat = (v: number) => patchLifts({ squat: v ? weightToKg(v, units) : 0 });
+  const setBench = (v: number) => patchLifts({ bench: v ? weightToKg(v, units) : 0 });
+  const setDeadlift = (v: number) => patchLifts({ deadlift: v ? weightToKg(v, units) : 0 });
+  const setOhp = (v: number) => patchLifts({ ohp: v ? weightToKg(v, units) : 0 });
+  const setPullups = (v: number) => patchLifts({ pullups: v });
+  const setVo2max = (v: number) => patch({ vo2max: v });
   const [sprint100, setSprint100] = useState(0); // seconds
   const [vertical, setVertical] = useState(0); // display small-length unit
   const [broad, setBroad] = useState(0); // display small-length unit
-  const [vo2max, setVo2max] = useState(0); // ml/kg/min
 
   const position =
     sport.positions.find((p) => p.key === posKey) ?? sport.positions[0];
@@ -107,7 +115,7 @@ export default function SportsBuildRater() {
       vo2max,
       wingspanCm: wingspan ? lengthToCm(wingspan, units) : 0,
     }),
-    [sex, age, height, weight, wingspan, squat, bench, deadlift, ohp, pullups, sprint100, vertical, broad, vo2max, units]
+    [sex, age, height, weight, wingspan, profile.lifts, vo2max, sprint100, vertical, broad, units]
   );
 
   const result = useMemo(

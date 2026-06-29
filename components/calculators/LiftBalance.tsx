@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Card,
   CardTitle,
@@ -14,7 +13,7 @@ import {
 import { useUnits } from "@/lib/settings";
 import { useProfile } from "@/lib/profile";
 import { liftBalance } from "@/lib/formulas";
-import { weightFromKg, weightUnit, fmt } from "@/lib/units";
+import { weightFromKg, weightToKg, weightUnit, fmt } from "@/lib/units";
 
 type Lift = "squat" | "bench" | "deadlift" | "ohp";
 const ORDER: Lift[] = ["squat", "bench", "deadlift", "ohp"];
@@ -24,20 +23,19 @@ const LABELS: Record<Lift, string> = {
   deadlift: "Deadlift",
   ohp: "Overhead press",
 };
-// Reasonable starting 1RMs in kg.
-const SEED_KG: Record<Lift, number> = { squat: 140, bench: 100, deadlift: 180, ohp: 60 };
 
 export default function LiftBalance() {
   const { units } = useUnits();
   const wu = weightUnit(units);
-  const { profile, patch } = useProfile();
+  const { profile, patch, patchLifts } = useProfile();
 
-  const [lifts, setLifts] = useState<Record<Lift, number>>(() =>
-    ORDER.reduce(
-      (acc, k) => ({ ...acc, [k]: Math.round(weightFromKg(SEED_KG[k], units)) }),
-      {} as Record<Lift, number>
-    )
-  );
+  const liftDisp = (kg: number) => (kg > 0 ? Number(weightFromKg(kg, units).toFixed(1)) : 0);
+  const lifts: Record<Lift, number> = {
+    squat: liftDisp(profile.lifts.squat),
+    bench: liftDisp(profile.lifts.bench),
+    deadlift: liftDisp(profile.lifts.deadlift),
+    ohp: liftDisp(profile.lifts.ohp),
+  };
 
   // Ratios are unit-agnostic, so we can analyse the display values directly.
   const result = liftBalance(lifts, profile.sex);
@@ -62,7 +60,7 @@ export default function LiftBalance() {
               <Field key={k} label={`${LABELS[k]} (${wu})`}>
                 <NumberInput
                   value={lifts[k]}
-                  onChange={(v) => setLifts((p) => ({ ...p, [k]: v }))}
+                  onChange={(v) => patchLifts({ [k]: v ? weightToKg(v, units) : 0 })}
                   suffix={wu}
                 />
               </Field>

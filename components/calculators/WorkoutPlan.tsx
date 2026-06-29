@@ -14,7 +14,7 @@ import {
   EmptyHint,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
-import { useWeightField } from "@/lib/profile";
+import { useProfile, useWeightField } from "@/lib/profile";
 import {
   GOALS,
   EQUIPMENT,
@@ -74,12 +74,16 @@ export default function WorkoutPlan() {
   const [posKey, setPosKey] = useState(sport.positions[0].key);
 
   const [bw, setBw] = useWeightField(units);
-  const [oneRMs, setOneRMs] = useState<Record<MainLift, number>>({
-    squat: 0,
-    bench: 0,
-    deadlift: 0,
-    ohp: 0,
-  });
+  const { profile, patchLifts } = useProfile();
+  const liftDisp = (kg: number) => (kg > 0 ? Number(weightFromKg(kg, units).toFixed(1)) : 0);
+  const oneRMs: Record<MainLift, number> = {
+    squat: liftDisp(profile.lifts.squat),
+    bench: liftDisp(profile.lifts.bench),
+    deadlift: liftDisp(profile.lifts.deadlift),
+    ohp: liftDisp(profile.lifts.ohp),
+  };
+  const setOneRM = (key: MainLift, v: number) =>
+    patchLifts({ [key]: v ? weightToKg(v, units) : 0 });
 
   const position =
     sport.positions.find((p) => p.key === posKey) ?? sport.positions[0];
@@ -97,7 +101,7 @@ export default function WorkoutPlan() {
       }
     }
     return out;
-  }, [tailor, position, oneRMs, bw, units]);
+  }, [tailor, position, profile.lifts, bw, units]);
 
   const suggestedGoal = tailor ? goalForSport(sportKey, posKey) : goal;
 
@@ -119,7 +123,7 @@ export default function WorkoutPlan() {
       includePlyo: plyo === "auto" ? undefined : plyo === "on",
       emphasis: emphasis === "none" ? undefined : emphasis,
     });
-  }, [goal, days, split, equipment, inc, maxSets, oneRMs, weakLifts, conditioning, plyo, emphasis, units]);
+  }, [goal, days, split, equipment, inc, maxSets, profile.lifts, weakLifts, conditioning, plyo, emphasis, units]);
 
   const vt = volumeTarget(goal);
 
@@ -281,7 +285,7 @@ export default function WorkoutPlan() {
                   <Field key={l.key} label={`${l.label} (${wu})`}>
                     <NumberInput
                       value={oneRMs[l.key]}
-                      onChange={(v) => setOneRMs((p) => ({ ...p, [l.key]: v }))}
+                      onChange={(v) => setOneRM(l.key, v)}
                       step={2.5}
                       suffix={wu}
                     />
