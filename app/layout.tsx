@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme";
 import { SettingsProvider } from "@/lib/settings";
 import { ProfileProvider } from "@/lib/profile";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -18,7 +19,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Vital — Health & Fitness Hub",
   description:
-    "An all-in-one health, fitness, and productivity calculator hub. Strength, cardio, nutrition, recovery, and focus tools in one place.",
+    "A suite of clean, science-based health & fitness calculators — strength, cardio, nutrition and recovery — all in your browser.",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
 };
 
 // Applied before paint so dark mode (the default) never flashes light.
@@ -54,6 +66,7 @@ export default function RootLayout({
             <ProfileProvider>{children}</ProfileProvider>
           </SettingsProvider>
         </ThemeProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

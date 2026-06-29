@@ -70,7 +70,15 @@ Open <http://localhost:3000>.
 
 ```bash
 npm run build && npm start   # production build
+npm test                     # run the formula unit tests (Vitest)
 ```
+
+The pure formula library in [`lib/formulas.ts`](lib/formulas.ts) is covered by
+a [Vitest suite](lib/formulas.test.ts) (VDOT, FFMI, muscle-gain, diet planner,
+RPE, power zones, strength standards, …) so the science stays correct as it
+grows. The app is also an installable **PWA** — a web manifest plus a small
+service worker make it work offline and add-to-home-screen after the first
+visit. Motion respects `prefers-reduced-motion`.
 
 ## Deploy to Vercel (zero config)
 

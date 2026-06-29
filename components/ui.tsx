@@ -211,11 +211,12 @@ export function SegmentedControl<T extends string>({
   options: { value: T; label: string }[];
 }) {
   return (
-    <div className="inline-flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+    <div role="group" className="inline-flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
+          aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
           className={
             "rounded-lg px-3 py-1.5 text-sm font-medium transition " +

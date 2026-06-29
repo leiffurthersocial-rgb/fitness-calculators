@@ -41,3 +41,19 @@ body {
 input[type="range"] {
   accent-color: var(--color-accent-500);
 }
+
+/* Respect users who prefer less motion: drop the smooth scroll and collapse
+   transitions/animations to near-instant. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

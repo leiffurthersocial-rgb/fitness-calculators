@@ -35,7 +35,8 @@ export default function Home() {
     if (window.location.hash !== `#${id}`) {
       window.history.pushState(null, "", `#${id}`);
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   };
 
   // Reflect the active tool in the tab title on in-app navigation. (A hard
