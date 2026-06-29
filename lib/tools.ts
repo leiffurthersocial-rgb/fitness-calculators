@@ -9,6 +9,9 @@ import RpeConverter from "@/components/calculators/RpeConverter";
 import StrengthScore from "@/components/calculators/StrengthScore";
 import WorkoutPlan from "@/components/calculators/WorkoutPlan";
 import SportsBuildRater from "@/components/calculators/SportsBuildRater";
+import PowerliftingPoints from "@/components/calculators/PowerliftingPoints";
+import AgeGradedRunning from "@/components/calculators/AgeGradedRunning";
+import FitnessAge from "@/components/calculators/FitnessAge";
 import Vo2Max from "@/components/calculators/Vo2Max";
 import HeartRateZones from "@/components/calculators/HeartRateZones";
 import PaceRace from "@/components/calculators/PaceRace";
@@ -57,6 +60,15 @@ export const TOOL_GROUPS: ToolGroup[] = [
     tools: [
       { id: "build-rater", name: "Sports build rater", blurb: "Rate your build for a sport & position", Component: SportsBuildRater },
       { id: "workout-plan", name: "Workout plan generator", blurb: "Weekly plan from your goal, sport & lifts", Component: WorkoutPlan },
+    ],
+  },
+  {
+    group: "Compete",
+    emoji: "🏆",
+    tools: [
+      { id: "pl-points", name: "Powerlifting points", blurb: "Wilks, DOTS & IPF GL from your total", Component: PowerliftingPoints },
+      { id: "age-grade", name: "Age-graded running", blurb: "Compare race times across age & sex", Component: AgeGradedRunning },
+      { id: "fitness-age", name: "Fitness age", blurb: "How old is your body, by VO₂max?", Component: FitnessAge },
     ],
   },
   {

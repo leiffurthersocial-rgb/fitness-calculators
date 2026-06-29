@@ -1650,3 +1650,217 @@ export function raceSplits(
     return { distM: r.dist, segSec: seg, cumSec: cum };
   });
 }
+
+/* ========================================================================
+ * COMPETITION SCORING — pound-for-pound, age-graded & fitness age
+ * ----------------------------------------------------------------------
+ * Pure scoring systems used in real competition, so athletes can compare
+ * across bodyweight, age and sex. All approximations are clearly bounded
+ * and documented; none of this needs a backend.
+ * ====================================================================== */
+
+/**
+ * Original Wilks coefficient — bodyweight-adjusted powerlifting score.
+ * score = total × 500 / poly(bodyweight). DOTS (see `dotsScore`) is its
+ * modern successor; both are offered side by side.
+ */
+export function wilksScore(
+  totalKg: number,
+  bodyweightKg: number,
+  sex: "male" | "female"
+): number {
+  const bw = Math.min(Math.max(bodyweightKg, 40), 200);
+  const C =
+    sex === "male"
+      ? [-216.0475144, 16.2606339, -0.002388645, -0.00113732, 7.01863e-6, -1.291e-8]
+      : [594.31747775582, -27.23842536447, 0.82112226871, -0.00930733913, 4.731582e-5, -9.054e-8];
+  const poly =
+    C[0] + C[1] * bw + C[2] * bw ** 2 + C[3] * bw ** 3 + C[4] * bw ** 4 + C[5] * bw ** 5;
+  return totalKg * (500 / poly);
+}
+
+/**
+ * IPF GL points — the IPF's current official bodyweight adjustment for
+ * classic (raw) full-power. points = total × 100 / (A − B·e^(−C·bw)).
+ */
+export function ipfGlPoints(
+  totalKg: number,
+  bodyweightKg: number,
+  sex: "male" | "female"
+): number {
+  const bw = Math.min(Math.max(bodyweightKg, 40), 200);
+  const [A, B, c] =
+    sex === "male"
+      ? [1199.72839, 1025.18162, 0.00921]
+      : [610.32796, 1045.59282, 0.03048];
+  const denom = A - B * Math.exp(-c * bw);
+  return denom > 0 ? totalKg * (100 / denom) : 0;
+}
+
+export interface PowerliftingPoints {
+  wilks: number;
+  dots: number;
+  ipfGl: number;
+}
+
+/** Convenience: all three pound-for-pound scores for a total. */
+export function powerliftingPoints(
+  totalKg: number,
+  bodyweightKg: number,
+  sex: "male" | "female"
+): PowerliftingPoints {
+  return {
+    wilks: wilksScore(totalKg, bodyweightKg, sex),
+    dots: dotsScore(totalKg, bodyweightKg, sex),
+    ipfGl: ipfGlPoints(totalKg, bodyweightKg, sex),
+  };
+}
+
+// Approximate WMA-style age factors for running (fraction of open-class
+// performance retainable at a given age), interpolated between anchors.
+const RUN_AGE_FACTORS: { age: number; f: number }[] = [
+  { age: 20, f: 1.0 }, { age: 30, f: 1.0 }, { age: 35, f: 0.975 },
+  { age: 40, f: 0.94 }, { age: 45, f: 0.9 }, { age: 50, f: 0.855 },
+  { age: 55, f: 0.805 }, { age: 60, f: 0.75 }, { age: 65, f: 0.69 },
+  { age: 70, f: 0.625 }, { age: 75, f: 0.555 }, { age: 80, f: 0.48 },
+  { age: 85, f: 0.4 }, { age: 90, f: 0.32 },
+];
+
+/** Linear interpolation of the running age factor (clamped to the table). */
+export function runAgeFactor(age: number): number {
+  const t = RUN_AGE_FACTORS;
+  if (age <= t[0].age) return t[0].f;
+  if (age >= t[t.length - 1].age) return t[t.length - 1].f;
+  for (let i = 1; i < t.length; i++) {
+    if (age <= t[i].age) {
+      const a = t[i - 1];
+      const b = t[i];
+      return a.f + ((b.f - a.f) * (age - a.age)) / (b.age - a.age);
+    }
+  }
+  return 1;
+}
+
+// Approximate open-class standard times (seconds) per distance, by sex.
+// Loosely anchored to world-class marks; age-grading is relative, so small
+// differences shift everyone equally.
+export interface RaceStandard {
+  key: string;
+  label: string;
+  distM: number;
+  men: number; // open standard, seconds
+  women: number;
+}
+export const RACE_STANDARDS: RaceStandard[] = [
+  { key: "1mile", label: "Mile", distM: 1609, men: 223, women: 252 },
+  { key: "5k", label: "5K", distM: 5000, men: 755, women: 850 },
+  { key: "10k", label: "10K", distM: 10000, men: 1571, women: 1771 },
+  { key: "10mile", label: "10 mile", distM: 16093, men: 2607, women: 2940 },
+  { key: "half", label: "Half marathon", distM: 21097, men: 3478, women: 3930 },
+  { key: "marathon", label: "Marathon", distM: 42195, men: 7299, women: 8125 },
+];
+
+export interface AgeGradeResult {
+  ageGradePct: number; // 0..100+ (capped for display elsewhere)
+  ageFactor: number;
+  ageStandardSec: number; // your age/sex world standard for the event
+  openStandardSec: number;
+  level: string;
+}
+
+/**
+ * Age-graded running performance. Compares your time to the world standard
+ * for your age and sex: % = ageStandard / yourTime × 100. This is an
+ * approximation of the WMA age-grading tables (single age-factor curve), good
+ * enough to track your own progress and compare across ages — not an official
+ * certificate.
+ */
+export function ageGradedRunning(
+  timeSec: number,
+  standard: RaceStandard,
+  age: number,
+  sex: "male" | "female"
+): AgeGradeResult {
+  const open = sex === "female" ? standard.women : standard.men;
+  const f = runAgeFactor(age);
+  const ageStandard = open / f; // older athletes get a slower standard
+  const pct = timeSec > 0 ? (ageStandard / timeSec) * 100 : 0;
+  const level =
+    pct >= 100 ? "World-record class"
+    : pct >= 90 ? "World class"
+    : pct >= 80 ? "National class"
+    : pct >= 70 ? "Regional class"
+    : pct >= 60 ? "Local competitive"
+    : pct >= 50 ? "Keen amateur"
+    : "Recreational";
+  return { ageGradePct: pct, ageFactor: f, ageStandardSec: ageStandard, openStandardSec: open, level };
+}
+
+// Average VO₂max (ml/kg/min) by age anchor and sex — used to invert a VO₂max
+// into a "fitness age": the age at which your VO₂max is merely average.
+const VO2_BY_AGE: { age: number; male: number; female: number }[] = [
+  { age: 20, male: 48, female: 38 },
+  { age: 30, male: 44, female: 35 },
+  { age: 40, male: 40, female: 32 },
+  { age: 50, male: 36, female: 29 },
+  { age: 60, male: 32, female: 26 },
+  { age: 70, male: 28, female: 23 },
+  { age: 80, male: 24, female: 20 },
+];
+
+export interface FitnessAgeResult {
+  fitnessAge: number;
+  vo2max: number;
+  averageForAge: number; // average VO₂max for the person's real age
+  deltaYears: number; // realAge − fitnessAge (positive = younger than calendar)
+}
+
+/**
+ * "Fitness age" from VO₂max: the age at which the given VO₂max is the
+ * population average for that sex. A higher VO₂max → a younger fitness age.
+ * Clamped to 18–80. Reference values are population averages, so this is a
+ * motivational estimate rather than a clinical figure.
+ */
+export function fitnessAge(
+  vo2max: number,
+  realAge: number,
+  sex: "male" | "female"
+): FitnessAgeResult {
+  const key = sex === "female" ? "female" : "male";
+  const t = VO2_BY_AGE;
+  // Average VO₂max at the person's real age (linear interpolation).
+  const avgAt = (age: number): number => {
+    if (age <= t[0].age) return t[0][key];
+    if (age >= t[t.length - 1].age) return t[t.length - 1][key];
+    for (let i = 1; i < t.length; i++) {
+      if (age <= t[i].age) {
+        const a = t[i - 1];
+        const b = t[i];
+        return a[key] + ((b[key] - a[key]) * (age - a.age)) / (b.age - a.age);
+      }
+    }
+    return t[t.length - 1][key];
+  };
+  // Invert: find the age whose average VO₂max equals the input.
+  let fAge: number;
+  if (vo2max >= t[0][key]) fAge = 18;
+  else if (vo2max <= t[t.length - 1][key]) fAge = 80;
+  else {
+    fAge = 80;
+    for (let i = 1; i < t.length; i++) {
+      const a = t[i - 1];
+      const b = t[i];
+      if (vo2max <= a[key] && vo2max >= b[key]) {
+        fAge = a.age + ((b.age - a.age) * (a[key] - vo2max)) / (a[key] - b[key]);
+        break;
+      }
+    }
+  }
+  fAge = Math.round(Math.min(80, Math.max(18, fAge)));
+  return {
+    fitnessAge: fAge,
+    vo2max,
+    averageForAge: avgAt(realAge),
+    deltaYears: realAge - fAge,
+  };
+}

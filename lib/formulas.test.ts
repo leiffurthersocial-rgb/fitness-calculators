@@ -34,6 +34,13 @@ import {
   swimZones,
   inclineFlatPace,
   raceSplits,
+  wilksScore,
+  ipfGlPoints,
+  powerliftingPoints,
+  runAgeFactor,
+  ageGradedRunning,
+  fitnessAge,
+  RACE_STANDARDS,
 } from "./formulas";
 
 describe("rep max", () => {
@@ -269,5 +276,73 @@ describe("race splits", () => {
     const s = raceSplits(1500, 5000, 1000, 4);
     expect(s[s.length - 1].cumSec).toBeCloseTo(1500, 2);
     expect(s[4].segSec).toBeLessThan(s[0].segSec);
+  });
+});
+
+describe("competition scoring — powerlifting points", () => {
+  it("Wilks gives a sane elite score for a big male total", () => {
+    // 700 kg total at 93 kg bodyweight ≈ low-mid 400s Wilks.
+    const w = wilksScore(700, 93, "male");
+    expect(w).toBeGreaterThan(400);
+    expect(w).toBeLessThan(480);
+  });
+
+  it("IPF GL gives ~90 points for a world-class male total", () => {
+    const gl = ipfGlPoints(700, 93, "male");
+    expect(gl).toBeGreaterThan(85);
+    expect(gl).toBeLessThan(100);
+  });
+
+  it("a lighter lifter with the same total scores higher (pound-for-pound)", () => {
+    const light = wilksScore(600, 75, "male");
+    const heavy = wilksScore(600, 120, "male");
+    expect(light).toBeGreaterThan(heavy);
+  });
+
+  it("powerliftingPoints returns all three systems", () => {
+    const p = powerliftingPoints(500, 80, "female");
+    expect(p.wilks).toBeGreaterThan(0);
+    expect(p.dots).toBeGreaterThan(0);
+    expect(p.ipfGl).toBeGreaterThan(0);
+  });
+});
+
+describe("competition scoring — age-graded running", () => {
+  it("age factor is 1.0 in the open prime and declines with age", () => {
+    expect(runAgeFactor(28)).toBeCloseTo(1.0, 5);
+    expect(runAgeFactor(60)).toBeLessThan(runAgeFactor(40));
+    expect(runAgeFactor(40)).toBeLessThan(1.0);
+  });
+
+  it("an identical time grades higher for an older runner", () => {
+    const fiveK = RACE_STANDARDS.find((s) => s.key === "5k")!;
+    const young = ageGradedRunning(1200, fiveK, 25, "male"); // 20:00
+    const old = ageGradedRunning(1200, fiveK, 60, "male");
+    expect(old.ageGradePct).toBeGreaterThan(young.ageGradePct);
+  });
+
+  it("a faster time grades higher and assigns a higher level band", () => {
+    const fiveK = RACE_STANDARDS.find((s) => s.key === "5k")!;
+    const fast = ageGradedRunning(900, fiveK, 30, "male"); // 15:00
+    const slow = ageGradedRunning(1500, fiveK, 30, "male"); // 25:00
+    expect(fast.ageGradePct).toBeGreaterThan(slow.ageGradePct);
+  });
+});
+
+describe("competition scoring — fitness age", () => {
+  it("a high VO₂max yields a younger fitness age than calendar age", () => {
+    const r = fitnessAge(50, 45, "male");
+    expect(r.fitnessAge).toBeLessThan(45);
+    expect(r.deltaYears).toBeGreaterThan(0);
+  });
+
+  it("a low VO₂max yields an older fitness age", () => {
+    const r = fitnessAge(28, 35, "male");
+    expect(r.fitnessAge).toBeGreaterThan(35);
+  });
+
+  it("clamps fitness age to the 18–80 range", () => {
+    expect(fitnessAge(80, 25, "male").fitnessAge).toBe(18);
+    expect(fitnessAge(10, 70, "female").fitnessAge).toBe(80);
   });
 });

@@ -42,6 +42,40 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       { q: "What are the broad jump and 5-10-5 agility tests?", a: "They're standard combine measures of explosive power and change-of-direction. The broad (standing long) jump is horizontal leg power; the 5-10-5 pro-agility shuttle times how fast you can decelerate and re-accelerate — both feed the power score for sports that reward quickness." },
     ],
   },
+  "pl-points": {
+    description:
+      "Calculate your Wilks, DOTS and IPF GL points from your squat, bench and deadlift total — bodyweight-adjusted scores that compare powerlifters of any size on one number.",
+    sources: [
+      { label: "Wilks & DOTS pound-for-pound coefficients", url: "https://en.wikipedia.org/wiki/Wilks_coefficient" },
+      { label: "IPF GL points formula", url: "https://www.powerlifting.sport/" },
+    ],
+    faq: [
+      { q: "Wilks vs DOTS vs IPF GL — which should I use?", a: "DOTS is the modern successor to Wilks and is widely used in raw federations; IPF GL points are the IPF's current official formula. Wilks is the original and still common. All three answer the same question — pound-for-pound, how strong is this total — so pick whichever your federation or training partners use." },
+      { q: "What's a good score?", a: "As a rough guide, ~300 is a solid intermediate, ~400 is advanced, and ~500+ is elite / national-class. The coefficients are calibrated separately for men and women, so the same number means the same level for either sex." },
+    ],
+  },
+  "age-grade": {
+    description:
+      "Age-grade your 5K, 10K, half or marathon time: compare your performance to the world standard for your age and sex on a single percentage, across any age or event.",
+    sources: [
+      { label: "World Masters Athletics age-grading", url: "https://en.wikipedia.org/wiki/Age_grading" },
+    ],
+    faq: [
+      { q: "What does the age-grade percentage mean?", a: "It's your time as a percentage of the world standard for someone your age and sex. Roughly: 60% is local-class, 70% regional, 80% national-class and 90%+ world class. Because it adjusts for age, you can compare a 25-year-old and a 60-year-old fairly — or track your own decline-adjusted progress over the years." },
+      { q: "Is this the official WMA figure?", a: "It's an approximation. It uses a single age-factor curve rather than the full per-event WMA tables, so it's ideal for tracking your own progress and rough comparisons, but it won't exactly match an official age-grading certificate." },
+    ],
+  },
+  "fitness-age": {
+    description:
+      "Estimate your fitness age from your VO₂max or resting heart rate — the age at which your aerobic fitness would be merely average, and one of the best predictors of longevity.",
+    sources: [
+      { label: "Uth–Sørensen VO₂max from heart-rate ratio", url: "https://pubmed.ncbi.nlm.nih.gov/14624296/" },
+    ],
+    faq: [
+      { q: "How is fitness age calculated?", a: "We find the age at which your VO₂max equals the population average for your sex. A VO₂max above average for your real age makes your fitness age younger; below average makes it older. You can enter VO₂max directly or estimate it from your resting heart rate." },
+      { q: "Why does VO₂max matter so much?", a: "Cardiorespiratory fitness is one of the strongest single predictors of all-cause mortality — often stronger than smoking, blood pressure or BMI. Raising VO₂max by about one MET (3.5 ml/kg/min) is associated with a meaningful reduction in risk." },
+    ],
+  },
   "workout-plan": {
     description:
       "Generate a weekly training plan from your goal, available days, equipment and lifts, with set/rep schemes, RIR targets and weekly volume per muscle.",
