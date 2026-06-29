@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardTitle, CalcGrid, Badge } from "../ui";
+import { Card, CardTitle, CalcGrid, Badge, EmptyHint } from "../ui";
 import { useUnits } from "@/lib/settings";
 import { useProfile } from "@/lib/profile";
 import {
@@ -15,8 +15,12 @@ import {
   maxHRTanaka,
   hrZones,
   waterTargetMl,
+  strengthScore,
+  biologicalAge,
+  type Lift,
   TRAINING_LEVELS,
 } from "@/lib/formulas";
+import { athleteScore } from "@/lib/score";
 import { weightFromKg, weightUnit, fmt } from "@/lib/units";
 
 // Jump to another tool by setting the URL hash; the shell listens for it.
@@ -62,7 +66,7 @@ export default function MyNumbers() {
   const { units } = useUnits();
   const wu = weightUnit(units);
   const { profile } = useProfile();
-  const { age, sex, heightCm, weightKg, bodyFatPct, restingHR, experience } = profile;
+  const { age, sex, heightCm, weightKg, bodyFatPct, restingHR, experience, vo2max, waistCm, lifts } = profile;
 
   const disp = (kg: number) => fmt(weightFromKg(kg, units), 1);
 
@@ -82,6 +86,19 @@ export default function MyNumbers() {
       ? disp(year.highKg)
       : `${disp(year.loKg)}–${disp(year.highKg)}`;
   const expLabel = TRAINING_LEVELS.find((t) => t.key === experience)?.label ?? "";
+
+  // ---- Performance & athleticism (from the saved lifts / VO₂max) ----
+  const hasLifts = lifts.squat > 0 || lifts.bench > 0 || lifts.deadlift > 0 || lifts.ohp > 0 || lifts.pullups > 0;
+  const liftValues: Partial<Record<Lift, number>> = {
+    squat: lifts.squat || undefined,
+    bench: lifts.bench || undefined,
+    deadlift: lifts.deadlift || undefined,
+    ohp: lifts.ohp || undefined,
+    pullup: lifts.pullups || undefined,
+  };
+  const strength = hasLifts ? strengthScore(liftValues, sex, weightKg, age) : null;
+  const aScore = athleteScore({ sex, age, heightCm, weightKg, bodyFatPct, lifts, vo2max });
+  const bio = vo2max > 0 ? biologicalAge({ vo2max, age, sex, restingHR, bodyFatPct, heightCm, waistCm }) : null;
 
   return (
     <CalcGrid>
@@ -178,6 +195,57 @@ export default function MyNumbers() {
           </button>{" "}
           tools to fill those in.
         </p>
+      </Card>
+
+      <Card>
+        <CardTitle>Performance &amp; athleticism</CardTitle>
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard
+            label="Athlete score"
+            value={String(aScore.overall)}
+            unit="/ 1000"
+            sub={<Badge tone={aScore.overall >= 500 ? "accent" : "warn"}>{aScore.tier}</Badge>}
+            toolId="athlete-score"
+            toolName="Athlete score"
+          />
+          {strength && (
+            <MetricCard
+              label="Strength score"
+              value={fmt(strength.score, 0)}
+              unit="/ 100"
+              sub={strength.level}
+              toolId="standards"
+              toolName="Strength standards"
+            />
+          )}
+          {bio && (
+            <MetricCard
+              label="Biological age"
+              value={String(bio.biologicalAge)}
+              unit="yr"
+              sub={
+                bio.deltaYears === 0
+                  ? "on your calendar age"
+                  : `${Math.abs(bio.deltaYears)} yr ${bio.deltaYears > 0 ? "younger" : "older"}`
+              }
+              toolId="fitness-age"
+              toolName="Biological age"
+            />
+          )}
+        </div>
+        <div className="mt-4 space-y-2">
+          {!hasLifts && (
+            <EmptyHint actionLabel="Add lifts" onAction={() => go("athlete-score")}>
+              Add your squat, bench, deadlift or pull-ups in <strong>Your stats</strong> to
+              score strength.
+            </EmptyHint>
+          )}
+          {vo2max <= 0 && (
+            <EmptyHint actionLabel="Estimate VO₂max" onAction={() => go("vo2max")}>
+              Add your VO₂max to unlock endurance and your biological age.
+            </EmptyHint>
+          )}
+        </div>
       </Card>
     </CalcGrid>
   );

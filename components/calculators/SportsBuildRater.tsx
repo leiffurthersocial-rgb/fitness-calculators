@@ -79,7 +79,6 @@ export default function SportsBuildRater() {
   const [sprint100, setSprint100] = useState(0); // seconds
   const [vertical, setVertical] = useState(0); // display small-length unit
   const [broad, setBroad] = useState(0); // display small-length unit
-  const [agility, setAgility] = useState(0); // seconds (5-10-5 shuttle)
   const [vo2max, setVo2max] = useState(0); // ml/kg/min
 
   const position =
@@ -105,11 +104,10 @@ export default function SportsBuildRater() {
       sprint100,
       vertical: vertical ? lengthToCm(vertical, units) : 0,
       broad: broad ? lengthToCm(broad, units) : 0,
-      agility,
       vo2max,
       wingspanCm: wingspan ? lengthToCm(wingspan, units) : 0,
     }),
-    [sex, age, height, weight, wingspan, squat, bench, deadlift, ohp, pullups, sprint100, vertical, broad, agility, vo2max, units]
+    [sex, age, height, weight, wingspan, squat, bench, deadlift, ohp, pullups, sprint100, vertical, broad, vo2max, units]
   );
 
   const result = useMemo(
@@ -220,9 +218,6 @@ export default function SportsBuildRater() {
               <Field label={`Broad jump (${su})`} hint="standing long jump">
                 <NumberInput value={broad} onChange={setBroad} suffix={su} />
               </Field>
-              <Field label="Agility 5-10-5" hint="pro-agility shuttle">
-                <NumberInput value={agility} onChange={setAgility} step={0.1} suffix="s" />
-              </Field>
             </div>
 
             <SubLabel>🫀 Endurance &amp; reach</SubLabel>
@@ -244,7 +239,7 @@ export default function SportsBuildRater() {
             Four groups are scored: <strong>physique</strong> (height, BMI &
             wingspan vs the role&apos;s range), <strong>strength</strong>{" "}
             (relative lifts & pull-ups), <strong>power</strong> (100 m,
-            vertical, broad jump &amp; agility) and <strong>endurance</strong>{" "}
+            vertical &amp; broad jump) and <strong>endurance</strong>{" "}
             (VO₂max).
           </p>
           <p>

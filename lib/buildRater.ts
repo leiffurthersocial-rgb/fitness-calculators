@@ -32,12 +32,10 @@ export interface PerfTargets {
   ohp?: number;
   pullups?: number;
   // Power — sprint is seconds over 100 m (lower is better); vertical & broad
-  // (standing long jump) are cm; agility is the 5-10-5 pro-shuttle in s (lower
-  // is better).
+  // (standing long jump) are in cm.
   sprint100?: number;
   vertical?: number;
   broad?: number;
-  agility?: number;
   // Endurance — VO₂max in ml/kg/min.
   vo2max?: number;
 }
@@ -91,8 +89,8 @@ export const SPORTS_DB: BuildSport[] = [
     label: "Basketball",
     reach: true,
     positions: [
-      { key: "pg", label: "Point guard", heightCm: [183, 193], bmi: [22, 25], weights: W(0.35, 0.2, 0.35, 0.1), targets: { squat: 1.6, deadlift: 1.9, pullups: 12, sprint100: 11.6, vertical: 70, agility: 4.3, vo2max: 52 }, metricWeights: { agility: 1.3 }, note: "Quick, agile playmaker — speed, change-of-direction and leaping over size." },
-      { key: "sg", label: "Shooting guard", heightCm: [193, 198], bmi: [22, 25], weights: W(0.4, 0.2, 0.35, 0.05), targets: { squat: 1.6, deadlift: 1.9, pullups: 12, sprint100: 11.6, vertical: 72, agility: 4.35 }, note: "Athletic scorer — height helps, explosive lower body and quick feet matter." },
+      { key: "pg", label: "Point guard", heightCm: [183, 193], bmi: [22, 25], weights: W(0.35, 0.2, 0.35, 0.1), targets: { squat: 1.6, deadlift: 1.9, pullups: 12, sprint100: 11.6, vertical: 70, vo2max: 52 }, note: "Quick, agile playmaker — speed, change-of-direction and leaping over size." },
+      { key: "sg", label: "Shooting guard", heightCm: [193, 198], bmi: [22, 25], weights: W(0.4, 0.2, 0.35, 0.05), targets: { squat: 1.6, deadlift: 1.9, pullups: 12, sprint100: 11.6, vertical: 72 }, note: "Athletic scorer — height helps, explosive lower body and quick feet matter." },
       { key: "sf", label: "Small forward", heightCm: [198, 203], bmi: [23, 26], weights: W(0.45, 0.25, 0.3, 0), targets: { squat: 1.7, bench: 1.25, deadlift: 2.0, pullups: 10, vertical: 70 }, note: "Versatile two-way wing — a blend of size, power and agility." },
       { key: "pf", label: "Power forward", heightCm: [203, 208], bmi: [24, 27], weights: W(0.5, 0.3, 0.2, 0), targets: { squat: 1.8, bench: 1.35, deadlift: 2.1, vertical: 65 }, metricWeights: { height: 1.4 }, note: "Physical interior player — size and strength to bang inside." },
       { key: "c", label: "Center", heightCm: [208, 216], bmi: [25, 28], weights: W(0.65, 0.25, 0.1, 0), targets: { squat: 1.8, bench: 1.4, deadlift: 2.1, vertical: 60 }, metricWeights: { height: 2 }, note: "Rim protector — height is the dominant trait by far." },
@@ -115,11 +113,11 @@ export const SPORTS_DB: BuildSport[] = [
     label: "American football",
     positions: [
       { key: "qb", label: "Quarterback", heightCm: [188, 196], bmi: [25, 28], weights: W(0.35, 0.4, 0.25, 0), targets: { squat: 1.8, bench: 1.4, deadlift: 2.0, ohp: 0.9, vertical: 65 }, note: "Tall enough to see the field; arm and lower-body power for the throw." },
-      { key: "rb", label: "Running back", heightCm: [175, 183], bmi: [27, 30], weights: W(0.25, 0.35, 0.4, 0), targets: { squat: 2.2, bench: 1.5, deadlift: 2.5, pullups: 12, sprint100: 10.9, vertical: 80, broad: 295, agility: 4.3 }, metricWeights: { squat: 1.3, deadlift: 1.2, bench: 0.8, pullups: 0.7, sprint100: 1.2, vertical: 1.0, agility: 1.2 }, note: "Compact, explosive and powerful — elite lower-body strength, speed and cuts." },
-      { key: "wr", label: "Wide receiver", heightCm: [183, 193], bmi: [24, 27], weights: W(0.3, 0.25, 0.45, 0), targets: { squat: 1.9, deadlift: 2.2, pullups: 14, sprint100: 10.7, vertical: 85, broad: 305, agility: 4.2 }, metricWeights: { sprint100: 1.4, vertical: 1.2, squat: 1.0, deadlift: 1.0, pullups: 0.7, agility: 1.2 }, note: "Lean and fast with springy legs — speed, vertical and sharp cuts are everything." },
+      { key: "rb", label: "Running back", heightCm: [175, 183], bmi: [27, 30], weights: W(0.25, 0.35, 0.4, 0), targets: { squat: 2.2, bench: 1.5, deadlift: 2.5, pullups: 12, sprint100: 10.9, vertical: 80, broad: 295 }, metricWeights: { squat: 1.3, deadlift: 1.2, bench: 0.8, pullups: 0.7, sprint100: 1.2, vertical: 1.0 }, note: "Compact, explosive and powerful — elite lower-body strength, speed and cuts." },
+      { key: "wr", label: "Wide receiver", heightCm: [183, 193], bmi: [24, 27], weights: W(0.3, 0.25, 0.45, 0), targets: { squat: 1.9, deadlift: 2.2, pullups: 14, sprint100: 10.7, vertical: 85, broad: 305 }, metricWeights: { sprint100: 1.4, vertical: 1.2, squat: 1.0, deadlift: 1.0, pullups: 0.7 }, note: "Lean and fast with springy legs — speed, vertical and sharp cuts are everything." },
       { key: "ol", label: "Offensive lineman", heightCm: [193, 201], bmi: [33, 38], weights: W(0.45, 0.55, 0, 0), targets: { squat: 2.3, bench: 1.7, deadlift: 2.6, ohp: 1.0 }, metricWeights: { squat: 1.3, bench: 1.3, deadlift: 1.0, ohp: 0.7 }, note: "Huge and immovable — mass plus raw absolute strength; press power off the line." },
-      { key: "lb", label: "Linebacker", heightCm: [185, 193], bmi: [28, 31], weights: W(0.3, 0.35, 0.35, 0), targets: { squat: 2.1, bench: 1.6, deadlift: 2.5, sprint100: 11.0, vertical: 78, broad: 290, agility: 4.4 }, note: "The complete athlete — size, power and speed in balance." },
-      { key: "db", label: "Defensive back", heightCm: [178, 188], bmi: [24, 27], weights: W(0.25, 0.3, 0.45, 0), targets: { squat: 2.0, deadlift: 2.3, pullups: 14, sprint100: 10.7, vertical: 85, broad: 305, agility: 4.15 }, metricWeights: { sprint100: 1.4, vertical: 1.2, squat: 1.0, deadlift: 1.0, pullups: 0.7, agility: 1.3 }, note: "Fast and explosive with elite relative strength and lightning change-of-direction." },
+      { key: "lb", label: "Linebacker", heightCm: [185, 193], bmi: [28, 31], weights: W(0.3, 0.35, 0.35, 0), targets: { squat: 2.1, bench: 1.6, deadlift: 2.5, sprint100: 11.0, vertical: 78, broad: 290 }, note: "The complete athlete — size, power and speed in balance." },
+      { key: "db", label: "Defensive back", heightCm: [178, 188], bmi: [24, 27], weights: W(0.25, 0.3, 0.45, 0), targets: { squat: 2.0, deadlift: 2.3, pullups: 14, sprint100: 10.7, vertical: 85, broad: 305 }, metricWeights: { sprint100: 1.4, vertical: 1.2, squat: 1.0, deadlift: 1.0, pullups: 0.7 }, note: "Fast and explosive with elite relative strength and lightning change-of-direction." },
     ],
   },
   {
@@ -229,8 +227,8 @@ export const SPORTS_DB: BuildSport[] = [
     label: "Tennis",
     reach: true,
     positions: [
-      { key: "player", label: "Singles player", heightCm: [183, 193], bmi: [22, 25], weights: W(0.3, 0.25, 0.25, 0.2), targets: { squat: 1.8, deadlift: 2.0, sprint100: 11.4, vertical: 62, agility: 4.4, vo2max: 55 }, metricWeights: { agility: 1.3 }, note: "Explosive multidirectional power and a big serve, with the engine for long rallies." },
-      { key: "doubles", label: "Doubles specialist", heightCm: [185, 198], bmi: [23, 26], weights: W(0.4, 0.25, 0.25, 0.1), targets: { squat: 1.7, deadlift: 1.9, vertical: 60, agility: 4.5 }, metricWeights: { wingspan: 1.5, height: 1.2 }, note: "Tall reach to dominate the net — wingspan, quick hands and a serve to set up the volley." },
+      { key: "player", label: "Singles player", heightCm: [183, 193], bmi: [22, 25], weights: W(0.3, 0.25, 0.25, 0.2), targets: { squat: 1.8, deadlift: 2.0, sprint100: 11.4, vertical: 62, vo2max: 55 }, note: "Explosive multidirectional power and a big serve, with the engine for long rallies." },
+      { key: "doubles", label: "Doubles specialist", heightCm: [185, 198], bmi: [23, 26], weights: W(0.4, 0.25, 0.25, 0.1), targets: { squat: 1.7, deadlift: 1.9, vertical: 60 }, metricWeights: { wingspan: 1.5, height: 1.2 }, note: "Tall reach to dominate the net — wingspan, quick hands and a serve to set up the volley." },
     ],
   },
   {
@@ -258,18 +256,18 @@ export const SPORTS_DB: BuildSport[] = [
     positions: [
       { key: "fast", label: "Fast bowler", heightCm: [185, 196], bmi: [23, 26], weights: W(0.35, 0.25, 0.2, 0.2), targets: { squat: 1.9, deadlift: 2.2, sprint100: 11.6, vertical: 62, vo2max: 54 }, metricWeights: { height: 1.4 }, note: "Tall, whippy and durable — height for bounce, with the engine for long spells." },
       { key: "spin", label: "Spin bowler", heightCm: [173, 185], bmi: [23, 27], weights: W(0.2, 0.25, 0.15, 0.4), targets: { squat: 1.7, deadlift: 1.9, vo2max: 52 }, note: "Subtle and tireless — wrists and control over raw athleticism." },
-      { key: "bat", label: "Batsman", heightCm: [175, 188], bmi: [23, 26], weights: W(0.25, 0.3, 0.3, 0.15), targets: { squat: 1.8, deadlift: 2.0, sprint100: 11.4, vertical: 58, agility: 4.5 }, note: "Quick hands and feet — rotational power, sharp running and concentration." },
-      { key: "keeper", label: "Wicketkeeper", heightCm: [170, 182], bmi: [23, 26], weights: W(0.2, 0.25, 0.35, 0.2), targets: { squat: 1.8, vertical: 60, sprint100: 11.5, agility: 4.3 }, metricWeights: { agility: 1.4 }, note: "Lightning reflexes, low squatting endurance and explosive lateral movement." },
+      { key: "bat", label: "Batsman", heightCm: [175, 188], bmi: [23, 26], weights: W(0.25, 0.3, 0.3, 0.15), targets: { squat: 1.8, deadlift: 2.0, sprint100: 11.4, vertical: 58 }, note: "Quick hands and feet — rotational power, sharp running and concentration." },
+      { key: "keeper", label: "Wicketkeeper", heightCm: [170, 182], bmi: [23, 26], weights: W(0.2, 0.25, 0.35, 0.2), targets: { squat: 1.8, vertical: 60, sprint100: 11.5 }, note: "Lightning reflexes, low squatting endurance and explosive lateral movement." },
     ],
   },
   {
     key: "fieldhockey",
     label: "Field hockey",
     positions: [
-      { key: "forward", label: "Forward", heightCm: [173, 183], bmi: [22, 25], weights: W(0.2, 0.2, 0.3, 0.3), targets: { squat: 1.8, deadlift: 2.0, sprint100: 11.2, vertical: 60, agility: 4.4, vo2max: 58 }, note: "Sharp, fast and low to the turf — acceleration and a big engine." },
+      { key: "forward", label: "Forward", heightCm: [173, 183], bmi: [22, 25], weights: W(0.2, 0.2, 0.3, 0.3), targets: { squat: 1.8, deadlift: 2.0, sprint100: 11.2, vertical: 60, vo2max: 58 }, note: "Sharp, fast and low to the turf — acceleration and a big engine." },
       { key: "mid", label: "Midfielder", heightCm: [172, 183], bmi: [21, 24], weights: W(0.2, 0.15, 0.2, 0.45), targets: { squat: 1.7, deadlift: 1.9, sprint100: 11.5, vo2max: 62 }, note: "Box-to-box engine — endurance first, with the pace to break." },
       { key: "def", label: "Defender", heightCm: [175, 186], bmi: [22, 25], weights: W(0.3, 0.25, 0.2, 0.25), targets: { squat: 1.9, deadlift: 2.1, sprint100: 11.4, vo2max: 56 }, note: "Strong and composed — duels, drag-flick power and stamina." },
-      { key: "gk", label: "Goalkeeper", heightCm: [178, 190], bmi: [24, 27], weights: W(0.4, 0.2, 0.4, 0), targets: { squat: 1.7, vertical: 60, agility: 4.2 }, metricWeights: { agility: 1.4, height: 1.2 }, note: "Padded and explosive — reactive lateral power and quick feet." },
+      { key: "gk", label: "Goalkeeper", heightCm: [178, 190], bmi: [24, 27], weights: W(0.4, 0.2, 0.4, 0), targets: { squat: 1.7, vertical: 60 }, metricWeights: { height: 1.2 }, note: "Padded and explosive — reactive lateral power and quick feet." },
     ],
   },
   {
@@ -277,10 +275,10 @@ export const SPORTS_DB: BuildSport[] = [
     label: "Lacrosse",
     reach: true,
     positions: [
-      { key: "attack", label: "Attacker", heightCm: [178, 188], bmi: [24, 27], weights: W(0.25, 0.3, 0.4, 0.05), targets: { squat: 1.9, deadlift: 2.2, sprint100: 11.0, vertical: 72, agility: 4.3 }, metricWeights: { agility: 1.3 }, note: "Dodgy and explosive — first-step quickness and a powerful shot." },
+      { key: "attack", label: "Attacker", heightCm: [178, 188], bmi: [24, 27], weights: W(0.25, 0.3, 0.4, 0.05), targets: { squat: 1.9, deadlift: 2.2, sprint100: 11.0, vertical: 72 }, note: "Dodgy and explosive — first-step quickness and a powerful shot." },
       { key: "mid", label: "Midfielder", heightCm: [180, 190], bmi: [24, 27], weights: W(0.25, 0.25, 0.3, 0.2), targets: { squat: 2.0, deadlift: 2.2, sprint100: 11.0, vertical: 70, vo2max: 56 }, note: "Two-way engine — speed, power and the conditioning to run all game." },
       { key: "def", label: "Defender", heightCm: [183, 193], bmi: [25, 28], weights: W(0.35, 0.3, 0.3, 0.05), targets: { squat: 2.0, deadlift: 2.3, sprint100: 11.2, vertical: 68 }, metricWeights: { wingspan: 1.4, height: 1.2 }, note: "Long levers with the long pole — reach, strength and slide speed." },
-      { key: "goalie", label: "Goalie", heightCm: [178, 190], bmi: [24, 28], weights: W(0.35, 0.2, 0.45, 0), targets: { squat: 1.7, vertical: 62, agility: 4.2 }, metricWeights: { agility: 1.5, wingspan: 1.3 }, note: "Cat-quick reactions and reach to fill the net." },
+      { key: "goalie", label: "Goalie", heightCm: [178, 190], bmi: [24, 28], weights: W(0.35, 0.2, 0.45, 0), targets: { squat: 1.7, vertical: 62 }, metricWeights: { wingspan: 1.3 }, note: "Cat-quick reactions and reach to fill the net." },
     ],
   },
   {
@@ -289,9 +287,9 @@ export const SPORTS_DB: BuildSport[] = [
     reach: true,
     positions: [
       { key: "back", label: "Backcourt", heightCm: [190, 200], bmi: [25, 28], weights: W(0.35, 0.3, 0.35, 0), targets: { squat: 1.9, bench: 1.3, deadlift: 2.1, vertical: 75, sprint100: 11.2 }, metricWeights: { height: 1.4, vertical: 1.2 }, note: "Tall jump-shooters — height and a huge leaping throw over the wall." },
-      { key: "wing", label: "Wing", heightCm: [178, 188], bmi: [23, 26], weights: W(0.2, 0.25, 0.45, 0.1), targets: { squat: 1.9, deadlift: 2.1, sprint100: 10.9, vertical: 78, agility: 4.3 }, metricWeights: { vertical: 1.3, sprint100: 1.2 }, note: "Fast-break flyers — top speed and a soaring dive-shot off the wing." },
+      { key: "wing", label: "Wing", heightCm: [178, 188], bmi: [23, 26], weights: W(0.2, 0.25, 0.45, 0.1), targets: { squat: 1.9, deadlift: 2.1, sprint100: 10.9, vertical: 78 }, metricWeights: { vertical: 1.3, sprint100: 1.2 }, note: "Fast-break flyers — top speed and a soaring dive-shot off the wing." },
       { key: "pivot", label: "Pivot", heightCm: [190, 200], bmi: [27, 31], weights: W(0.4, 0.45, 0.15, 0), targets: { squat: 2.1, bench: 1.5, deadlift: 2.4 }, metricWeights: { bench: 1.2 }, note: "The wrecking ball — mass and brute strength to hold position in the six." },
-      { key: "gk", label: "Goalkeeper", heightCm: [190, 200], bmi: [24, 27], weights: W(0.45, 0.15, 0.4, 0), targets: { vertical: 58, agility: 4.2 }, metricWeights: { wingspan: 1.6, height: 1.3, agility: 1.3 }, note: "Big wingspan and explosive limbs — reach and reflexes win saves." },
+      { key: "gk", label: "Goalkeeper", heightCm: [190, 200], bmi: [24, 27], weights: W(0.45, 0.15, 0.4, 0), targets: { vertical: 58 }, metricWeights: { wingspan: 1.6, height: 1.3 }, note: "Big wingspan and explosive limbs — reach and reflexes win saves." },
     ],
   },
   {
@@ -329,7 +327,7 @@ export const SPORTS_DB: BuildSport[] = [
       { key: "mid", label: "Midfielder", heightCm: [183, 190], bmi: [23, 26], weights: W(0.25, 0.2, 0.25, 0.3), targets: { squat: 1.9, deadlift: 2.1, sprint100: 11.0, vertical: 70, vo2max: 60 }, note: "Relentless runners — elite endurance with the burst to win the contest." },
       { key: "key", label: "Key forward / back", heightCm: [193, 201], bmi: [24, 27], weights: W(0.4, 0.25, 0.3, 0.05), targets: { squat: 1.9, deadlift: 2.2, vertical: 78, sprint100: 11.2 }, metricWeights: { height: 1.4, vertical: 1.3 }, note: "Tall marking targets — height and a towering leap for the grab." },
       { key: "ruck", label: "Ruckman", heightCm: [200, 208], bmi: [25, 28], weights: W(0.55, 0.25, 0.2, 0), targets: { squat: 1.9, deadlift: 2.2, vertical: 70 }, metricWeights: { height: 2 }, note: "The tallest on the ground — reach and a standing leap to win the tap." },
-      { key: "small", label: "Small / rover", heightCm: [173, 182], bmi: [22, 25], weights: W(0.15, 0.2, 0.35, 0.3), targets: { squat: 1.9, deadlift: 2.1, sprint100: 10.9, vertical: 68, agility: 4.3, vo2max: 58 }, metricWeights: { agility: 1.3 }, note: "Low, quick and clever — agility and acceleration at ground level." },
+      { key: "small", label: "Small / rover", heightCm: [173, 182], bmi: [22, 25], weights: W(0.15, 0.2, 0.35, 0.3), targets: { squat: 1.9, deadlift: 2.1, sprint100: 10.9, vertical: 68, vo2max: 58 }, note: "Low, quick and clever — agility and acceleration at ground level." },
     ],
   },
   {
@@ -337,9 +335,9 @@ export const SPORTS_DB: BuildSport[] = [
     label: "Netball",
     reach: true,
     positions: [
-      { key: "shooter", label: "Shooter (GS/GA)", heightCm: [185, 196], bmi: [22, 25], weights: W(0.45, 0.2, 0.3, 0.05), targets: { squat: 1.6, vertical: 58, agility: 4.5 }, metricWeights: { height: 1.5, wingspan: 1.3 }, note: "Tall, poised and accurate — height and reach to shoot over the defence." },
-      { key: "centre", label: "Centre court (C/WA/WD)", heightCm: [175, 185], bmi: [21, 24], weights: W(0.25, 0.2, 0.3, 0.25), targets: { vertical: 55, sprint100: 12.0, agility: 4.4, vo2max: 54 }, metricWeights: { agility: 1.4 }, note: "The engine — endless running, sharp changes of direction and quick hands." },
-      { key: "defence", label: "Defender (GK/GD)", heightCm: [183, 193], bmi: [22, 25], weights: W(0.4, 0.2, 0.35, 0.05), targets: { vertical: 60, agility: 4.4 }, metricWeights: { height: 1.4, wingspan: 1.4, agility: 1.2 }, note: "Long and springy — reach and a quick vertical to intercept and rebound." },
+      { key: "shooter", label: "Shooter (GS/GA)", heightCm: [185, 196], bmi: [22, 25], weights: W(0.45, 0.2, 0.3, 0.05), targets: { squat: 1.6, vertical: 58 }, metricWeights: { height: 1.5, wingspan: 1.3 }, note: "Tall, poised and accurate — height and reach to shoot over the defence." },
+      { key: "centre", label: "Centre court (C/WA/WD)", heightCm: [175, 185], bmi: [21, 24], weights: W(0.25, 0.2, 0.3, 0.25), targets: { vertical: 55, sprint100: 12.0, vo2max: 54 }, note: "The engine — endless running, sharp changes of direction and quick hands." },
+      { key: "defence", label: "Defender (GK/GD)", heightCm: [183, 193], bmi: [22, 25], weights: W(0.4, 0.2, 0.35, 0.05), targets: { vertical: 60 }, metricWeights: { height: 1.4, wingspan: 1.4 }, note: "Long and springy — reach and a quick vertical to intercept and rebound." },
     ],
   },
   {
@@ -377,7 +375,7 @@ export const SPORTS_DB: BuildSport[] = [
     key: "general",
     label: "General athletic build",
     positions: [
-      { key: "athlete", label: "All-round athlete", heightCm: [170, 190], bmi: [22, 26], weights: W(0.3, 0.3, 0.2, 0.2), targets: { squat: 1.8, bench: 1.3, deadlift: 2.2, ohp: 0.9, pullups: 12, sprint100: 12.5, vertical: 55, broad: 240, agility: 4.7, vo2max: 45 }, note: "A well-rounded, capable physique — strong, lean, fast and fit." },
+      { key: "athlete", label: "All-round athlete", heightCm: [170, 190], bmi: [22, 26], weights: W(0.3, 0.3, 0.2, 0.2), targets: { squat: 1.8, bench: 1.3, deadlift: 2.2, ohp: 0.9, pullups: 12, sprint100: 12.5, vertical: 55, broad: 240, vo2max: 45 }, note: "A well-rounded, capable physique — strong, lean, fast and fit." },
     ],
   },
 ];
@@ -396,7 +394,6 @@ export interface BuildInput {
   sprint100?: number;
   vertical?: number;
   broad?: number; // standing long jump, cm
-  agility?: number; // 5-10-5 pro-agility shuttle, seconds (lower is better)
   vo2max?: number;
   wingspanCm?: number; // arm span, for the ape-index (reach) metric
   reach?: boolean; // does the sport reward reach? (basketball, volleyball, …)
@@ -463,7 +460,7 @@ const FEMALE_HEIGHT_SHIFT = -11; // cm
 const FEMALE = {
   squat: 0.7, bench: 0.62, deadlift: 0.7, ohp: 0.6, pullups: 0.45,
   vertical: 0.72, broad: 0.78, vo2max: 0.88,
-  sprint100: 1.1, agility: 1.08, // slower target time/shuttle
+  sprint100: 1.1, // slower target time
 };
 
 const GROUP_LABELS: Record<AttributeGroup, string> = {
@@ -584,7 +581,6 @@ export function rateBuild(input: BuildInput, position: BuildPosition): BuildResu
   addMetric("sprint100", "100 m sprint", "power", input.sprint100, t.sprint100, { lowerBetter: true, femaleKey: "sprint100", ageMult: aP });
   addMetric("vertical", "Vertical jump", "power", input.vertical, t.vertical, { femaleKey: "vertical", unit: " cm", ageMult: aP });
   addMetric("broad", "Broad jump", "power", input.broad, t.broad, { femaleKey: "broad", unit: " cm", ageMult: aP });
-  addMetric("agility", "Agility (5-10-5)", "power", input.agility, t.agility, { lowerBetter: true, femaleKey: "agility", ageMult: aP });
   addMetric("vo2max", "VO₂max", "endurance", input.vo2max, t.vo2max, { femaleKey: "vo2max", ageMult: aP });
 
   // Wingspan / ape index — long arms help in reach sports (basketball,

@@ -249,6 +249,10 @@ export interface PlanInput {
   maxSets?: number; // cap on working sets per session (0 / undefined = no cap)
   oneRMs?: Partial<Record<MainLift, number>>; // kg
   weakLifts?: MainLift[];
+  // Customisation overrides (undefined = use the goal's default).
+  includeConditioning?: boolean; // force cardio finishers on/off
+  includePlyo?: boolean; // force jump work on/off
+  emphasis?: Muscle; // add a set to exercises that hit this muscle
 }
 
 /** Suggest a default goal from a sport's dominant attribute-group weighting. */
@@ -266,7 +270,7 @@ export function goalForSport(sportKey: string, positionKey: string): Goal {
   return "athletic";
 }
 
-const MUSCLES: Muscle[] = ["Quads", "Hamstrings", "Glutes", "Chest", "Back", "Shoulders", "Arms", "Core"];
+export const MUSCLES: Muscle[] = ["Quads", "Hamstrings", "Glutes", "Chest", "Back", "Shoulders", "Arms", "Core"];
 
 /** Productive weekly set range per muscle for the goal (for the volume readout). */
 export function volumeTarget(goal: Goal): { min: number; max: number; label: string } {
@@ -280,6 +284,10 @@ export function generatePlan(input: PlanInput): WorkoutPlan {
 
   const scheme = GOAL_SCHEMES[input.goal];
   const weak = new Set(input.weakLifts ?? []);
+  // Customisation: fall back to the goal's defaults when not overridden.
+  const wantPlyo = input.includePlyo ?? scheme.plyo;
+  const wantCond = input.includeConditioning ?? scheme.conditioning;
+  const emphasis = input.emphasis;
   const split = splitFor(input.daysPerWeek, input.split);
   const splitLabel = SPLIT_DEFS[input.split]?.days === input.daysPerWeek
     ? SPLIT_DEFS[input.split].label
@@ -298,19 +306,22 @@ export function generatePlan(input: PlanInput): WorkoutPlan {
   // Conditioning is limited to ~2 sessions/week (every other day) rather than
   // every session — enough to build a base without blunting strength gains.
   const condDays = new Set<number>();
-  if (scheme.conditioning) {
+  if (wantCond) {
     for (let i = 1; i < split.length && condDays.size < 2; i += 2) condDays.add(i);
   }
 
   const days: PlanDay[] = split.map((day, dayIdx) => {
     const isLegDay = day.exercises.some((e) => ["squat", "hinge", "lunge"].includes(e.pattern));
-    const hasPlyo = scheme.plyo && isLegDay;
+    const hasPlyo = wantPlyo && isLegDay;
 
     // First pass: build the lifts with their planned set counts.
     const built = day.exercises.map((ex, i) => {
       const isMain = ex.role === "main" || i === 0;
-      const emphasised = !!ex.mainLift && weak.has(ex.mainLift);
-      const sets = (isMain ? scheme.mainSets : scheme.accSets) + (emphasised ? 1 : 0);
+      const liftEmph = !!ex.mainLift && weak.has(ex.mainLift);
+      const muscleEmph = !!emphasis && ex.primary.includes(emphasis);
+      const emphasised = liftEmph || muscleEmph;
+      const sets =
+        (isMain ? scheme.mainSets : scheme.accSets) + (liftEmph ? 1 : 0) + (muscleEmph ? 1 : 0);
       return { ex, isMain, emphasised, sets };
     });
     let plyoSets = hasPlyo ? 4 : 0;
@@ -365,10 +376,11 @@ export function generatePlan(input: PlanInput): WorkoutPlan {
   notes.push(`Every muscle is trained ~2× per week — at matched volume that out-grows once-weekly splits. ${vt.label}.`);
   notes.push(`Take most sets to ${scheme.rir} (stop a rep or two short of failure); push the last set of an exercise closest to failure.`);
   notes.push(`Main lifts: ${scheme.mainSets}×${scheme.mainReps}${input.equipment === "full" ? ` at ~${Math.round(scheme.mainPct * 100)}% 1RM` : ""}; rest ~${scheme.restSec >= 60 ? scheme.restSec / 60 + " min" : scheme.restSec + "s"} on compounds.`);
-  if (scheme.plyo || scheme.conditioning)
-    notes.push(`${scheme.plyo ? "Plyometrics open the leg days" : ""}${scheme.plyo && scheme.conditioning ? "; " : ""}${scheme.conditioning ? "conditioning runs on ~2 days" : ""} — both count toward your per-session set total.`);
+  if (wantPlyo || wantCond)
+    notes.push(`${wantPlyo ? "Plyometrics open the leg days" : ""}${wantPlyo && wantCond ? "; " : ""}${wantCond ? "conditioning runs on ~2 days" : ""} — both count toward your per-session set total.`);
   if (cap !== Infinity) notes.push(`Capped at ${cap} working sets per session — accessories were trimmed first, then plyos, then main lifts.`);
   if (weak.size) notes.push(`Extra set added to your weak lift${weak.size > 1 ? "s" : ""}: ${[...weak].join(", ")}.`);
+  if (emphasis) notes.push(`Emphasis on ${emphasis} — an extra set added to every exercise that trains it.`);
   notes.push("Progress weekly: add reps until you reach the top of the range on all sets, then add ~2.5 kg / 5 lb.");
   notes.push("Deload every 4–6 weeks (halve the sets, drop intensity) to manage fatigue.");
 

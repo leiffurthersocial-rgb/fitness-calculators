@@ -9,7 +9,7 @@ import RpeConverter from "@/components/calculators/RpeConverter";
 import StrengthScore from "@/components/calculators/StrengthScore";
 import WorkoutPlan from "@/components/calculators/WorkoutPlan";
 import SportsBuildRater from "@/components/calculators/SportsBuildRater";
-import PowerliftingPoints from "@/components/calculators/PowerliftingPoints";
+import AthleteScore from "@/components/calculators/AthleteScore";
 import AgeGradedRunning from "@/components/calculators/AgeGradedRunning";
 import FitnessAge from "@/components/calculators/FitnessAge";
 import Vo2Max from "@/components/calculators/Vo2Max";
@@ -31,6 +31,7 @@ import CalorieBurn from "@/components/calculators/CalorieBurn";
 import Caffeine from "@/components/calculators/Caffeine";
 import Sleep from "@/components/calculators/Sleep";
 import Water from "@/components/calculators/Water";
+import SweatRate from "@/components/calculators/SweatRate";
 
 export interface Tool {
   id: string;
@@ -66,9 +67,9 @@ export const TOOL_GROUPS: ToolGroup[] = [
     group: "Compete",
     emoji: "🏆",
     tools: [
-      { id: "pl-points", name: "Powerlifting points", blurb: "Wilks, DOTS & IPF GL from your total", Component: PowerliftingPoints },
+      { id: "athlete-score", name: "Athlete score", blurb: "One all-round 0–1000 athleticism score", Component: AthleteScore },
       { id: "age-grade", name: "Age-graded running", blurb: "Compare race times across age & sex", Component: AgeGradedRunning },
-      { id: "fitness-age", name: "Fitness age", blurb: "How old is your body, by VO₂max?", Component: FitnessAge },
+      { id: "fitness-age", name: "Biological age", blurb: "How old is your body, really?", Component: FitnessAge },
     ],
   },
   {
@@ -119,6 +120,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "caffeine", name: "Caffeine tracker", blurb: "Half-life decay curve", Component: Caffeine },
       { id: "sleep", name: "Sleep cycles", blurb: "Best bed / wake times", Component: Sleep },
       { id: "water", name: "Water intake", blurb: "Daily hydration target", Component: Water },
+      { id: "sweat-rate", name: "Sweat rate", blurb: "Weigh-in/out → fluid replacement", Component: SweatRate },
     ],
   },
 ];

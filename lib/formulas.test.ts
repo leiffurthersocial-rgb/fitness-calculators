@@ -34,13 +34,12 @@ import {
   swimZones,
   inclineFlatPace,
   raceSplits,
-  wilksScore,
-  ipfGlPoints,
-  powerliftingPoints,
   runAgeFactor,
   ageGradedRunning,
   fitnessAge,
+  biologicalAge,
   RACE_STANDARDS,
+  sweatRate,
 } from "./formulas";
 
 describe("rep max", () => {
@@ -279,34 +278,6 @@ describe("race splits", () => {
   });
 });
 
-describe("competition scoring — powerlifting points", () => {
-  it("Wilks gives a sane elite score for a big male total", () => {
-    // 700 kg total at 93 kg bodyweight ≈ low-mid 400s Wilks.
-    const w = wilksScore(700, 93, "male");
-    expect(w).toBeGreaterThan(400);
-    expect(w).toBeLessThan(480);
-  });
-
-  it("IPF GL gives ~90 points for a world-class male total", () => {
-    const gl = ipfGlPoints(700, 93, "male");
-    expect(gl).toBeGreaterThan(85);
-    expect(gl).toBeLessThan(100);
-  });
-
-  it("a lighter lifter with the same total scores higher (pound-for-pound)", () => {
-    const light = wilksScore(600, 75, "male");
-    const heavy = wilksScore(600, 120, "male");
-    expect(light).toBeGreaterThan(heavy);
-  });
-
-  it("powerliftingPoints returns all three systems", () => {
-    const p = powerliftingPoints(500, 80, "female");
-    expect(p.wilks).toBeGreaterThan(0);
-    expect(p.dots).toBeGreaterThan(0);
-    expect(p.ipfGl).toBeGreaterThan(0);
-  });
-});
-
 describe("competition scoring — age-graded running", () => {
   it("age factor is 1.0 in the open prime and declines with age", () => {
     expect(runAgeFactor(28)).toBeCloseTo(1.0, 5);
@@ -344,5 +315,59 @@ describe("competition scoring — fitness age", () => {
   it("clamps fitness age to the 18–80 range", () => {
     expect(fitnessAge(80, 25, "male").fitnessAge).toBe(18);
     expect(fitnessAge(10, 70, "female").fitnessAge).toBe(80);
+  });
+});
+
+describe("sweat rate & hydration", () => {
+  it("computes sweat rate from weigh-in/out plus fluid intake", () => {
+    // Lost 1 kg net, drank 0.5 L over 1 h → 1.5 L sweat, 1.5 L/h.
+    const r = sweatRate({ preKg: 80, postKg: 79, durationHr: 1, fluidIntakeL: 0.5 });
+    expect(r.sweatLossL).toBeCloseTo(1.5, 5);
+    expect(r.sweatRateLPerHr).toBeCloseTo(1.5, 5);
+    expect(r.netDeficitL).toBeCloseTo(1.0, 5);
+  });
+
+  it("flags >2% body-mass loss as performance-impairing", () => {
+    const r = sweatRate({ preKg: 70, postKg: 68.3, durationHr: 1.5, fluidIntakeL: 0 });
+    expect(r.pctBodyMassLoss).toBeGreaterThan(2);
+    expect(r.status).toMatch(/impairing|Significant/i);
+  });
+
+  it("targets ~150% of the deficit for rehydration and scales sodium with sweat", () => {
+    const r = sweatRate({ preKg: 80, postKg: 78, durationHr: 2, fluidIntakeL: 0, sweatSodiumMgPerL: 1000 });
+    expect(r.rehydrationTargetL).toBeCloseTo(3.0, 5); // 2 L deficit × 1.5
+    expect(r.sodiumLossMg).toBeCloseTo(2000, 0); // 2 L sweat × 1000 mg/L
+  });
+
+  it("detects overhydration when weight goes up", () => {
+    const r = sweatRate({ preKg: 70, postKg: 71, durationHr: 2, fluidIntakeL: 1.5 });
+    expect(r.pctBodyMassLoss).toBeLessThan(0);
+    expect(r.status).toMatch(/Overhydrated/i);
+  });
+});
+
+describe("biological age (multi-factor)", () => {
+  it("a fit, lean non-smoker comes out younger than calendar age", () => {
+    const r = biologicalAge({ vo2max: 52, age: 45, sex: "male", restingHR: 52, bodyFatPct: 12 });
+    expect(r.biologicalAge).toBeLessThan(45);
+    expect(r.deltaYears).toBeGreaterThan(0);
+  });
+
+  it("poor markers and smoking add years over the fitness baseline", () => {
+    const base = biologicalAge({ vo2max: 34, age: 40, sex: "male" });
+    const worse = biologicalAge({ vo2max: 34, age: 40, sex: "male", restingHR: 80, bodyFatPct: 30, heightCm: 178, waistCm: 105, smoker: true });
+    expect(worse.biologicalAge).toBeGreaterThan(base.biologicalAge);
+    expect(worse.factors.find((f) => f.key === "smoker")!.years).toBe(6);
+  });
+
+  it("always includes the aerobic-fitness baseline factor first", () => {
+    const r = biologicalAge({ vo2max: 45, age: 35, sex: "female", restingHR: 70 });
+    expect(r.factors[0].key).toBe("vo2max");
+    expect(r.factors.some((f) => f.key === "rhr")).toBe(true);
+  });
+
+  it("clamps individual factor contributions", () => {
+    const r = biologicalAge({ vo2max: 40, age: 40, sex: "male", restingHR: 200 });
+    expect(r.factors.find((f) => f.key === "rhr")!.years).toBeLessThanOrEqual(6);
   });
 });

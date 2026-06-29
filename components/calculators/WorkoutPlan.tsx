@@ -11,12 +11,14 @@ import {
   InfoNote,
   Badge,
   Tip,
+  EmptyHint,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
 import { useWeightField } from "@/lib/profile";
 import {
   GOALS,
   EQUIPMENT,
+  MUSCLES,
   generatePlan,
   goalForSport,
   volumeTarget,
@@ -26,6 +28,7 @@ import {
   type MainLift,
   type Equipment,
   type Split,
+  type Muscle,
 } from "@/lib/workoutPlan";
 import { SPORTS_DB } from "@/lib/buildRater";
 import {
@@ -54,6 +57,10 @@ export default function WorkoutPlan() {
   const [equipment, setEquipment] = useState<Equipment>("full");
   const [maxSets, setMaxSets] = useState(0); // 0 = no cap
   const [tailor, setTailor] = useState(false);
+  // Customisation: "auto" defers to the goal; on/off overrides it.
+  const [conditioning, setConditioning] = useState<"auto" | "on" | "off">("auto");
+  const [plyo, setPlyo] = useState<"auto" | "on" | "off">("auto");
+  const [emphasis, setEmphasis] = useState<Muscle | "none">("none");
   const isEndurance = goal === "endurance";
 
   // Switching frequency resets the split to a valid default for that day count.
@@ -108,8 +115,11 @@ export default function WorkoutPlan() {
       maxSets,
       oneRMs: rmKg,
       weakLifts,
+      includeConditioning: conditioning === "auto" ? undefined : conditioning === "on",
+      includePlyo: plyo === "auto" ? undefined : plyo === "on",
+      emphasis: emphasis === "none" ? undefined : emphasis,
     });
-  }, [goal, days, split, equipment, inc, maxSets, oneRMs, weakLifts, units]);
+  }, [goal, days, split, equipment, inc, maxSets, oneRMs, weakLifts, conditioning, plyo, emphasis, units]);
 
   const vt = volumeTarget(goal);
 
@@ -168,6 +178,42 @@ export default function WorkoutPlan() {
                   ]}
                 />
               </Field>
+            )}
+            {!isEndurance && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Conditioning" hint="cardio finishers">
+                  <Select
+                    value={conditioning}
+                    onChange={setConditioning}
+                    options={[
+                      { value: "auto", label: "Auto (by goal)" },
+                      { value: "on", label: "Include" },
+                      { value: "off", label: "None" },
+                    ]}
+                  />
+                </Field>
+                <Field label="Plyometrics" hint="jump work">
+                  <Select
+                    value={plyo}
+                    onChange={setPlyo}
+                    options={[
+                      { value: "auto", label: "Auto (by goal)" },
+                      { value: "on", label: "Include" },
+                      { value: "off", label: "None" },
+                    ]}
+                  />
+                </Field>
+                <Field label="Emphasis muscle" hint="extra weekly volume">
+                  <Select
+                    value={emphasis}
+                    onChange={setEmphasis}
+                    options={[
+                      { value: "none", label: "None" },
+                      ...MUSCLES.map((m) => ({ value: m, label: m })),
+                    ]}
+                  />
+                </Field>
+              </div>
             )}
             <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
               <input
@@ -252,6 +298,12 @@ export default function WorkoutPlan() {
                   </Badge>
                 ))}
               </div>
+            )}
+            {equipment === "full" && LIFTS.every((l) => oneRMs[l.key] === 0) && (
+              <EmptyHint>
+                Enter your 1RMs to get exact working weights — otherwise the plan
+                shows %1RM targets to fill in yourself.
+              </EmptyHint>
             )}
           </div>
         </div>

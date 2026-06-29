@@ -5,9 +5,14 @@ A concrete, prioritisable list of things we could build. Split into **little**
 Constraint that shapes all of this: the site stays **static — no backend, no
 accounts** — so everything is pure formulas + localStorage + URL state.
 
-Already shipped recently: expanded Sports Build Rater (30 sports), and the
-**Compete** group — Powerlifting points (Wilks/DOTS/IPF GL), Age-graded running,
-and Fitness age. See `docs/site-roadmap.md` for the strategic phasing.
+Already shipped: expanded Sports Build Rater (30 sports); the **Compete** group —
+**Athlete Score** (0–1000 composite), Age-graded running and a multi-factor
+**Biological age**; a **Sweat-rate & hydration** tool with a fluid-balance graph;
+an expanded **profile** (saved lifts, VO₂max, waist); a beefed-up **My Numbers**
+dashboard; reusable empty-state hints; and extra **workout-planner** controls
+(conditioning / plyometrics toggles, emphasis muscle). The old Powerlifting-points
+tool and the 5-10-5 agility metric were removed as redundant/uncommon.
+See `docs/site-roadmap.md` for the strategic phasing.
 
 ---
 
@@ -61,11 +66,10 @@ and Fitness age. See `docs/site-roadmap.md` for the strategic phasing.
 ## Big updates (projects)
 
 ### Competition & comparison (fits the static model)
-- **Athlete Score** — one 0–1000 composite (strength/power/endurance/body-comp,
-  each as an age/sex/bodyweight percentile) with a radar and percentile
-  call-outs. The flagship "driven people" number; pure, no backend.
-  *Depends on:* a shared `lib/score.ts` percentile engine over the existing norm
-  tables. Effort: M–L.
+- ~~**Athlete Score**~~ — ✅ shipped (`lib/score.ts` + the Athlete score tool):
+  a 0–1000 composite over strength/endurance/body-comp/power, each an
+  age/sex/bodyweight percentile, with a radar and tier. Next: feed its sub-score
+  percentiles into a shared "where do I rank" line across the other tools.
 - **Shareable score card** — render the Athlete Score (or a PR/age-grade) as a
   styled card + dynamic OG image, encoded in the URL. The competition *is* the
   share when there's no server. Effort: M.

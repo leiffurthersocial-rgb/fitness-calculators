@@ -39,19 +39,31 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     faq: [
       { q: "Which sport suits my build best?", a: "Fill in your height, weight and any performance numbers, and the best-fit finder scores you against every sport and position in the database — then ranks the top matches so you can tap straight into the one that fits you most." },
       { q: "Do I need to enter all the performance fields?", a: "No. Everything except height and weight is optional. The rating only ever reflects what you enter, and a confidence read-out tells you how much of what the role demands you've actually measured — so add lifts, sprint, jumps or VO₂max for a sharper score." },
-      { q: "What are the broad jump and 5-10-5 agility tests?", a: "They're standard combine measures of explosive power and change-of-direction. The broad (standing long) jump is horizontal leg power; the 5-10-5 pro-agility shuttle times how fast you can decelerate and re-accelerate — both feed the power score for sports that reward quickness." },
+      { q: "What is the broad jump?", a: "The broad (standing long) jump is a standard combine measure of horizontal leg power: from a standstill, jump forward as far as you can and measure heel-to-toe. It feeds the power score alongside the vertical jump and sprint for sports that reward explosiveness." },
     ],
   },
-  "pl-points": {
+  "athlete-score": {
     description:
-      "Calculate your Wilks, DOTS and IPF GL points from your squat, bench and deadlift total — bodyweight-adjusted scores that compare powerlifters of any size on one number.",
+      "Get one 0–1000 athlete score from four pillars — strength, endurance, body composition and power — each scored as an age, sex and bodyweight-adjusted percentile, with a tier and the weak spot to fix.",
     sources: [
-      { label: "Wilks & DOTS pound-for-pound coefficients", url: "https://en.wikipedia.org/wiki/Wilks_coefficient" },
-      { label: "IPF GL points formula", url: "https://www.powerlifting.sport/" },
+      { label: "ExRx.net strength standards", url: "https://exrx.net/Testing/WeightLifting/StrengthStandards" },
+      { label: "ACSM VO₂max & body-composition norms", url: "https://www.acsm.org/" },
     ],
     faq: [
-      { q: "Wilks vs DOTS vs IPF GL — which should I use?", a: "DOTS is the modern successor to Wilks and is widely used in raw federations; IPF GL points are the IPF's current official formula. Wilks is the original and still common. All three answer the same question — pound-for-pound, how strong is this total — so pick whichever your federation or training partners use." },
-      { q: "What's a good score?", a: "As a rough guide, ~300 is a solid intermediate, ~400 is advanced, and ~500+ is elite / national-class. The coefficients are calibrated separately for men and women, so the same number means the same level for either sex." },
+      { q: "What is a good athlete score?", a: "The pillars are percentiles, so a median healthy trainee lands near 500. Roughly: under 350 beginner, 500 intermediate, 650 advanced, 800 elite and 900+ world-class. Because it's percentile-based and adjusted for age, sex and bodyweight, the same score means the same level for anyone." },
+      { q: "Do I need to fill in everything?", a: "No. Only height and weight are needed for the body-composition pillar; strength, endurance and power are each optional. The score is the weighted average of the pillars you complete, and a 'measured' read-out shows how complete it is — so add lifts, VO₂max and a jump for a truer number." },
+      { q: "How can I raise my score the most?", a: "The tool flags your limiting pillar — usually the fastest lever. For most people that's endurance (raise VO₂max) or body composition (build muscle / get leaner), since strength alone is only one of four pillars." },
+    ],
+  },
+  "sweat-rate": {
+    description:
+      "Calculate your sweat rate from a weigh-in/weigh-out, see how much body mass you lost as a percentage, and get a fluid- and sodium-replacement target for training and racing.",
+    sources: [
+      { label: "ACSM position stand — exercise & fluid replacement", url: "https://pubmed.ncbi.nlm.nih.gov/17277604/" },
+    ],
+    faq: [
+      { q: "How do I measure my sweat rate?", a: "Weigh yourself nude (or in minimal, dry kit) right before and right after a session, note how long it lasted and how much you drank. Sweat rate = (weight lost + fluid drunk) ÷ hours, treating 1 litre of sweat as about 1 kg of body mass." },
+      { q: "How much should I drink to rehydrate?", a: "Aim to replace roughly 150% of the fluid deficit over the next few hours — the extra 50% covers the urine you'll produce while rehydrating. If sweat losses were heavy or your sweat is salty, include sodium (from food or electrolyte drinks) to help you hold onto the fluid." },
     ],
   },
   "age-grade": {
@@ -67,13 +79,15 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   },
   "fitness-age": {
     description:
-      "Estimate your fitness age from your VO₂max or resting heart rate — the age at which your aerobic fitness would be merely average, and one of the best predictors of longevity.",
+      "Estimate your biological age from your VO₂max, resting heart rate, body fat, waist-to-height ratio and smoking — a multi-factor read on how old your body really is, and how to lower it.",
     sources: [
       { label: "Uth–Sørensen VO₂max from heart-rate ratio", url: "https://pubmed.ncbi.nlm.nih.gov/14624296/" },
+      { label: "Cardiorespiratory fitness & mortality (ACSM/AHA)", url: "https://pubmed.ncbi.nlm.nih.gov/27881567/" },
     ],
     faq: [
-      { q: "How is fitness age calculated?", a: "We find the age at which your VO₂max equals the population average for your sex. A VO₂max above average for your real age makes your fitness age younger; below average makes it older. You can enter VO₂max directly or estimate it from your resting heart rate." },
-      { q: "Why does VO₂max matter so much?", a: "Cardiorespiratory fitness is one of the strongest single predictors of all-cause mortality — often stronger than smoking, blood pressure or BMI. Raising VO₂max by about one MET (3.5 ml/kg/min) is associated with a meaningful reduction in risk." },
+      { q: "How is biological age calculated?", a: "VO₂max sets the baseline — the age at which your aerobic fitness would be merely average for your sex. Then independent markers (resting heart rate, body fat, waist-to-height ratio and smoking) each add or subtract a capped number of years. You can enter VO₂max directly or estimate it from your resting heart rate." },
+      { q: "Why does VO₂max matter so much?", a: "Cardiorespiratory fitness is one of the strongest single predictors of all-cause mortality — often stronger than blood pressure or BMI. Raising VO₂max by about one MET (3.5 ml/kg/min) is associated with a meaningful reduction in risk, which is why it's the biggest lever on the score." },
+      { q: "Is this a clinical biological age?", a: "No. True biological-age clocks use blood biomarkers or DNA methylation. This is a motivational fitness-based estimate built from population averages — useful for tracking your own trend, not a medical figure." },
     ],
   },
   "workout-plan": {

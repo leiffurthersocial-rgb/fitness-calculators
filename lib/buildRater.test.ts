@@ -69,23 +69,22 @@ describe("rateBuild — basics", () => {
   });
 });
 
-describe("rateBuild — new power metrics", () => {
-  it("scores broad jump and agility in the power group", () => {
+describe("rateBuild — power metrics", () => {
+  it("scores broad jump in the power group", () => {
     const r = rateBuild(
-      { ...baseMale, heightCm: 180, weightKg: 90, broad: 300, agility: 4.2 },
+      { ...baseMale, heightCm: 180, weightKg: 90, broad: 300 },
       pos("football", "rb")
     );
     expect(r.metrics.some((m) => m.key === "broad")).toBe(true);
-    expect(r.metrics.some((m) => m.key === "agility")).toBe(true);
     expect(r.groups.find((g) => g.group === "power")!.score).not.toBeNull();
   });
 
-  it("treats a faster agility shuttle as better (lower is better)", () => {
-    const slow = rateBuild({ ...baseMale, agility: 5.0 }, pos("football", "db"));
-    const fast = rateBuild({ ...baseMale, agility: 4.0 }, pos("football", "db"));
-    const slowS = slow.metrics.find((m) => m.key === "agility")!.score;
-    const fastS = fast.metrics.find((m) => m.key === "agility")!.score;
-    expect(fastS).toBeGreaterThan(slowS);
+  it("rewards a longer broad jump with a higher power score", () => {
+    const short = rateBuild({ ...baseMale, broad: 220 }, pos("track", "jumps"));
+    const long = rateBuild({ ...baseMale, broad: 330 }, pos("track", "jumps"));
+    const shortS = short.metrics.find((m) => m.key === "broad")!.score;
+    const longS = long.metrics.find((m) => m.key === "broad")!.score;
+    expect(longS).toBeGreaterThan(shortS);
   });
 });
 

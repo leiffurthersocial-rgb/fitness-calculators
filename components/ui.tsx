@@ -375,3 +375,33 @@ export function Button({
 export function CalcGrid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-5 lg:grid-cols-2">{children}</div>;
 }
+
+/**
+ * A subtle, dashed empty-state hint — nudges the user toward the input that
+ * would light up a result. Optionally renders an action button.
+ */
+export function EmptyHint({
+  children,
+  actionLabel,
+  onAction,
+}: {
+  children: React.ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+      <span aria-hidden>💡</span>
+      <span className="flex-1">{children}</span>
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="shrink-0 rounded-lg bg-accent-100 px-2.5 py-1 text-xs font-semibold text-accent-700 transition hover:bg-accent-200 dark:bg-accent-900/40 dark:text-accent-300"
+        >
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}

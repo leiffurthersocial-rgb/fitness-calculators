@@ -1659,63 +1659,6 @@ export function raceSplits(
  * and documented; none of this needs a backend.
  * ====================================================================== */
 
-/**
- * Original Wilks coefficient — bodyweight-adjusted powerlifting score.
- * score = total × 500 / poly(bodyweight). DOTS (see `dotsScore`) is its
- * modern successor; both are offered side by side.
- */
-export function wilksScore(
-  totalKg: number,
-  bodyweightKg: number,
-  sex: "male" | "female"
-): number {
-  const bw = Math.min(Math.max(bodyweightKg, 40), 200);
-  const C =
-    sex === "male"
-      ? [-216.0475144, 16.2606339, -0.002388645, -0.00113732, 7.01863e-6, -1.291e-8]
-      : [594.31747775582, -27.23842536447, 0.82112226871, -0.00930733913, 4.731582e-5, -9.054e-8];
-  const poly =
-    C[0] + C[1] * bw + C[2] * bw ** 2 + C[3] * bw ** 3 + C[4] * bw ** 4 + C[5] * bw ** 5;
-  return totalKg * (500 / poly);
-}
-
-/**
- * IPF GL points — the IPF's current official bodyweight adjustment for
- * classic (raw) full-power. points = total × 100 / (A − B·e^(−C·bw)).
- */
-export function ipfGlPoints(
-  totalKg: number,
-  bodyweightKg: number,
-  sex: "male" | "female"
-): number {
-  const bw = Math.min(Math.max(bodyweightKg, 40), 200);
-  const [A, B, c] =
-    sex === "male"
-      ? [1199.72839, 1025.18162, 0.00921]
-      : [610.32796, 1045.59282, 0.03048];
-  const denom = A - B * Math.exp(-c * bw);
-  return denom > 0 ? totalKg * (100 / denom) : 0;
-}
-
-export interface PowerliftingPoints {
-  wilks: number;
-  dots: number;
-  ipfGl: number;
-}
-
-/** Convenience: all three pound-for-pound scores for a total. */
-export function powerliftingPoints(
-  totalKg: number,
-  bodyweightKg: number,
-  sex: "male" | "female"
-): PowerliftingPoints {
-  return {
-    wilks: wilksScore(totalKg, bodyweightKg, sex),
-    dots: dotsScore(totalKg, bodyweightKg, sex),
-    ipfGl: ipfGlPoints(totalKg, bodyweightKg, sex),
-  };
-}
-
 // Approximate WMA-style age factors for running (fraction of open-class
 // performance retainable at a given age), interpolated between anchors.
 const RUN_AGE_FACTORS: { age: number; f: number }[] = [
@@ -1808,6 +1751,38 @@ const VO2_BY_AGE: { age: number; male: number; female: number }[] = [
   { age: 80, male: 24, female: 20 },
 ];
 
+/** Average VO₂max (ml/kg/min) for an age & sex (interpolated from the table). */
+export function avgVo2max(age: number, sex: "male" | "female"): number {
+  const key = sex === "female" ? "female" : "male";
+  const t = VO2_BY_AGE;
+  if (age <= t[0].age) return t[0][key];
+  if (age >= t[t.length - 1].age) return t[t.length - 1][key];
+  for (let i = 1; i < t.length; i++) {
+    if (age <= t[i].age) {
+      const a = t[i - 1];
+      const b = t[i];
+      return a[key] + ((b[key] - a[key]) * (age - a.age)) / (b.age - a.age);
+    }
+  }
+  return t[t.length - 1][key];
+}
+
+/**
+ * Map a VO₂max to an approximate population percentile (1–99) for age & sex,
+ * anchored so the age/sex average sits at the 50th percentile and ±40% of
+ * average spans roughly the 5th–95th.
+ */
+export function vo2maxPercentile(
+  vo2: number,
+  age: number,
+  sex: "male" | "female"
+): number {
+  const avg = avgVo2max(age, sex);
+  if (avg <= 0 || vo2 <= 0) return 0;
+  const pct = 50 + (vo2 / avg - 1) * 112.5;
+  return Math.max(1, Math.min(99, pct));
+}
+
 export interface FitnessAgeResult {
   fitnessAge: number;
   vo2max: number;
@@ -1862,5 +1837,149 @@ export function fitnessAge(
     vo2max,
     averageForAge: avgAt(realAge),
     deltaYears: realAge - fAge,
+  };
+}
+
+export interface BioAgeFactor {
+  key: string;
+  label: string;
+  years: number; // signed contribution: + ages you, − keeps you young
+}
+
+export interface BioAgeInput {
+  vo2max: number; // ml/kg/min (the backbone — strongest single predictor)
+  age: number;
+  sex: "male" | "female";
+  restingHR?: number; // bpm
+  bodyFatPct?: number;
+  heightCm?: number; // with waistCm → waist-to-height ratio
+  waistCm?: number;
+  smoker?: boolean;
+}
+
+export interface BioAgeResult {
+  biologicalAge: number;
+  fitnessAgeBase: number; // VO₂max-derived starting point
+  realAge: number;
+  deltaYears: number; // realAge − biologicalAge (positive = younger than calendar)
+  factors: BioAgeFactor[]; // signed contributions, for the breakdown graph
+}
+
+const clampYears = (v: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, v));
+
+/**
+ * A multi-factor "biological age" estimate. VO₂max sets the baseline (it's the
+ * single strongest predictor of all-cause mortality); then independent markers
+ * — resting heart rate, body fat, waist-to-height and smoking — each nudge the
+ * number up or down within capped ranges. It's a motivational composite from
+ * population averages, not a clinical biomarker age.
+ */
+export function biologicalAge(input: BioAgeInput): BioAgeResult {
+  const base = fitnessAge(input.vo2max, input.age, input.sex).fitnessAge;
+  const factors: BioAgeFactor[] = [];
+
+  // Resting HR: ~60 bpm is a healthy reference; each bpm above adds ~0.1 yr.
+  if (input.restingHR && input.restingHR > 0) {
+    const years = clampYears((input.restingHR - 60) * 0.1, -5, 6);
+    factors.push({ key: "rhr", label: "Resting HR", years });
+  }
+
+  // Body fat vs a healthy midpoint (≈15% male, ≈23% female).
+  if (input.bodyFatPct && input.bodyFatPct > 0) {
+    const mid = input.sex === "female" ? 23 : 15;
+    const years = clampYears((input.bodyFatPct - mid) * 0.35, -4, 6);
+    factors.push({ key: "bodyfat", label: "Body fat", years });
+  }
+
+  // Waist-to-height ratio: 0.5 is the healthy threshold; a strong metabolic marker.
+  if (input.waistCm && input.waistCm > 0 && input.heightCm && input.heightCm > 0) {
+    const whtr = input.waistCm / input.heightCm;
+    const years = clampYears((whtr - 0.5) * 60, -4, 7);
+    factors.push({ key: "whtr", label: "Waist-to-height", years });
+  }
+
+  // Smoking — a large, independent ager.
+  if (input.smoker) {
+    factors.push({ key: "smoker", label: "Smoking", years: 6 });
+  }
+
+  const adjustment = factors.reduce((s, f) => s + f.years, 0);
+  const bioAge = Math.round(clampYears(base + adjustment, 18, 90));
+
+  // Prepend the VO₂max baseline as the first "factor" for the breakdown.
+  factors.unshift({
+    key: "vo2max",
+    label: "Aerobic fitness",
+    years: base - input.age,
+  });
+
+  return {
+    biologicalAge: bioAge,
+    fitnessAgeBase: base,
+    realAge: input.age,
+    deltaYears: input.age - bioAge,
+    factors,
+  };
+}
+
+/* ========================================================================
+ * SWEAT RATE & HYDRATION — weigh-in / weigh-out fluid replacement
+ * ----------------------------------------------------------------------
+ * Sweat rate is the gold-standard field method: weigh nude before and
+ * after exercise, add anything you drank back in, and divide by time.
+ * 1 L of sweat ≈ 1 kg of body mass. Aim to keep losses under ~2% of body
+ * mass (where performance starts to drop) and to replace ~150% of any
+ * deficit afterwards (some is lost to urine during rehydration).
+ * ====================================================================== */
+
+export interface SweatInput {
+  preKg: number;
+  postKg: number;
+  durationHr: number;
+  fluidIntakeL: number; // drunk during the session
+  urineL?: number; // any urine passed during (rare; usually 0)
+  sweatSodiumMgPerL?: number; // typical 500–1500; default 1000
+}
+
+export interface SweatResult {
+  sweatLossL: number; // total sweat produced
+  sweatRateLPerHr: number;
+  netDeficitL: number; // net body-mass lost (what to replace)
+  pctBodyMassLoss: number;
+  rehydrationTargetL: number; // ~150% of the deficit
+  sodiumLossMg: number;
+  status: string;
+}
+
+export function sweatRate(input: SweatInput): SweatResult {
+  const dur = input.durationHr > 0 ? input.durationHr : 1;
+  const naConc = input.sweatSodiumMgPerL ?? 1000;
+  const netDeficitL = input.preKg - input.postKg; // net mass change (kg≈L)
+  // Total sweat = net loss + what you drank − any urine passed.
+  const sweatLossL = Math.max(
+    0,
+    netDeficitL + input.fluidIntakeL - (input.urineL ?? 0)
+  );
+  const sweatRateLPerHr = sweatLossL / dur;
+  const pct = input.preKg > 0 ? (netDeficitL / input.preKg) * 100 : 0;
+  const rehydrationTargetL = Math.max(0, netDeficitL) * 1.5;
+  const sodiumLossMg = sweatLossL * naConc;
+
+  const status =
+    pct < -1 ? "Overhydrated — eased off too hard on fluids; watch hyponatremia"
+    : pct < 1 ? "Well hydrated — losses were minimal"
+    : pct < 2 ? "Mild dehydration — top up soon"
+    : pct < 3 ? "Performance-impairing — replace fluids deliberately"
+    : "Significant dehydration — rehydrate carefully with sodium";
+
+  return {
+    sweatLossL,
+    sweatRateLPerHr,
+    netDeficitL,
+    pctBodyMassLoss: pct,
+    rehydrationTargetL,
+    sodiumLossMg,
+    status,
   };
 }
