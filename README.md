@@ -20,9 +20,9 @@ Number fields accept decimals.
 | --- | --- |
 | **Overview** | My numbers (key metrics at a glance from your saved stats) |
 | **Sports** | Sports build rater (rate your build, strength & performance for a sport + position), Workout plan generator |
-| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (squat/bench/deadlift/OHP + max-rep pull-ups; age/weight/sex/sport) |
-| **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel), Run training paces (Daniels VDOT zone paces + race-time equivalents from a race, Cooper test or VO₂max) |
-| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Muscle-gain potential (Aragon rate + FFMI ceiling), Calorie burn (METs) |
+| **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (squat/bench/deadlift/OHP + max-rep pull-ups; age/weight/sex/sport), Lift balance (squat/bench/deadlift/OHP proportions + weak-point flag), RPE ↔ %1RM ↔ RIR converter (RTS chart) |
+| **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel), Run training paces (Daniels VDOT zone paces with HR cross-reference + race-time equivalents), Cycling power zones (Coggan FTP zones + W/kg) |
+| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Cut/bulk planner (calories, macros & a body-recomp timeline to a target body-fat %), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Muscle-gain potential (Aragon rate + FFMI ceiling), Calorie burn (METs) |
 | **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |
 
 The **Sports build rater** scores four attribute groups — **physique**

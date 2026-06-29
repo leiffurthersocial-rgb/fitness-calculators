@@ -1196,3 +1196,302 @@ export function bsaMosteller(weightKg: number, heightCm: number): number {
 export function bsaDuBois(weightKg: number, heightCm: number): number {
   return 0.007184 * Math.pow(weightKg, 0.425) * Math.pow(heightCm, 0.725);
 }
+
+/* ========================================================================
+ * DIET PLANNER — cut / bulk calories + body-recomposition timeline
+ * ----------------------------------------------------------------------
+ * Ties TDEE, a goal rate and the muscle-gain model together: pick a goal
+ * and pace and get your daily calories, macros and a week-by-week
+ * projection of weight, fat and lean mass, plus an ETA to a target body
+ * fat %. ~7700 kcal ≈ 1 kg of body-mass change (the standard approximation).
+ * ====================================================================== */
+
+export type DietGoal = "lose" | "maintain" | "gain";
+
+const KCAL_PER_KG = 7700;
+
+export interface DietWeek {
+  week: number;
+  weightKg: number;
+  leanKg: number;
+  fatKg: number;
+  bodyFatPct: number;
+}
+
+export interface DietPlanResult {
+  tdee: number;
+  calorieTarget: number;
+  dailyDeltaKcal: number; // signed: negative on a cut
+  rateKgPerWeek: number; // signed
+  proteinPerKg: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  weeklyLeanCapKg: number;
+  trajectory: DietWeek[];
+  weeksToTarget: number | null;
+  targetWeightKg: number | null;
+}
+
+/**
+ * Fraction of weight LOST that comes from fat (the rest is lean). Leaner
+ * people give up proportionally more lean; higher body-fat means more of the
+ * loss is fat. Clamped to a sensible 0.60–0.92.
+ */
+function fatFractionOfLoss(bodyFatPct: number): number {
+  return Math.min(0.92, Math.max(0.6, 0.65 + (bodyFatPct - 12) * 0.013));
+}
+
+export function dietPlan(args: {
+  sex: "male" | "female";
+  age: number;
+  heightCm: number;
+  weightKg: number;
+  bodyFatPct: number;
+  activityMultiplier: number;
+  goal: DietGoal;
+  ratePctPerWeek: number; // magnitude, % of bodyweight per week
+  experience: TrainingLevel;
+  targetBodyFatPct?: number;
+  weeks?: number;
+}): DietPlanResult {
+  const {
+    sex, age, heightCm, weightKg, bodyFatPct, activityMultiplier,
+    goal, ratePctPerWeek, experience, targetBodyFatPct, weeks = 16,
+  } = args;
+
+  const bmr = bmrMifflin(weightKg, heightCm, age, sex);
+  const tdeeVal = tdee(bmr, activityMultiplier);
+
+  const dir = goal === "lose" ? -1 : goal === "gain" ? 1 : 0;
+  const rateKgPerWeek = dir * (ratePctPerWeek / 100) * weightKg;
+  const dailyDeltaKcal = (rateKgPerWeek * KCAL_PER_KG) / 7;
+  const calorieTargetVal = Math.round(tdeeVal + dailyDeltaKcal);
+
+  // More protein on a cut to spare muscle.
+  const proteinPerKg = goal === "lose" ? 2.2 : 1.8;
+  const m = macroSplit(calorieTargetVal, weightKg, proteinPerKg);
+
+  // Weekly cap on lean gain for a bulk, from the muscle-gain model.
+  const mg = muscleGainPotential({ sex, age, heightCm, weightKg, bodyFatPct, level: experience });
+  const weeklyLeanCapKg = mg.ratePerMonthHiKg / 4.345;
+
+  let lean = weightKg * (1 - bodyFatPct / 100);
+  let fat = Math.max(0, weightKg - lean);
+  const trajectory: DietWeek[] = [
+    { week: 0, weightKg, leanKg: lean, fatKg: fat, bodyFatPct },
+  ];
+  let weeksToTarget: number | null = null;
+  let targetWeightKg: number | null = null;
+  const maxWeeks = 104;
+
+  for (let w = 1; w <= maxWeeks; w++) {
+    if (dir < 0) {
+      const bfNow = (fat / (lean + fat)) * 100;
+      const fatFrac = fatFractionOfLoss(bfNow);
+      fat += rateKgPerWeek * fatFrac; // rateKgPerWeek negative
+      lean += rateKgPerWeek * (1 - fatFrac);
+    } else if (dir > 0) {
+      const leanGain = Math.min(rateKgPerWeek, Math.max(0, weeklyLeanCapKg));
+      lean += leanGain;
+      fat += rateKgPerWeek - leanGain;
+    }
+    fat = Math.max(0, fat);
+    lean = Math.max(0, lean);
+    const wt = lean + fat;
+    const bf = wt > 0 ? (fat / wt) * 100 : 0;
+
+    if (weeksToTarget === null && targetBodyFatPct != null) {
+      if (
+        (dir < 0 && bf <= targetBodyFatPct) ||
+        (dir > 0 && bf >= targetBodyFatPct)
+      ) {
+        weeksToTarget = w;
+        targetWeightKg = wt;
+      }
+    }
+    if (w <= weeks) {
+      trajectory.push({ week: w, weightKg: wt, leanKg: lean, fatKg: fat, bodyFatPct: bf });
+    }
+  }
+
+  return {
+    tdee: tdeeVal,
+    calorieTarget: calorieTargetVal,
+    dailyDeltaKcal,
+    rateKgPerWeek,
+    proteinPerKg,
+    proteinG: m.proteinG,
+    carbsG: m.carbsG,
+    fatG: m.fatG,
+    weeklyLeanCapKg,
+    trajectory,
+    weeksToTarget,
+    targetWeightKg,
+  };
+}
+
+/* ========================================================================
+ * LIFT BALANCE — are your main lifts in proportion?
+ * ----------------------------------------------------------------------
+ * Compares your squat/bench/deadlift/OHP against the proportions a
+ * balanced lifter shows (derived from the strength-standard ratios),
+ * anchored to whichever lift you're relatively strongest at, and flags
+ * the laggards.
+ * ====================================================================== */
+
+type BalanceLift = "squat" | "bench" | "deadlift" | "ohp";
+
+const IDEAL_LIFT_RATIO: Record<"male" | "female", Record<BalanceLift, number>> = {
+  male: { squat: 1.5, bench: 1.0, deadlift: 1.75, ohp: 0.8 },
+  female: { squat: 1.2, bench: 0.65, deadlift: 1.4, ohp: 0.47 },
+};
+
+const BALANCE_LABELS: Record<BalanceLift, string> = {
+  squat: "Squat",
+  bench: "Bench press",
+  deadlift: "Deadlift",
+  ohp: "Overhead press",
+};
+
+export interface LiftBalanceRow {
+  key: BalanceLift;
+  label: string;
+  actual: number;
+  expected: number;
+  deltaPct: number; // +ve = ahead of balanced, -ve = behind
+}
+
+export interface LiftBalanceResult {
+  rows: LiftBalanceRow[];
+  weakest: LiftBalanceRow | null;
+  strongest: LiftBalanceRow | null;
+  anchor: BalanceLift | null;
+}
+
+export function liftBalance(
+  actual: Record<BalanceLift, number>,
+  sex: "male" | "female"
+): LiftBalanceResult {
+  const ideal = IDEAL_LIFT_RATIO[sex];
+  const keys: BalanceLift[] = ["squat", "bench", "deadlift", "ohp"];
+  const provided = keys.filter((k) => actual[k] > 0);
+
+  if (provided.length < 2) {
+    return {
+      rows: keys.map((k) => ({
+        key: k, label: BALANCE_LABELS[k], actual: actual[k] || 0, expected: 0, deltaPct: 0,
+      })),
+      weakest: null, strongest: null, anchor: null,
+    };
+  }
+
+  // Anchor = lift you're relatively strongest at (highest actual ÷ ideal).
+  let anchor = provided[0];
+  for (const k of provided) {
+    if (actual[k] / ideal[k] > actual[anchor] / ideal[anchor]) anchor = k;
+  }
+
+  const rows: LiftBalanceRow[] = keys.map((k) => {
+    const expected = actual[anchor] * (ideal[k] / ideal[anchor]);
+    const deltaPct = actual[k] > 0 ? ((actual[k] - expected) / expected) * 100 : 0;
+    return { key: k, label: BALANCE_LABELS[k], actual: actual[k] || 0, expected, deltaPct };
+  });
+
+  const prov = rows.filter((r) => r.actual > 0);
+  const weakest = prov.reduce((a, b) => (b.deltaPct < a.deltaPct ? b : a));
+  const strongest = prov.reduce((a, b) => (b.deltaPct > a.deltaPct ? b : a));
+  return { rows, weakest, strongest, anchor };
+}
+
+/* ========================================================================
+ * RPE ↔ %1RM ↔ RIR (Reactive Training Systems chart)
+ * ----------------------------------------------------------------------
+ * The full RTS/Helms RPE table collapses to a single curve: %1RM is a
+ * function of "effective reps" e = reps + (10 − RPE), i.e. reps performed
+ * plus reps in reserve. We store the RPE-10 row (reps-to-failure → %1RM)
+ * and interpolate.
+ * ====================================================================== */
+
+const RPE10_PCT = [
+  100, 95.5, 92.2, 89.2, 86.3, 83.7, 81.1, 78.6, 76.2, 73.9, 70.7, 68.0,
+];
+
+function pctForEffectiveReps(e: number): number {
+  if (e <= 1) return 100;
+  const lo = Math.floor(e);
+  const hi = Math.ceil(e);
+  const a = RPE10_PCT[Math.min(lo, 12) - 1] ?? RPE10_PCT[11];
+  const b = RPE10_PCT[Math.min(hi, 12) - 1] ?? RPE10_PCT[11];
+  return a + (b - a) * (e - lo);
+}
+
+/** %1RM for completing `reps` with the given RPE (6–10). */
+export function pctOfOneRM(reps: number, rpe: number): number {
+  const e = reps + (10 - rpe);
+  return pctForEffectiveReps(e);
+}
+
+/** Estimated 1RM from a working set: weight ÷ (%1RM/100). */
+export function oneRMFromRPE(weight: number, reps: number, rpe: number): number {
+  const pct = pctOfOneRM(reps, rpe);
+  return pct > 0 ? weight / (pct / 100) : 0;
+}
+
+/** Target weight to hit `reps` at `rpe` given a known 1RM. */
+export function weightForRepsAtRPE(oneRM: number, reps: number, rpe: number): number {
+  return (oneRM * pctOfOneRM(reps, rpe)) / 100;
+}
+
+/* ========================================================================
+ * CYCLING POWER ZONES (Coggan, % of FTP)
+ * ====================================================================== */
+
+export interface PowerZone {
+  zone: number;
+  name: string;
+  lowPct: number;
+  highPct: number;
+  desc: string;
+}
+
+export const FTP_ZONES: PowerZone[] = [
+  { zone: 1, name: "Active recovery", lowPct: 0, highPct: 0.55, desc: "Easy spinning, recovery rides" },
+  { zone: 2, name: "Endurance", lowPct: 0.56, highPct: 0.75, desc: "All-day aerobic base" },
+  { zone: 3, name: "Tempo", lowPct: 0.76, highPct: 0.9, desc: "Brisk, 'comfortably hard'" },
+  { zone: 4, name: "Threshold", lowPct: 0.91, highPct: 1.05, desc: "At/around FTP, 10–30 min" },
+  { zone: 5, name: "VO₂max", lowPct: 1.06, highPct: 1.2, desc: "3–8 min hard intervals" },
+  { zone: 6, name: "Anaerobic", lowPct: 1.21, highPct: 1.5, desc: "30 s–3 min efforts" },
+  { zone: 7, name: "Neuromuscular", lowPct: 1.51, highPct: 2.5, desc: "Sprints, max power" },
+];
+
+/** FTP estimate from a 20-minute test (95% of 20-min average power). */
+export function ftpFrom20min(power20: number): number {
+  return power20 * 0.95;
+}
+
+export interface PowerZoneRange {
+  zone: PowerZone;
+  lowW: number;
+  highW: number;
+}
+
+export function powerZones(ftp: number): PowerZoneRange[] {
+  return FTP_ZONES.map((z) => ({
+    zone: z,
+    lowW: z.lowPct * ftp,
+    highW: z.highPct * ftp,
+  }));
+}
+
+/** Rough cyclist category from FTP per kg of bodyweight (W/kg). */
+export function ftpWkgCategory(wkg: number, sex: "male" | "female"): string {
+  // Women's bands sit a little lower.
+  const s = sex === "male" ? 0 : -0.5;
+  if (wkg >= 5.5 + s) return "Exceptional";
+  if (wkg >= 4.5 + s) return "Very strong";
+  if (wkg >= 3.5 + s) return "Good";
+  if (wkg >= 2.5 + s) return "Moderate";
+  if (wkg >= 1.8 + s) return "Fair";
+  return "Beginner";
+}

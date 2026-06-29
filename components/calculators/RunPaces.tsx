@@ -14,12 +14,25 @@ import {
   Tip,
 } from "../ui";
 import { useUnits } from "@/lib/settings";
+import { useProfile } from "@/lib/profile";
 import {
   vdotFromRace,
   runTrainingPaces,
   timeForVdotAtDistance,
   paceSecPerKm,
+  maxHRTanaka,
+  karvonenTarget,
 } from "@/lib/formulas";
+
+// Heart-rate-reserve band each running zone roughly corresponds to. Repetition
+// is too short for HR to be meaningful, so it's left off.
+const ZONE_HRR: Record<string, [number, number] | null> = {
+  easy: [0.65, 0.74],
+  marathon: [0.74, 0.84],
+  threshold: [0.84, 0.91],
+  interval: [0.93, 1.0],
+  repetition: null,
+};
 import {
   parseTimeToSeconds,
   fmtTime,
@@ -48,6 +61,10 @@ const EQUIV = RACES.filter((r) => r.key !== "1500");
 export default function RunPaces() {
   const { units } = useUnits();
   const metric = units === "metric";
+  const { profile } = useProfile();
+  const maxHR = maxHRTanaka(profile.age);
+  const hrFor = (frac: number) =>
+    Math.round(karvonenTarget(maxHR, profile.restingHR, frac));
 
   const [method, setMethod] = useState<Method>("race");
 
@@ -182,11 +199,23 @@ export default function RunPaces() {
                             )}–${fmtPace(p.slowSecPerKm, units)}`}
                       </span>
                     </div>
-                    <div className="text-xs text-zinc-400">{p.zone.trains}</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-zinc-400">{p.zone.trains}</span>
+                      {ZONE_HRR[p.zone.key] && (
+                        <span className="shrink-0 text-xs text-zinc-400">
+                          ♥ {hrFor(ZONE_HRR[p.zone.key]![0])}–
+                          {hrFor(ZONE_HRR[p.zone.key]![1])} bpm
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
+            <p className="mt-2 text-xs text-zinc-400">
+              Heart rates use your age &amp; resting HR from{" "}
+              <strong>Your stats</strong> (Karvonen, max {fmt(maxHR, 0)} bpm).
+            </p>
 
             <h4 className="mb-3 mt-6 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
               Equivalent race times

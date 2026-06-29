@@ -4,16 +4,20 @@ import RepMax from "@/components/calculators/RepMax";
 import TrainingMax from "@/components/calculators/TrainingMax";
 import PlateLoading from "@/components/calculators/PlateLoading";
 import StrengthStandards from "@/components/calculators/StrengthStandards";
+import LiftBalance from "@/components/calculators/LiftBalance";
+import RpeConverter from "@/components/calculators/RpeConverter";
 import WorkoutPlan from "@/components/calculators/WorkoutPlan";
 import SportsBuildRater from "@/components/calculators/SportsBuildRater";
 import Vo2Max from "@/components/calculators/Vo2Max";
 import HeartRateZones from "@/components/calculators/HeartRateZones";
 import PaceRace from "@/components/calculators/PaceRace";
 import RunPaces from "@/components/calculators/RunPaces";
+import FtpZones from "@/components/calculators/FtpZones";
 import Tdee from "@/components/calculators/Tdee";
 import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
 import IdealWeight from "@/components/calculators/IdealWeight";
+import DietPlanner from "@/components/calculators/DietPlanner";
 import Ffmi from "@/components/calculators/Ffmi";
 import MuscleGain from "@/components/calculators/MuscleGain";
 import CalorieBurn from "@/components/calculators/CalorieBurn";
@@ -59,6 +63,8 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "training-max", name: "Training max", blurb: "Working-weight percentages", Component: TrainingMax },
       { id: "plate-loading", name: "Plate loading", blurb: "Plates per side for a target", Component: PlateLoading },
       { id: "standards", name: "Strength standards", blurb: "Rank your lifts by age, weight & sport", Component: StrengthStandards },
+      { id: "lift-balance", name: "Lift balance", blurb: "Are your big lifts in proportion?", Component: LiftBalance },
+      { id: "rpe", name: "RPE / 1RM converter", blurb: "RPE ↔ %1RM ↔ reps in reserve", Component: RpeConverter },
     ],
   },
   {
@@ -69,6 +75,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "hr-zones", name: "Heart-rate zones", blurb: "5 zones, Karvonen / % max", Component: HeartRateZones },
       { id: "pace-race", name: "Pace & race predictor", blurb: "Pace + Riegel predictions", Component: PaceRace },
       { id: "run-paces", name: "Run training paces", blurb: "Zone paces from a race or test (VDOT)", Component: RunPaces },
+      { id: "ftp-zones", name: "Cycling power zones", blurb: "FTP-based watt zones + W/kg (Coggan)", Component: FtpZones },
     ],
   },
   {
@@ -76,6 +83,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
     emoji: "🍎",
     tools: [
       { id: "tdee", name: "TDEE / BMR", blurb: "Daily energy needs", Component: Tdee },
+      { id: "diet-planner", name: "Cut / bulk planner", blurb: "Calories, macros & a timeline to your goal", Component: DietPlanner },
       { id: "macros", name: "Macros", blurb: "Protein / carbs / fat split", Component: Macros },
       { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
       { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },
