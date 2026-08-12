@@ -98,6 +98,65 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
     ],
   },
 
+  "weekly-stimulus": {
+    description:
+      "Score a week of training for one muscle in stimulus units: stimulating reps per set, the fatigue discount on every extra set, a penalty for training before you've recovered, and what a different frequency would be worth.",
+    sources: [
+      { label: "Chris Beardsley — stimulating reps & the stimulus-to-fatigue ratio", url: "https://sandcresearch.medium.com/" },
+      { label: "Schoenfeld et al. — training frequency & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/27102172/" },
+      { label: "Schoenfeld et al. — dose–response of weekly volume", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
+      { label: "Refalo et al. — proximity to failure & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/36334240/" },
+    ],
+    faq: [
+      { q: "What is a stimulating rep?", a: "A rep only grows muscle when the fibres are both fully recruited and shortening slowly — that is what produces high mechanical tension. With a moderate load that combination only happens in roughly the last five reps before failure, so a set contributes about 5 − RIR stimulating reps. With a heavy load (a rep-max of five or fewer) recruitment is maximal from the first rep, so the whole set counts." },
+      { q: "Why does the same number of sets score higher when I spread them out?", a: "Stimulus decays within a session — every set for a muscle is performed in a more fatigued state than the last, so set 8 is worth a fraction of set 1. Fatigue clears between sessions, but the stimulus you banked does not. Splitting 12 weekly sets over three days instead of one can be worth 50% more net stimulus for exactly the same work." },
+      { q: "Is 'net stimulus' a real biological measurement?", a: "No. It is a relative score built from Chris Beardsley's stimulating-reps and stimulus-to-fatigue framework, with coefficients tuned to reproduce the findings that framework explains: per-session saturation around four to six hard sets, higher frequency winning at matched volume, and effort mattering more than set count. Use it to compare two plans, not as a number to report." },
+      { q: "How many stimulus units should I aim for?", a: "Below about 7 a week a muscle slowly detrains; 7–16 maintains; 16–30 grows steadily; 30–48 is the productive zone for someone chasing size; above 48 is as much as a muscle can use, and only if sleep, food and scheduling all cooperate. Check the weekly set count against the volume landmarks too — stimulus you cannot recover from is not stimulus." },
+    ],
+  },
+  "volume-landmarks": {
+    description:
+      "Your personal MV, MEV, MAV and MRV — weekly hard sets per muscle — adjusted for experience, age, whether you're cutting or bulking and how well you recover, plus a mesocycle that ramps MEV to MRV and deloads.",
+    sources: [
+      { label: "Israetel et al. — volume landmarks (Renaissance Periodization)", url: "https://rpstrength.com/blogs/articles/training-volume-landmarks-muscle-growth" },
+      { label: "Schoenfeld et al. — dose–response of weekly volume", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
+    ],
+    faq: [
+      { q: "What do MV, MEV, MAV and MRV mean?", a: "MV (maintenance volume) is the least that holds the muscle you have. MEV (minimum effective volume) is the least that reliably grows it. MAV (maximum adaptive volume) is the productive working range. MRV (maximum recoverable volume) is the ceiling — past it you accumulate more fatigue than you can recover from and progress stalls or reverses." },
+      { q: "How do I count a set?", a: "Count hard sets taken within a few reps of failure, for the muscle that actually limits the set. A compound counts fully for its prime mover and roughly half for the assisting muscles — so a bench press is a full chest set and half a triceps set." },
+      { q: "Should I just train at MRV all the time?", a: "No. Landmarks are a range to move through, not a target to sit on. Start a block at MEV, add about a set per session each week, and deload when you reach MRV — that way the volume that stopped working in week five is an effective dose again in week one." },
+      { q: "Why does a calorie deficit lower my volume ceiling?", a: "Recovery is paid for out of energy availability. In a deficit the same sets take longer to recover from, so MRV drops by roughly 20% and holding volume near MEV — while keeping effort and load high — preserves more muscle than grinding out extra sets." },
+    ],
+  },
+  "effective-reps": {
+    description:
+      "See exactly which reps of a set build muscle: stimulating reps from your reps and RIR, the load that implies, and a side-by-side comparison of heavy, moderate and high-rep schemes on stimulus, fatigue and gym time.",
+    sources: [
+      { label: "Chris Beardsley — stimulating (effective) reps", url: "https://sandcresearch.medium.com/" },
+      { label: "Refalo et al. — proximity to failure & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/36334240/" },
+      { label: "Helms et al. — RPE / reps-in-reserve scale", url: "https://pubmed.ncbi.nlm.nih.gov/27049459/" },
+    ],
+    faq: [
+      { q: "How many effective reps does a set have?", a: "About five, if you take it to failure — and you lose one for every rep you leave in reserve, so a set at 3 RIR banks only two. Heavy sets are the exception: with a rep-max of five or fewer, recruitment is maximal from rep one and every rep is stimulating." },
+      { q: "Are heavy triples or sets of ten better for growth?", a: "For hypertrophy they can be close — 5×3 to failure and 4×10 to 1 RIR bank a similar number of stimulating reps — but the heavy version costs far more joint and nervous-system fatigue per unit of growth. That is why most hypertrophy work sits in the 6–20 rep range and heavy work is reserved for the lifts you want to get strong at." },
+      { q: "Do sets of 30 build muscle?", a: "Yes, if they go to failure — the last few reps are still fully recruited and slow. They simply reach the same five stimulating reps through a great deal more uncomfortable, fatiguing work, so they suit machines and isolation where the local fatigue does not spill over into the rest of your session." },
+    ],
+  },
+  "exercise-sfr": {
+    description:
+      "Rate any lift's stimulus-to-fatigue ratio from how it loads the muscle — compound or isolation, free or supported, stretched or squeezed, full range or partials — and see where it belongs in your session.",
+    sources: [
+      { label: "Chris Beardsley — the stimulus-to-fatigue ratio", url: "https://sandcresearch.medium.com/" },
+      { label: "Maeo et al. — training at long muscle lengths", url: "https://pubmed.ncbi.nlm.nih.gov/33009197/" },
+      { label: "Pedrosa et al. — lengthened partials vs full ROM", url: "https://pubmed.ncbi.nlm.nih.gov/34715015/" },
+    ],
+    faq: [
+      { q: "What is the stimulus-to-fatigue ratio?", a: "Stimulus is the growth signal a set sends to the target muscle; fatigue is everything it costs you — muscle damage, nervous-system fatigue, joint stress and the sets it takes away from the rest of your session. SFR is the ratio. High-SFR exercises are the ones you can afford lots of." },
+      { q: "Does a low rating mean the exercise is bad?", a: "No — it means it is expensive. A heavy back squat is one of the best strength lifts there is and trains several muscles at once, which the whole-body SFR figure credits it for. It just costs too much fatigue to be the source of your tenth hard set of the week, so do it first and do fewer of them." },
+      { q: "Why do exercises that load the stretch score higher?", a: "Tension at long muscle lengths appears to be a stronger growth signal than the same tension at short lengths, and the evidence for lengthened partials points the same way. So an incline curl or a seated leg curl gets a stimulus premium over a movement whose hardest point is where the muscle is already fully shortened." },
+    ],
+  },
+
   "rep-max": {
     description:
       "Estimate your one-rep max (and 3RM/5RM) from a set, with a full percentage table, using the Epley and Brzycki formulas.",

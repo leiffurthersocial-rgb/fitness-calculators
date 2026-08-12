@@ -21,8 +21,9 @@ Number fields accept decimals.
 | **Overview** | My numbers (key metrics at a glance from your saved stats) |
 | **Sports** | Sports build rater (rate your build, strength & performance for a sport + position), Workout plan generator |
 | **Strength** | Rep-max (1/3/5RM + table), Training max %, Plate loading, Strength standards (squat/bench/deadlift/OHP + max-rep pull-ups; age/weight/sex/sport), Lift balance (proportions + weak-point flag), Strength score (one percentile across all lifts), RPE ↔ %1RM ↔ RIR converter (RTS chart) |
+| **Hypertrophy** | Weekly net stimulus (Beardsley stimulating-reps / SFR model), Volume landmarks (MEV→MRV per muscle + mesocycle), Effective reps (stimulating reps + set-scheme comparison), Exercise SFR rater, Muscle-gain potential |
 | **Cardio** | VO₂ max (3 methods), Heart-rate zones (Karvonen), Pace & race predictor (Riegel), Run training paces (Daniels VDOT + HR cross-reference + equivalents), Cycling power zones (Coggan FTP + W/kg), Swim pace zones (Critical Swim Speed), Treadmill pace (incline → flat equivalent, ACSM), Race-day splits (even / negative) |
-| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Cut/bulk planner (calories, macros & a body-recomp timeline to a target body-fat %), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Muscle-gain potential (Aragon rate + FFMI ceiling), Calorie burn (METs) |
+| **Body & Nutrition** | TDEE/BMR (Mifflin–St Jeor), Cut/bulk planner (calories, macros & a body-recomp timeline to a target body-fat %), Macros (+ pie chart), Body comp (Navy BF%, BMI, WHtR), Ideal weight (+ lean mass), FFMI, Calorie burn (METs) |
 | **Recovery** | Caffeine half-life tracker (decay curve + presets), Sleep cycles, Water intake |
 
 The **Sports build rater** scores four attribute groups — **physique**
@@ -51,6 +52,27 @@ your 1RMs, adds a set to any lift below your sport's target ratio, and reports
 **weekly set volume per muscle** against evidence-based landmarks (10–20
 sets/week for hypertrophy, counting secondary movers as half-sets). Logic in
 [`lib/workoutPlan.ts`](lib/workoutPlan.ts).
+
+The **Hypertrophy** section is built on one shared engine
+([`lib/hypertrophy.ts`](lib/hypertrophy.ts)): a *stimulus-and-fatigue* model of
+muscle growth in the style of Chris Beardsley's stimulating-reps framework. Only
+the last ~5 reps before failure are stimulating (all of them on a heavy set), so
+a set is worth `5 − RIR` stimulating reps; each further set for the same muscle
+in a session is discounted because it happens in a more fatigued state; fatigue
+clears between sessions but stimulus does not; and training a muscle before it
+has recovered costs up to 40% of the session. **Weekly net stimulus** turns your
+week into one number, prices every individual set on a chart, flags junk volume
+and under-recovery, and shows what the *same* sets would be worth at a different
+frequency. **Volume landmarks** gives per-muscle MV/MEV/MAV/MRV weekly sets,
+shifted for your experience, age, energy balance and sleep, plus a mesocycle that
+ramps MEV→MRV and deloads. **Effective reps** shows rep-by-rep which reps of a
+set did anything and compares heavy, moderate and high-rep schemes on stimulus,
+fatigue, SFR and gym minutes. The **Exercise SFR rater** scores any lift's
+stimulus-to-fatigue ratio from how it loads the muscle and ranks 24 common lifts,
+so you know which movements to build volume on and which to do first and few. The
+coefficients are a quantification of a qualitative framework — a relative score
+for comparing plans, not a biological measurement — and the whole model is
+covered by [unit tests](lib/hypertrophy.test.ts).
 
 Every tool has its **own page and URL** (`/t/<id>`) with a unique title,
 meta description and canonical link, a generated **sitemap** and **robots**,
@@ -82,8 +104,10 @@ npm test                     # run the formula unit tests (Vitest)
 
 The pure formula library in [`lib/formulas.ts`](lib/formulas.ts) is covered by
 a [Vitest suite](lib/formulas.test.ts) (VDOT, FFMI, muscle-gain, diet planner,
-RPE, power zones, strength standards, …) so the science stays correct as it
-grows. The app is also an installable **PWA** — a web manifest plus a small
+RPE, power zones, strength standards, …), as is the hypertrophy engine in
+[`lib/hypertrophy.ts`](lib/hypertrophy.ts) (stimulating reps, within-session
+decay, recovery, frequency, volume landmarks, exercise SFR), so the science stays
+correct as it grows. The app is also an installable **PWA** — a web manifest plus a small
 service worker make it work offline and add-to-home-screen after the first
 visit. Motion respects `prefers-reduced-motion`.
 
@@ -110,6 +134,7 @@ app/
   globals.css        # Tailwind v4 setup, accent color, class-based dark mode
 lib/
   formulas.ts        # every calculation, pure & commented — tweak here
+  hypertrophy.ts     # the stimulus/fatigue growth model + volume landmarks
   units.ts           # metric/imperial conversion + time/number formatting
   profile.tsx        # shared profile context (localStorage)
   theme.tsx          # dark/light theme context

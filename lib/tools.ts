@@ -20,6 +20,10 @@ import FtpZones from "@/components/calculators/FtpZones";
 import SwimZones from "@/components/calculators/SwimZones";
 import TreadmillPace from "@/components/calculators/TreadmillPace";
 import RaceSplits from "@/components/calculators/RaceSplits";
+import WeeklyStimulus from "@/components/calculators/WeeklyStimulus";
+import VolumeLandmarks from "@/components/calculators/VolumeLandmarks";
+import EffectiveReps from "@/components/calculators/EffectiveReps";
+import ExerciseSfr from "@/components/calculators/ExerciseSfr";
 import Tdee from "@/components/calculators/Tdee";
 import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
@@ -86,6 +90,17 @@ export const TOOL_GROUPS: ToolGroup[] = [
     ],
   },
   {
+    group: "Hypertrophy",
+    emoji: "💪",
+    tools: [
+      { id: "weekly-stimulus", name: "Weekly net stimulus", blurb: "Score your week's growth stimulus per muscle (Beardsley model)", Component: WeeklyStimulus },
+      { id: "volume-landmarks", name: "Volume landmarks", blurb: "MEV → MRV weekly sets per muscle + a mesocycle", Component: VolumeLandmarks },
+      { id: "effective-reps", name: "Effective reps", blurb: "Stimulating reps per set & set-scheme comparison", Component: EffectiveReps },
+      { id: "exercise-sfr", name: "Exercise SFR rater", blurb: "Rate any lift's stimulus-to-fatigue ratio", Component: ExerciseSfr },
+      { id: "muscle-gain", name: "Muscle-gain potential", blurb: "How much muscle you can gain & by when", Component: MuscleGain },
+    ],
+  },
+  {
     group: "Cardio",
     emoji: "❤️",
     tools: [
@@ -109,7 +124,6 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
       { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },
       { id: "ffmi", name: "FFMI", blurb: "Fat-free mass index", Component: Ffmi },
-      { id: "muscle-gain", name: "Muscle-gain potential", blurb: "How much muscle you can gain & by when", Component: MuscleGain },
       { id: "calorie-burn", name: "Calorie burn", blurb: "Energy used by activity (METs)", Component: CalorieBurn },
     ],
   },
