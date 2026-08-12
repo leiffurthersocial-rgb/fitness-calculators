@@ -5,11 +5,11 @@ A concrete, prioritisable list of things we could build. Split into **little**
 Constraint that shapes all of this: the site stays **static — no backend, no
 accounts** — so everything is pure formulas + localStorage + URL state.
 
-Already shipped: a **Hypertrophy** group built on a shared stimulus/fatigue
-engine (`lib/hypertrophy.ts`) — **Weekly net stimulus** (Beardsley stimulating
-reps, within-session decay, recovery spacing, frequency comparison), **Volume
-landmarks** (personalised MEV→MRV + mesocycle), **Effective reps** and the
-**Exercise SFR rater**, with Muscle-gain potential moved in alongside them;
+Already shipped: a **Hypertrophy** group built on Chris Beardsley's weekly net
+stimulus model (`lib/hypertrophy.ts`) — **Weekly net stimulus** (frequency, sets
+per workout, dose–response dataset, maintenance volume, stimulus duration) and
+**WNS landmarks** (MV/MEV/MAV/MRV in stimulus units, a frequency × sets matrix
+and target finder), with Muscle-gain potential moved in alongside them;
 expanded Sports Build Rater (30 sports); the **Compete** group —
 **Athlete Score** (0–1000 composite), Age-graded running and a multi-factor
 **Biological age**; a **Sweat-rate & hydration** tool with a fluid-balance graph;

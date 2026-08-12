@@ -21,9 +21,7 @@ import SwimZones from "@/components/calculators/SwimZones";
 import TreadmillPace from "@/components/calculators/TreadmillPace";
 import RaceSplits from "@/components/calculators/RaceSplits";
 import WeeklyStimulus from "@/components/calculators/WeeklyStimulus";
-import VolumeLandmarks from "@/components/calculators/VolumeLandmarks";
-import EffectiveReps from "@/components/calculators/EffectiveReps";
-import ExerciseSfr from "@/components/calculators/ExerciseSfr";
+import WnsLandmarks from "@/components/calculators/WnsLandmarks";
 import Tdee from "@/components/calculators/Tdee";
 import Macros from "@/components/calculators/Macros";
 import BodyComp from "@/components/calculators/BodyComp";
@@ -93,10 +91,8 @@ export const TOOL_GROUPS: ToolGroup[] = [
     group: "Hypertrophy",
     emoji: "💪",
     tools: [
-      { id: "weekly-stimulus", name: "Weekly net stimulus", blurb: "Score your week's growth stimulus per muscle (Beardsley model)", Component: WeeklyStimulus },
-      { id: "volume-landmarks", name: "Volume landmarks", blurb: "MEV → MRV weekly sets per muscle + a mesocycle", Component: VolumeLandmarks },
-      { id: "effective-reps", name: "Effective reps", blurb: "Stimulating reps per set & set-scheme comparison", Component: EffectiveReps },
-      { id: "exercise-sfr", name: "Exercise SFR rater", blurb: "Rate any lift's stimulus-to-fatigue ratio", Component: ExerciseSfr },
+      { id: "weekly-stimulus", name: "Weekly net stimulus", blurb: "Frequency × sets → your week's net growth stimulus (Beardsley)", Component: WeeklyStimulus },
+      { id: "wns-landmarks", name: "WNS landmarks", blurb: "What a WNS number means, and every way to hit one", Component: WnsLandmarks },
       { id: "muscle-gain", name: "Muscle-gain potential", blurb: "How much muscle you can gain & by when", Component: MuscleGain },
     ],
   },
