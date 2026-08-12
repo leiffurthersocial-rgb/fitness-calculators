@@ -19,23 +19,23 @@ import {
   wnsMatrix,
   waysToHit,
   findDataset,
-  maxUsefulFrequency,
+  dailyAtrophyRate,
+  atrophyDays,
   DATASETS,
   DEFAULT_SETTINGS,
-  LANDMARK_REFERENCE,
-  REFERENCE_FREQUENCY,
+  LANDMARK_MULTIPLES,
   type WnsSettings,
 } from "@/lib/hypertrophy";
 import { fmt } from "@/lib/units";
 
 /**
- * WNS landmarks — what a weekly-net-stimulus number actually means, and every
- * frequency × sets combination that gets you to one. The same model settings as
- * the calculator, because the WNS scale moves with them.
+ * WNS landmarks — what a weekly net stimulus number means, and every
+ * frequency × sets combination that reaches one. Same model settings as the
+ * calculator, because the WNS scale moves with them.
  */
 
-const FREQUENCIES = [1, 2, 3, 4, 5, 6];
-const SETS_ROWS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15];
+const FREQUENCIES = [1, 2, 3, 4, 5, 6, 7];
+const SETS_ROWS = [1, 2, 3, 4, 5, 6, 8, 10, 12];
 
 const CELL_COLOR: Record<string, string> = {
   losing: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300",
@@ -54,18 +54,20 @@ export default function WnsLandmarks() {
 
   const l = wnsLandmarks(settings);
   const dataset = findDataset(settings.dataset);
-  const cap = maxUsefulFrequency(settings.stimulusHours);
+  const daily = dailyAtrophyRate(settings);
+  const coverAll = 7 / (settings.stimulusHours / 24); // frequency that leaves no atrophy days
   const matrix = wnsMatrix(settings, FREQUENCIES, SETS_ROWS);
   const routes = waysToHit(target, settings, FREQUENCIES);
   const targetBand = wnsBand(target, l);
 
   const bands = [
-    { key: "maintenance", label: "Maintenance", range: `0 – ${fmt(l.mev * 0.25, 1)}`, blurb: "Holds the muscle you have. Nothing more." },
-    { key: "minimal", label: "Minimal growth", range: `${fmt(l.mev * 0.25, 1)} – ${fmt(l.mev, 1)}`, blurb: "Above maintenance, under the minimum effective dose." },
-    { key: "growing", label: "Growing", range: `${fmt(l.mev, 1)} – ${fmt(l.mavLo, 1)}`, blurb: "Past MEV. Real, if unhurried, growth." },
-    { key: "productive", label: "Productive range", range: `${fmt(l.mavLo, 1)} – ${fmt(l.mavHi, 1)}`, blurb: "The adaptive range — where most of a training block should live." },
-    { key: "peak", label: "Near your ceiling", range: `${fmt(l.mavHi, 1)} – ${fmt(l.mrv, 1)}`, blurb: "Sustainable for the last weeks of a block, not indefinitely." },
-    { key: "over", label: "Beyond recoverable", range: `> ${fmt(l.mrv, 1)}`, blurb: "Scores well on paper; fatigue eats it in practice." },
+    { key: "losing", label: "Losing muscle", range: "< 0", blurb: "Atrophy between sessions outweighs what the workouts build." },
+    { key: "maintenance", label: "Maintenance", range: "0", blurb: "Stimulus and atrophy cancel out exactly." },
+    { key: "minimal", label: "Minimal growth", range: `0 – ${fmt(l.mev, 1)}`, blurb: "Positive, but under the minimum effective dose." },
+    { key: "growing", label: "Growing", range: `${fmt(l.mev, 1)} – ${fmt(l.mavLo, 1)}`, blurb: "Real growth, with room to add a workout." },
+    { key: "productive", label: "Productive range", range: `${fmt(l.mavLo, 1)} – ${fmt(l.mavHi, 1)}`, blurb: "What most people can turn into muscle week after week." },
+    { key: "peak", label: "Near your ceiling", range: `${fmt(l.mavHi, 1)} – ${fmt(l.mrv, 1)}`, blurb: "Good for the last weeks of a block, not indefinitely." },
+    { key: "over", label: "Beyond recoverable", range: `> ${fmt(l.mrv, 1)}`, blurb: "The model prices stimulus, not fatigue. This is where progress stalls." },
   ];
 
   return (
@@ -86,22 +88,25 @@ export default function WnsLandmarks() {
             </Field>
             <p className="-mt-2 text-xs leading-relaxed text-zinc-500">{dataset.note}</p>
 
-            <Field label="Maintenance volume" hint="sets a workout spends holding — default 3">
+            <Field label="Maintenance volume" hint="sets once a week that maintain — default 3">
               <NumberInput
                 value={settings.maintenanceSets}
                 onChange={(v) => patch({ maintenanceSets: v })}
-                min={0}
-                max={15}
+                min={1}
+                max={5}
                 suffix="sets"
               />
             </Field>
-            <Field label="Stimulus duration" hint="how long a workout's dose lasts — standard 48 h">
-              <NumberInput
-                value={settings.stimulusHours}
-                onChange={(v) => patch({ stimulusHours: v })}
-                min={6}
-                max={168}
-                suffix="h"
+            <Field label="Stimulus duration" hint="research says 36–48 h">
+              <Select
+                value={String(settings.stimulusHours)}
+                onChange={(v) => patch({ stimulusHours: Number(v) })}
+                options={[
+                  { value: "24", label: "24 hours" },
+                  { value: "36", label: "36 hours" },
+                  { value: "48", label: "48 hours (standard)" },
+                  { value: "72", label: "72 hours" },
+                ]}
               />
             </Field>
 
@@ -110,27 +115,26 @@ export default function WnsLandmarks() {
             </Field>
 
             <Tip>
-              WNS is an arbitrary scale, and it moves when you change dataset or
-              maintenance volume — so the landmarks are recomputed from your own
-              settings rather than fixed. Compare plans within one set of
-              settings, never across two.
+              These settings fix the whole scale: one maintenance workout is worth{" "}
+              {fmt(l.unit, 2)} units, and each atrophy day costs{" "}
+              {fmt(daily, 2)}. Compare programmes within one set of settings,
+              never across two.
             </Tip>
           </div>
 
           <InfoNote>
             <p>
-              The landmarks are anchored to weekly set counts from the volume
-              literature and priced with your settings: about{" "}
-              {LANDMARK_REFERENCE.mev} sets a week to start growing (MEV),{" "}
-              {LANDMARK_REFERENCE.mavLo}–{LANDMARK_REFERENCE.mavHi} for the
-              productive range (MAV) and around {LANDMARK_REFERENCE.mrv} as the
-              point most people stop recovering (MRV) — each split over a
-              reference frequency of {REFERENCE_FREQUENCY}× a week.
+              The zero point is Beardsley&apos;s: a single weekly workout at your
+              maintenance volume scores exactly nothing. Above it, the landmarks
+              here are multiples of that maintenance workout&apos;s stimulus —{" "}
+              {LANDMARK_MULTIPLES.mev}× for MEV, {LANDMARK_MULTIPLES.mavLo}–
+              {LANDMARK_MULTIPLES.mavHi}× for the productive range and{" "}
+              {LANDMARK_MULTIPLES.mrv}× for MRV.
             </p>
             <p>
-              That is why raising the maintenance volume lowers every landmark:
-              more of each workout goes on rent, so the same weekly sets buy less
-              net stimulus.
+              Those multiples are this app&apos;s reading, not part of the model,
+              which fixes only the zero. They scale with your settings so a band
+              means the same thing whichever dataset you pick.
             </p>
           </InfoNote>
         </Card>
@@ -150,7 +154,12 @@ export default function WnsLandmarks() {
                 key={b.key}
                 className="flex items-baseline gap-3 rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800"
               >
-                <span className={"shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold " + CELL_COLOR[b.key]}>
+                <span
+                  className={
+                    "w-24 shrink-0 rounded-md px-2 py-0.5 text-center text-xs font-semibold tabular-nums " +
+                    CELL_COLOR[b.key]
+                  }
+                >
                   {b.range}
                 </span>
                 <span className="min-w-0">
@@ -192,18 +201,16 @@ export default function WnsLandmarks() {
                 <tr key={row.frequency} className="border-t border-zinc-100 dark:border-zinc-800">
                   <td className="px-4 py-2 font-medium">
                     {row.frequency}×
-                    {row.frequency > cap + 1e-9 && (
-                      <span className="ml-1 text-xs text-amber-500">
-                        counts as {fmt(cap, 1)}×
-                      </span>
+                    {row.frequency >= coverAll && (
+                      <span className="ml-1 text-xs text-zinc-400">no atrophy days</span>
                     )}
                   </td>
                   <td className="px-4 py-2 tabular-nums">
-                    {row.setsPerWorkout ?? <span className="text-zinc-400">out of reach</span>}
+                    {row.setsPerWorkout ?? (
+                      <span className="text-zinc-400">out of reach</span>
+                    )}
                   </td>
-                  <td className="px-4 py-2 tabular-nums text-zinc-500">
-                    {row.weeklySets ?? "—"}
-                  </td>
+                  <td className="px-4 py-2 tabular-nums text-zinc-500">{row.weeklySets ?? "—"}</td>
                   <td className="px-4 py-2 tabular-nums">
                     {row.setsPerWorkout ? fmt(row.wns, 1) : "—"}
                   </td>
@@ -214,16 +221,18 @@ export default function WnsLandmarks() {
         </div>
         <p className="mt-3 text-xs text-zinc-500">
           The fewest whole sets per workout that reach the target at each
-          frequency. Fewer, bigger workouts pay the maintenance charge less often;
-          more frequent ones each pay it again, which is why the weekly set count
-          climbs as you spread the same stimulus out.
+          frequency. Training more often needs dramatically fewer sets — and at
+          low frequencies a target can be out of reach at any set count, because
+          the per-workout curve flattens faster than{" "}
+          {fmt(atrophyDays(1, settings.stimulusHours), 1)} days of atrophy can be
+          paid off.
         </p>
       </Card>
 
       <Card>
         <CardTitle>Every combination</CardTitle>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[34rem] text-sm">
+          <table className="w-full min-w-[36rem] text-sm">
             <thead>
               <tr>
                 <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -234,7 +243,7 @@ export default function WnsLandmarks() {
                     key={f}
                     className="px-3 py-2 text-center text-xs font-medium uppercase tracking-wide text-zinc-500"
                   >
-                    {f}×{f > cap + 1e-9 && <span className="text-amber-500">*</span>}
+                    {f}×
                   </th>
                 ))}
               </tr>
@@ -265,9 +274,10 @@ export default function WnsLandmarks() {
         </div>
         <p className="mt-3 text-xs text-zinc-500">
           Weekly net stimulus for every frequency × sets combination, coloured by
-          landmark. {cap < 6 && <>An asterisk marks a frequency past the {fmt(cap, 1)}× the stimulus duration supports — those columns stop improving. </>}
-          Rows below your maintenance volume of {fmt(settings.maintenanceSets, 0)}{" "}
-          sets never leave maintenance, however often you train.
+          landmark. Read across a row rather than down a column: at{" "}
+          {fmt(settings.stimulusHours, 0)} h, going from 1× to {Math.ceil(coverAll)}× a
+          week removes every atrophy day, which moves the number far more than
+          piling sets into the workouts you already do.
         </p>
       </Card>
     </div>

@@ -100,33 +100,34 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
 
   "weekly-stimulus": {
     description:
-      "Chris Beardsley's weekly net stimulus model in five inputs: frequency, sets per workout, a dose\u2013response dataset, your maintenance volume and how long a workout's stimulus lasts.",
+      "Chris Beardsley's weekly net stimulus model: workout stimulus \u00d7 frequency minus the atrophy that happens on the days between sessions, from five inputs.",
     sources: [
-      { label: "Chris Beardsley \u2014 stimulus, fatigue & the weekly net stimulus model", url: "https://sandcresearch.medium.com/" },
+      { label: "Chris Beardsley \u2014 Weekly Net Stimulus", url: "https://www.patreon.com/posts/weekly-net-102750269" },
+      { label: "Chris Beardsley \u2014 does muscle loss happen within a training week?", url: "https://sandcresearch.medium.com/does-muscle-loss-happen-within-a-training-week-880a986350c4" },
       { label: "Schoenfeld et al. \u2014 dose\u2013response of weekly volume", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
-      { label: "Currier et al. \u2014 Bayesian dose\u2013response meta-analysis", url: "https://pubmed.ncbi.nlm.nih.gov/37127349/" },
-      { label: "Schoenfeld et al. \u2014 training frequency & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/27102172/" },
+      { label: "Pelland et al. \u2014 resistance-training dose\u2013response meta-regression", url: "https://pubmed.ncbi.nlm.nih.gov/?term=Pelland+resistance+training+dose+response+meta-regression" },
     ],
     faq: [
-      { q: "What is weekly net stimulus?", a: "The growth stimulus a week of training actually delivers, after you subtract what it costs to stand still. Each workout produces a stimulus that grows with its sets but with diminishing returns; part of every workout only maintains the muscle you already have; and a workout's stimulus lasts a limited time, so training again too soon adds nothing. WNS = effective frequency \u00d7 (workout stimulus \u2212 maintenance stimulus)." },
-      { q: "What does the maintenance volume input do?", a: "It is the number of sets in a workout that only hold the muscle you have \u2014 three by default. It is subtracted from every workout, not once a week, which is why adding a session is not free: the new session has to pay the maintenance bill again before it grows anything." },
-      { q: "Why does stimulus duration cap my frequency?", a: "A workout's stimulus lasts about 48 hours. Train the same muscle again inside that window and the second dose lands on a signal that is already switched on, so it adds little. That puts the useful ceiling at 168 \u00f7 duration \u2014 about 3.5 sessions a week at 48 hours." },
-      { q: "Which dataset should I pick?", a: "Schoenfeld is the recommended default: a graded dose\u2013response where sets keep adding growth with clear diminishing returns. Pick Currier if you believe volume keeps paying past 30 sets a week, or the conservative curve if extra sets stop doing much for you \u2014 it changes the shape of the curve, not the scale." },
-      { q: "Is WNS a real biological measurement?", a: "No. It is a relative score for comparing plans under one set of settings, and it prices stimulus only \u2014 not fatigue, joints, or the time a session takes. Compare two programmes with it; do not report the number as if it were a measurement." },
+      { q: "What is weekly net stimulus?", a: "The growth a week of training actually delivers, after subtracting the muscle lost between sessions. WNS = (stimulus per workout \u00d7 frequency) \u2212 (atrophy days \u00d7 daily atrophy rate). A positive score means your training outruns the atrophy; a negative one means too much time passes between sessions for the volume you do." },
+      { q: "How is the stimulus per workout calculated?", a: "From the sets you take to failure, with diminishing returns \u2014 that is what the dataset setting picks. Schoenfeld's meta-analysis has six sets producing about twice the stimulus of a single set; Pelland's has six sets producing about four times. One set to failure is 1 arbitrary unit in both, so the curve's shape changes, not the starting point." },
+      { q: "Where does the atrophy come from?", a: "The growth stimulus of a workout lasts roughly 36\u201348 hours, so at 48 h each workout covers two days and the rest of the week is atrophy days: 7 \u2212 frequency \u00d7 2, never below zero. The rate of loss comes from your maintenance volume \u2014 since one weekly workout of about three sets is known to maintain, the stimulus those sets provide must be exactly what is lost over the five uncovered days." },
+      { q: "Why does the model favour training more often?", a: "Because the two halves pull in the same direction. Extra sets inside one workout are worth progressively less, while every extra workout both adds a full dose of stimulus and removes atrophy days. That is why three sets three times a week scores far higher than nine sets once a week, even though the weekly set count is identical." },
+      { q: "What should I set maintenance volume to?", a: "Three sets is the default and three to four suits most people; the model accepts one to five. It is the number of sets in a single weekly workout that would hold your current muscle. Raising it raises the daily atrophy rate, so the same programme scores lower." },
+      { q: "Is WNS a real biological measurement?", a: "No \u2014 it is in arbitrary units, and it only prices stimulus and atrophy, not fatigue, joints or time. Use it to compare two programmes under one set of settings; the number itself means nothing outside them." },
     ],
   },
   "wns-landmarks": {
     description:
-      "What a weekly net stimulus number actually means \u2014 MV, MEV, MAV and MRV computed for your own model settings, plus every frequency \u00d7 sets combination and the cheapest ways to hit a target.",
+      "What a weekly net stimulus number means \u2014 MV, MEV, MAV and MRV priced for your own settings \u2014 plus every frequency \u00d7 sets combination and the cheapest ways to hit a target.",
     sources: [
-      { label: "Chris Beardsley \u2014 stimulus, fatigue & the weekly net stimulus model", url: "https://sandcresearch.medium.com/" },
+      { label: "Chris Beardsley \u2014 Weekly Net Stimulus", url: "https://www.patreon.com/posts/weekly-net-102750269" },
       { label: "Schoenfeld et al. \u2014 dose\u2013response of weekly volume", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
       { label: "Israetel et al. \u2014 volume landmarks (Renaissance Periodization)", url: "https://rpstrength.com/blogs/articles/training-volume-landmarks-muscle-growth" },
     ],
     faq: [
-      { q: "What do MV, MEV, MAV and MRV mean in WNS terms?", a: "MV (maintenance) is zero net stimulus \u2014 you hold what you have. MEV is the least that reliably grows you, MAV is the productive range a training block should live in, and MRV is the point past which the stimulus stops being recoverable. Here they are expressed in stimulus units instead of sets, because sets buy different amounts of stimulus depending on how they are arranged." },
-      { q: "Why do the landmarks move when I change the settings?", a: "WNS is an arbitrary scale that shifts with the dataset and the maintenance volume, so fixed thresholds would mislead. The landmarks are priced under your own settings from reference weekly set counts \u2014 about 10 sets a week for MEV, 16\u201326 for MAV and 34 for MRV, split over a reference frequency of two \u2014 so they always mean the same thing in your units." },
-      { q: "Why does the same target need more weekly sets at a higher frequency?", a: "Every workout pays the maintenance volume before it grows anything. Spread the same stimulus over more sessions and you pay that charge more often, so the weekly set count has to rise to compensate. Stack it too deep in one session instead and diminishing returns take over \u2014 the matrix shows where the trade lands." },
+      { q: "What do MV, MEV, MAV and MRV mean in WNS terms?", a: "MV is zero \u2014 the model defines maintenance as a single weekly workout at your maintenance volume, which scores exactly nothing. Above that, MEV is the least that reliably grows you, MAV the productive range a block should live in, and MRV the point past which the stimulus stops being recoverable." },
+      { q: "Where do the landmark numbers come from?", a: "They are multiples of one maintenance workout's stimulus: 1\u00d7 for MEV, 2\u20134\u00d7 for MAV and 6\u00d7 for MRV. Only the zero point is Beardsley's; the multiples are this app's reading, and they are expressed that way so a band means the same thing whichever dataset and maintenance volume you choose." },
+      { q: "Why can a low frequency miss a target at any set count?", a: "Training once a week leaves five atrophy days to pay for, and the per-workout curve flattens faster than extra sets can cover them \u2014 on the Schoenfeld dataset, thirty sets in one workout is worth barely more than twelve. Adding a second or third workout removes atrophy days and adds a full dose at the same time, which is why the same target then needs only a handful of sets." },
     ],
   },
 

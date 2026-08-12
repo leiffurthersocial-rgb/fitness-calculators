@@ -1,11 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
   workoutStimulus,
+  datasetExponent,
   weeklyNetStimulus,
-  maxUsefulFrequency,
+  atrophyDays,
+  dailyAtrophyRate,
+  stimulusDays,
   splitOptions,
   bestSplit,
-  wnsCurve,
+  frequencyCurve,
+  setsCurve,
   wnsLandmarks,
   wnsBand,
   wnsMatrix,
@@ -16,7 +20,7 @@ import {
   type WnsInput,
 } from "./hypertrophy";
 
-const settings = DEFAULT_SETTINGS; // Schoenfeld curve, 3 maintenance sets, 48 h
+const settings = DEFAULT_SETTINGS; // Schoenfeld, 3 maintenance sets, 48 h
 const input = (p: Partial<WnsInput> = {}): WnsInput => ({
   ...settings,
   frequency: 3,
@@ -25,188 +29,213 @@ const input = (p: Partial<WnsInput> = {}): WnsInput => ({
 });
 
 describe("dose–response curve", () => {
-  it("agrees across datasets that one set is one stimulus unit", () => {
+  it("is anchored to each meta-analysis: 1 set = 1 unit, 6 sets = the reported multiple", () => {
     for (const d of DATASETS) {
-      expect(workoutStimulus(1, d)).toBeCloseTo(1, 6);
+      expect(workoutStimulus(1, d)).toBeCloseTo(1, 9);
+      expect(workoutStimulus(6, d)).toBeCloseTo(d.ratioAtSix, 9);
     }
+    expect(findDataset("schoenfeld").ratioAtSix).toBe(2);
+    expect(findDataset("pelland").ratioAtSix).toBe(4);
   });
 
-  it("rises with sets but with diminishing returns", () => {
-    const d = findDataset("schoenfeld");
-    expect(workoutStimulus(0, d)).toBe(0);
-    expect(workoutStimulus(6, d)).toBeGreaterThan(workoutStimulus(3, d));
-    // The second three sets add less than the first three.
-    expect(workoutStimulus(6, d) - workoutStimulus(3, d)).toBeLessThan(workoutStimulus(3, d));
+  it("diminishes: Schoenfeld more steeply than Pelland", () => {
+    const s = findDataset("schoenfeld");
+    const p = findDataset("pelland");
+    expect(datasetExponent(s)).toBeLessThan(datasetExponent(p));
+    expect(workoutStimulus(12, s)).toBeLessThan(workoutStimulus(12, p));
+    // Doubling the sets never doubles the stimulus.
+    expect(workoutStimulus(12, p)).toBeLessThan(2 * workoutStimulus(6, p));
+    expect(workoutStimulus(0, s)).toBe(0);
+  });
+});
+
+describe("atrophy", () => {
+  it("counts the days a workout's stimulus does not cover", () => {
+    expect(stimulusDays(48)).toBe(2);
+    expect(atrophyDays(1, 48)).toBe(5);
+    expect(atrophyDays(3, 48)).toBe(1);
+    expect(atrophyDays(4, 48)).toBe(0); // 8 covered days, floored at none
+    expect(atrophyDays(3, 36)).toBeCloseTo(2.5, 9);
   });
 
-  it("holds set value longer on the shallower dataset than the conservative one", () => {
-    const shallow = workoutStimulus(10, findDataset("currier"));
-    const graded = workoutStimulus(10, findDataset("schoenfeld"));
-    const steep = workoutStimulus(10, findDataset("conservative"));
-    expect(shallow).toBeGreaterThan(graded);
-    expect(graded).toBeGreaterThan(steep);
+  it("derives the daily rate from maintenance volume", () => {
+    // 3 sets once a week must be lost over the other 5 days.
+    expect(dailyAtrophyRate(settings)).toBeCloseTo(
+      workoutStimulus(3, findDataset("schoenfeld")) / 5,
+      9
+    );
   });
 });
 
 describe("weekly net stimulus", () => {
-  it("is frequency × (workout stimulus − maintenance)", () => {
+  it("is weekly stimulus minus weekly atrophy", () => {
     const r = weeklyNetStimulus(input());
-    const d = findDataset("schoenfeld");
-    expect(r.gross).toBeCloseTo(workoutStimulus(6, d), 6);
-    expect(r.maintenance).toBeCloseTo(workoutStimulus(3, d), 6);
-    expect(r.net).toBeCloseTo(r.gross - r.maintenance, 6);
-    expect(r.wns).toBeCloseTo(3 * r.net, 6);
+    expect(r.perWorkout).toBeCloseTo(2, 9); // Schoenfeld: 6 sets = 2× one set
+    expect(r.weeklyStimulus).toBeCloseTo(6, 9);
+    expect(r.atrophyDays).toBe(1);
+    expect(r.weeklyAtrophy).toBeCloseTo(r.atrophyDays * r.dailyAtrophy, 9);
+    expect(r.wns).toBeCloseTo(r.weeklyStimulus - r.weeklyAtrophy, 9);
     expect(r.weeklySets).toBe(18);
   });
 
-  it("is exactly zero when every workout sits at maintenance volume", () => {
-    expect(weeklyNetStimulus(input({ setsPerWorkout: 3 })).wns).toBeCloseTo(0, 9);
-    // …however often you train it.
-    expect(weeklyNetStimulus(input({ setsPerWorkout: 3, frequency: 6 })).wns).toBeCloseTo(0, 9);
+  it("scores the maintenance program at exactly zero, whatever the settings", () => {
+    for (const dataset of ["schoenfeld", "pelland"] as const) {
+      for (const maintenanceSets of [1, 3, 5]) {
+        for (const stimulusHours of [24, 36, 48]) {
+          const r = weeklyNetStimulus({
+            dataset,
+            maintenanceSets,
+            stimulusHours,
+            frequency: 1,
+            setsPerWorkout: maintenanceSets,
+          });
+          expect(r.wns).toBeCloseTo(0, 9);
+          expect(r.band.key).toBe("maintenance");
+        }
+      }
+    }
   });
 
-  it("goes negative below maintenance volume", () => {
-    const r = weeklyNetStimulus(input({ setsPerWorkout: 1 }));
+  it("goes negative when one small workout can't outrun the week's atrophy", () => {
+    const r = weeklyNetStimulus(input({ frequency: 1, setsPerWorkout: 2 }));
     expect(r.wns).toBeLessThan(0);
     expect(r.band.key).toBe("losing");
   });
 
-  it("rises with both sets and frequency", () => {
-    const base = weeklyNetStimulus(input()).wns;
-    expect(weeklyNetStimulus(input({ setsPerWorkout: 8 })).wns).toBeGreaterThan(base);
-    expect(weeklyNetStimulus(input({ frequency: 2 })).wns).toBeLessThan(base);
-  });
-});
-
-describe("stimulus duration", () => {
-  it("caps the useful frequency at 168 ÷ duration", () => {
-    expect(maxUsefulFrequency(48)).toBeCloseTo(3.5, 6);
-    expect(maxUsefulFrequency(24)).toBe(7);
-    expect(maxUsefulFrequency(72)).toBeCloseTo(2.333, 3);
+  it("rewards frequency more than extra sets in the same workout", () => {
+    const base = weeklyNetStimulus(input({ frequency: 2, setsPerWorkout: 6 })).wns;
+    const moreSets = weeklyNetStimulus(input({ frequency: 2, setsPerWorkout: 12 })).wns;
+    const moreOften = weeklyNetStimulus(input({ frequency: 4, setsPerWorkout: 6 })).wns;
+    expect(moreSets).toBeGreaterThan(base);
+    expect(moreOften).toBeGreaterThan(moreSets);
   });
 
-  it("stops paying for sessions inside the previous stimulus window", () => {
-    const four = weeklyNetStimulus(input({ frequency: 4 }));
-    const six = weeklyNetStimulus(input({ frequency: 6 }));
-    expect(four.capped).toBe(true);
-    expect(four.effectiveFrequency).toBeCloseTo(3.5, 6);
-    expect(six.wns).toBeCloseTo(four.wns, 6); // both clipped to 3.5×
-    expect(four.notes.some((n) => n.includes("already switched on"))).toBe(true);
+  it("stops charging atrophy once the week is covered", () => {
+    const r = weeklyNetStimulus(input({ frequency: 4 }));
+    expect(r.atrophyDays).toBe(0);
+    expect(r.weeklyAtrophy).toBe(0);
+    expect(r.wns).toBeCloseTo(r.weeklyStimulus, 9);
+    expect(r.notes.some((n) => n.includes("no atrophy days"))).toBe(true);
   });
 
-  it("lets a shorter stimulus support more frequency", () => {
-    const long = weeklyNetStimulus(input({ frequency: 6, stimulusHours: 48 }));
-    const short = weeklyNetStimulus(input({ frequency: 6, stimulusHours: 24 }));
-    expect(short.wns).toBeGreaterThan(long.wns);
-    expect(short.capped).toBe(false);
-  });
-});
-
-describe("maintenance volume", () => {
-  it("costs you stimulus in every workout, not once a week", () => {
-    const cheap = weeklyNetStimulus(input({ maintenanceSets: 1 }));
-    const dear = weeklyNetStimulus(input({ maintenanceSets: 5 }));
-    expect(cheap.wns).toBeGreaterThan(dear.wns);
-    // Three workouts pay the difference three times over.
-    expect(cheap.wns - dear.wns).toBeCloseTo(3 * (dear.maintenance - cheap.maintenance), 6);
+  it("loses less to atrophy when the stimulus lasts longer", () => {
+    const short = weeklyNetStimulus(input({ stimulusHours: 24 }));
+    const long = weeklyNetStimulus(input({ stimulusHours: 48 }));
+    expect(short.atrophyDays).toBeGreaterThan(long.atrophyDays);
+    expect(short.wns).toBeLessThan(long.wns);
   });
 
-  it("says what share of a workout goes on rent", () => {
-    const r = weeklyNetStimulus(input());
-    expect(r.notes.some((n) => n.includes("maintenance cost"))).toBe(true);
+  it("charges more atrophy for a higher maintenance volume", () => {
+    const light = weeklyNetStimulus(input({ maintenanceSets: 1 }));
+    const heavy = weeklyNetStimulus(input({ maintenanceSets: 5 }));
+    expect(heavy.dailyAtrophy).toBeGreaterThan(light.dailyAtrophy);
+    expect(heavy.wns).toBeLessThan(light.wns);
   });
 });
 
 describe("splits", () => {
   it("prices the same weekly volume at every frequency", () => {
-    const opts = splitOptions(18, settings, 6);
-    expect(opts.map((o) => o.frequency)).toEqual([1, 2, 3, 4, 5, 6]);
-    for (const o of opts) expect(o.setsPerWorkout).toBeCloseTo(18 / o.frequency, 6);
+    const opts = splitOptions(18, settings);
+    expect(opts.map((o) => o.frequency)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    for (const o of opts) expect(o.setsPerWorkout).toBeCloseTo(18 / o.frequency, 9);
   });
 
   it("stops splitting once a workout would fall under one set", () => {
-    expect(splitOptions(3, settings, 6).length).toBe(3);
+    expect(splitOptions(3, settings).length).toBe(3);
   });
 
-  it("penalises spreading volume so thin that every workout is mostly rent", () => {
+  it("picks spreading the volume out, which is the model's whole point", () => {
     const best = bestSplit(18, settings)!;
-    const thin = splitOptions(18, settings).find((o) => o.frequency === 6)!;
-    expect(best.wns).toBeGreaterThan(thin.wns);
-    expect(best.frequency).toBeLessThanOrEqual(3);
+    const once = splitOptions(18, settings)[0];
+    expect(best.frequency).toBeGreaterThan(once.frequency);
+    expect(best.wns).toBeGreaterThan(once.wns);
+  });
+});
+
+describe("curves", () => {
+  it("rises with frequency and kinks where atrophy days hit zero", () => {
+    const c = frequencyCurve(settings, 6, 7);
+    expect(c.length).toBe(7);
+    for (let i = 1; i < c.length; i++) expect(c[i].wns).toBeGreaterThan(c[i - 1].wns);
+    // Once the week is covered, each workout adds exactly its own stimulus.
+    expect(c[5].wns - c[4].wns).toBeCloseTo(c[6].wns - c[5].wns, 9);
+  });
+
+  it("crosses zero at maintenance volume for a once-a-week program", () => {
+    const c = setsCurve(settings, 1, 8);
+    expect(c.find((p) => p.sets === 3)!.wns).toBeCloseTo(0, 9);
+    expect(c.find((p) => p.sets === 2)!.wns).toBeLessThan(0);
+    expect(c.find((p) => p.sets === 4)!.wns).toBeGreaterThan(0);
   });
 });
 
 describe("landmarks", () => {
   const l = wnsLandmarks(settings);
 
-  it("comes out ordered and positive", () => {
+  it("is built from multiples of one maintenance workout", () => {
+    expect(l.unit).toBeCloseTo(workoutStimulus(3, findDataset("schoenfeld")), 9);
     expect(l.mv).toBe(0);
-    expect(l.mev).toBeGreaterThan(0);
-    expect(l.mev).toBeLessThan(l.mavLo);
-    expect(l.mavLo).toBeLessThan(l.mavHi);
-    expect(l.mavHi).toBeLessThan(l.mrv);
+    expect(l.mev).toBeCloseTo(l.unit, 9);
+    expect(l.mavHi).toBeCloseTo(l.unit * 4, 9);
+    expect(l.mrv).toBeCloseTo(l.unit * 6, 9);
   });
 
-  it("moves with the settings, because the WNS scale does", () => {
-    const dearer = wnsLandmarks({ ...settings, maintenanceSets: 5 });
-    expect(dearer.mev).toBeLessThan(l.mev);
-    const shallower = wnsLandmarks({ ...settings, dataset: "currier" });
-    expect(shallower.mrv).toBeGreaterThan(l.mrv);
+  it("stretches with the scale, so the bands stay readable on either dataset", () => {
+    const pelland = wnsLandmarks({ ...settings, dataset: "pelland" });
+    expect(pelland.mrv).toBeGreaterThan(l.mrv);
+    // The same program scores higher on the shallower curve — 6 sets are worth
+    // more relative to the 3-set maintenance workout — so it rates higher too.
+    const three = weeklyNetStimulus(input()); // 3× 6 sets
+    const threePelland = weeklyNetStimulus(input({ dataset: "pelland" }));
+    expect(threePelland.wns).toBeGreaterThan(three.wns);
+    expect(three.band.key).toBe("productive");
+    expect(threePelland.band.key).toBe("peak");
   });
 
-  it("bands a WNS score against them", () => {
+  it("bands a score against them", () => {
     expect(wnsBand(-1, l).key).toBe("losing");
     expect(wnsBand(0, l).key).toBe("maintenance");
     expect(wnsBand(l.mev * 0.5, l).key).toBe("minimal");
-    expect(wnsBand((l.mev + l.mavLo) / 2, l).key).toBe("growing");
-    expect(wnsBand((l.mavLo + l.mavHi) / 2, l).key).toBe("productive");
-    expect(wnsBand((l.mavHi + l.mrv) / 2, l).key).toBe("peak");
-    expect(wnsBand(l.mrv + 1, l).key).toBe("over");
+    expect(wnsBand(l.mev * 1.5, l).key).toBe("growing");
+    expect(wnsBand(l.unit * 3, l).key).toBe("productive");
+    expect(wnsBand(l.unit * 5, l).key).toBe("peak");
+    expect(wnsBand(l.unit * 7, l).key).toBe("over");
   });
 
   it("puts a textbook week (3× 6 sets) in the productive range", () => {
-    expect(weeklyNetStimulus(input()).band.key).toBe("productive");
+    const r = weeklyNetStimulus(input());
+    expect(r.band.key).toBe("productive");
+    expect(r.maintenanceWorkoutsWorth).toBeCloseTo(r.wns / r.landmarks.unit, 9);
   });
 });
 
 describe("matrix & targets", () => {
   it("scores every frequency × sets combination", () => {
     const m = wnsMatrix(settings, [1, 2, 3], [3, 6]);
-    expect(m.length).toBe(2); // one row per set count
+    expect(m.length).toBe(2);
     expect(m[0].length).toBe(3);
-    expect(m[0][0].wns).toBeCloseTo(0, 9); // 3 sets = maintenance
+    expect(m[0][0].wns).toBeCloseTo(0, 9); // 1× 3 sets = maintenance
     expect(m[1][2].weeklySets).toBe(18);
   });
 
   it("finds the fewest sets per workout that reach a target", () => {
-    const rows = waysToHit(4, settings, [1, 2, 3]);
-    for (const row of rows) {
+    const rows = waysToHit(4, settings, [1, 2, 3, 4]);
+    // Once a week cannot reach 4 units at any sane set count: the curve
+    // flattens faster than five days of atrophy can be paid off.
+    expect(rows[0].setsPerWorkout).toBeNull();
+    for (const row of rows.slice(1)) {
       expect(row.setsPerWorkout).not.toBeNull();
       expect(row.wns).toBeGreaterThanOrEqual(4);
     }
-    // Spreading the same target over more sessions costs more weekly sets.
-    expect(rows[2].weeklySets!).toBeGreaterThan(rows[0].weeklySets!);
+    // Training more often gets there on far fewer sets per workout.
+    expect(rows[1].setsPerWorkout!).toBe(11);
+    expect(rows[2].setsPerWorkout!).toBe(3);
+    expect(rows[3].setsPerWorkout!).toBe(1);
   });
 
-  it("reports a target that cannot be reached at all", () => {
+  it("reports a target no sane number of sets reaches", () => {
     const rows = waysToHit(500, settings, [1]);
     expect(rows[0].setsPerWorkout).toBeNull();
     expect(rows[0].weeklySets).toBeNull();
-  });
-});
-
-describe("curve for the chart", () => {
-  it("crosses zero at the maintenance volume", () => {
-    const c = wnsCurve(settings, 3, 10);
-    expect(c.length).toBe(10);
-    expect(c.find((p) => p.sets === 3)!.wns).toBeCloseTo(0, 9);
-    expect(c.find((p) => p.sets === 2)!.wns).toBeLessThan(0);
-    expect(c.find((p) => p.sets === 4)!.wns).toBeGreaterThan(0);
-  });
-
-  it("uses the capped frequency, not the raw one", () => {
-    const capped = wnsCurve(settings, 6, 8);
-    const atCap = wnsCurve(settings, 3.5, 8);
-    expect(capped).toEqual(atCap);
   });
 });

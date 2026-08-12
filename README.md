@@ -60,21 +60,25 @@ recommended), your **maintenance volume** (default 3 sets) and the **stimulus
 duration** (standard 48 h).
 
 ```
-WNS = effective frequency × ( S(sets) − S(maintenance) )
-S(n) = a · ln(1 + n / b)          # the dataset's per-workout dose–response
-effective frequency = min(frequency, 168 / stimulus duration)
+WNS           = (stimulus per workout × frequency) − (atrophy days × daily atrophy)
+S(sets)       = sets^k        # k from the dataset: 6 sets = 2× one set
+                              # (Schoenfeld) or 4× (Pelland); 1 set = 1 unit
+atrophy days  = max(0, 7 − frequency × stimulus days)
+daily atrophy = S(maintenance) ÷ (7 − stimulus days)
 ```
 
-A workout's stimulus grows with its sets but with diminishing returns; part of
-every workout only holds the muscle you already have, so it is subtracted from
-each one; and a workout's stimulus lasts a limited time, so training again
-inside that window adds nothing. **WNS landmarks** prices MV/MEV/MAV/MRV in
-stimulus units under your own settings (the scale moves with the dataset and
+That last line is the model's hinge: one weekly workout at your maintenance
+volume is known to hold muscle, so the stimulus it produces must be exactly what
+you lose over the days it leaves uncovered — which makes that programme score
+zero under any settings. Because extra sets inside a workout are worth
+progressively less while each extra *workout* both adds a full dose and removes
+atrophy days, the model comes out strongly in favour of frequency: 3 sets three
+times a week beats 9 sets once. **WNS landmarks** prices MV/MEV/MAV/MRV as
+multiples of one maintenance workout (the scale stretches with the dataset and
 maintenance volume, so fixed thresholds would mislead), then shows every
-frequency × sets combination and the cheapest ways to hit a target. WNS is a
-relative score for comparing plans, not a biological measurement, and it prices
-stimulus only — not fatigue, joints or time. Covered by
-[unit tests](lib/hypertrophy.test.ts).
+frequency × sets combination and the cheapest ways to hit a target. WNS is in
+arbitrary units and prices stimulus and atrophy only — not fatigue, joints or
+time. Covered by [unit tests](lib/hypertrophy.test.ts).
 
 Every tool has its **own page and URL** (`/t/<id>`) with a unique title,
 meta description and canonical link, a generated **sitemap** and **robots**,
@@ -107,8 +111,8 @@ npm test                     # run the formula unit tests (Vitest)
 The pure formula library in [`lib/formulas.ts`](lib/formulas.ts) is covered by
 a [Vitest suite](lib/formulas.test.ts) (VDOT, FFMI, muscle-gain, diet planner,
 RPE, power zones, strength standards, …), as is the weekly-net-stimulus engine in
-[`lib/hypertrophy.ts`](lib/hypertrophy.ts) (dose–response curves, the maintenance
-subtraction, the stimulus-duration cap, splits and landmarks), so the science
+[`lib/hypertrophy.ts`](lib/hypertrophy.ts) (dose–response curves, atrophy days,
+the maintenance-derived atrophy rate, splits and landmarks), so the science
 stays correct as it grows. The app is also an installable **PWA** — a web manifest plus a small
 service worker make it work offline and add-to-home-screen after the first
 visit. Motion respects `prefers-reduced-motion`.

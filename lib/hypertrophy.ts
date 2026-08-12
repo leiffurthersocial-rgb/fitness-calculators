@@ -1,31 +1,37 @@
 /**
  * lib/hypertrophy.ts
  * ------------------
- * Weekly net stimulus (WNS) — Chris Beardsley's model of how much growth
- * stimulus a week of training actually delivers, kept deliberately small.
- * Pure logic, no React.
+ * Chris Beardsley's **Weekly Net Stimulus** (WNS) model. Pure logic, no React.
  *
  * THE MODEL
  * ---------
- * 1. A workout's stimulus comes from the sets in it, with diminishing returns:
- *    the second set adds less than the first, the fifth less again. The shape
- *    of that curve is the *dataset* you pick.
- * 2. Some of every workout is spent just holding onto the muscle you have —
- *    the *maintenance volume*. Only the stimulus above it grows anything, so
- *    net stimulus per workout = S(sets) − S(maintenance).
- * 3. A workout's stimulus lasts a limited time — the *stimulus duration*,
- *    about 48 hours. Training the same muscle again inside that window
- *    overlaps with a signal that is already switched on, so the useful
- *    frequency is capped at 168 ÷ duration (3.5× a week at 48 h).
- * 4. Weekly net stimulus = effective frequency × net stimulus per workout.
+ *   WNS = weekly hypertrophy stimulus − weekly atrophy effect
+ *       = (stimulus per workout × frequency) − (atrophy days × daily atrophy rate)
  *
- * The dose–response curves are logarithmic fits anchored to the published
- * findings named on each dataset, applied per workout because that is the unit
- * this model works in. WNS is a relative score for comparing plans, not a
- * biological measurement.
+ * • **Stimulus per workout** comes from the sets you do for the muscle, with
+ *   diminishing returns. How steeply it diminishes is the *dataset* you pick:
+ *   Schoenfeld's meta-analysis has 6 sets producing 2× the stimulus of 1 set,
+ *   Pelland's has 6 sets producing 4×.
+ *
+ * • **Atrophy days** are the days of the week not covered by a workout's
+ *   stimulus. The growth stimulus lasts about 36–48 hours, so at 48 h each
+ *   workout covers 2 days and a week has 7 − 2 × frequency atrophy days (never
+ *   fewer than none).
+ *
+ * • **The daily atrophy rate** falls out of maintenance volume. One workout of
+ *   ~3 sets to failure a week is enough to maintain, so over the 5 atrophy days
+ *   that week you must lose exactly the stimulus those 3 sets provided:
+ *   daily atrophy = S(maintenance) ÷ (7 − stimulus days). That makes the
+ *   maintenance program score exactly zero, whatever settings you choose.
+ *
+ * Because the per-workout curve flattens quickly while atrophy is charged by
+ * the day, the model rewards spreading volume over more workouts — that is the
+ * point it exists to make.
+ *
+ * Units are arbitrary: one set to failure = 1 stimulus unit.
  */
 
-const HOURS_PER_WEEK = 168;
+const DAYS_PER_WEEK = 7;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -33,42 +39,38 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
  * DATASETS — the sets-per-workout dose–response
  * ====================================================================== */
 
-export type DatasetKey = "schoenfeld" | "currier" | "conservative";
+export type DatasetKey = "schoenfeld" | "pelland";
 
 export interface Dataset {
   key: DatasetKey;
   label: string;
-  /** What the curve says, and where its shape comes from. */
   note: string;
   recommended?: boolean;
-  /**
-   * Curvature of S(n) = a · ln(1 + n/b). Larger b = shallower diminishing
-   * returns, so extra sets in a workout hold their value longer. `a` is
-   * derived so every dataset agrees that one set = 1 stimulus unit — switching
-   * dataset changes the shape of the curve, never the scale.
-   */
-  b: number;
+  /** Stimulus of 6 sets as a multiple of 1 set, as the meta-analysis reports. */
+  ratioAtSix: number;
+}
+
+/**
+ * Stimulus = sets^exponent, the simplest curve that passes through both fixed
+ * points every dataset gives us: 1 set = 1 unit, and 6 sets = `ratioAtSix`.
+ */
+export function datasetExponent(d: Dataset): number {
+  return Math.log(d.ratioAtSix) / Math.log(6);
 }
 
 export const DATASETS: Dataset[] = [
   {
     key: "schoenfeld",
-    label: "Schoenfeld et al. — graded dose–response",
-    note: "Sets keep adding growth with clear diminishing returns. Anchored to the graded volume dose–response of Schoenfeld, Ogborn & Krieger's meta-analysis (roughly 5.4%, 6.6% and 9.8% growth for under 5, 5–9 and 10+ sets).",
+    label: "Schoenfeld — pronounced diminishing returns",
+    note: "6 sets produce about 2× the stimulus of a single set. The more conservative read of the dose–response literature, and the recommended default.",
     recommended: true,
-    b: 3,
+    ratioAtSix: 2,
   },
   {
-    key: "currier",
-    label: "Currier et al. — volume keeps paying",
-    note: "A Bayesian meta-analysis whose dose–response is still climbing past 30 sets a week. A shallower curve, so extra sets in a workout stay worth doing for longer.",
-    b: 6,
-  },
-  {
-    key: "conservative",
-    label: "Conservative — early plateau",
-    note: "The trials where extra sets stopped adding much (Ostrowski 1997, Baz-Valle 2022). A steep curve that is nearly flat by about four sets in a workout.",
-    b: 1.5,
+    key: "pelland",
+    label: "Pelland — subtle diminishing returns",
+    note: "6 sets produce about 4× the stimulus of a single set. Extra sets in a workout keep more of their value, so higher per-workout volumes score better.",
+    ratioAtSix: 4,
   },
 ];
 
@@ -76,12 +78,11 @@ export function findDataset(key: string): Dataset {
   return DATASETS.find((d) => d.key === key) ?? DATASETS[0];
 }
 
-/** Stimulus of a workout containing `sets` sets, in stimulus units. */
+/** Hypertrophy stimulus of one workout containing `sets` sets to failure. */
 export function workoutStimulus(sets: number, dataset: Dataset): number {
   const n = Math.max(0, sets);
   if (n === 0) return 0;
-  const a = 1 / Math.log(1 + 1 / dataset.b); // normalise so S(1) = 1
-  return a * Math.log(1 + n / dataset.b);
+  return Math.pow(n, datasetExponent(dataset));
 }
 
 /* ========================================================================
@@ -90,9 +91,9 @@ export function workoutStimulus(sets: number, dataset: Dataset): number {
 
 export interface WnsSettings {
   dataset: DatasetKey;
-  /** Sets in a workout that only maintain the muscle. Beardsley's default: 3. */
+  /** Sets in one weekly workout that maintain the muscle. Default 3. */
   maintenanceSets: number;
-  /** How long a workout's stimulus lasts, hours. Standard: 48. */
+  /** How long a workout's growth stimulus lasts, hours. Standard 48. */
   stimulusHours: number;
 }
 
@@ -108,26 +109,40 @@ export const DEFAULT_SETTINGS: WnsSettings = {
   stimulusHours: 48,
 };
 
-/** Most workouts a week whose stimulus does not overlap the previous one. */
-export function maxUsefulFrequency(stimulusHours: number): number {
-  const h = clamp(stimulusHours, 6, HOURS_PER_WEEK);
-  return HOURS_PER_WEEK / h;
+/** Days of the week a single workout's stimulus covers. */
+export function stimulusDays(stimulusHours: number): number {
+  return clamp(stimulusHours, 1, 168) / 24;
+}
+
+/** Days of the week left uncovered by any workout's stimulus. */
+export function atrophyDays(frequency: number, stimulusHours: number): number {
+  return Math.max(0, DAYS_PER_WEEK - Math.max(0, frequency) * stimulusDays(stimulusHours));
+}
+
+/**
+ * Stimulus lost per atrophy day, derived from maintenance volume: one workout
+ * of `maintenanceSets` a week has to come out at exactly zero net stimulus.
+ */
+export function dailyAtrophyRate(settings: WnsSettings): number {
+  const uncovered = DAYS_PER_WEEK - stimulusDays(settings.stimulusHours);
+  if (uncovered <= 0) return 0; // a stimulus lasting a week can't be outrun
+  return workoutStimulus(settings.maintenanceSets, findDataset(settings.dataset)) / uncovered;
 }
 
 export interface WnsResult {
-  /** S(sets) — the workout's gross stimulus. */
-  gross: number;
-  /** S(maintenance) — the part of it spent holding what you have. */
-  maintenance: number;
-  net: number;
-  frequency: number;
-  effectiveFrequency: number;
-  maxFrequency: number;
-  /** True when frequency is wasted on an overlapping stimulus. */
-  capped: boolean;
-  /** The headline: weekly net stimulus. */
+  /** S(sets) — one workout's hypertrophy stimulus. */
+  perWorkout: number;
+  /** S(sets) × frequency. */
+  weeklyStimulus: number;
+  atrophyDays: number;
+  dailyAtrophy: number;
+  /** atrophy days × daily atrophy rate. */
+  weeklyAtrophy: number;
+  /** The headline. */
   wns: number;
   weeklySets: number;
+  /** WNS as a multiple of one maintenance workout's stimulus. */
+  maintenanceWorkoutsWorth: number;
   landmarks: WnsLandmarks;
   band: WnsBand;
   notes: string[];
@@ -135,79 +150,89 @@ export interface WnsResult {
 
 export function weeklyNetStimulus(input: WnsInput): WnsResult {
   const dataset = findDataset(input.dataset);
-  const sets = Math.max(0, input.setsPerWorkout);
-  const maintenanceSets = Math.max(0, input.maintenanceSets);
   const frequency = Math.max(0, input.frequency);
+  const sets = Math.max(0, input.setsPerWorkout);
 
-  const gross = workoutStimulus(sets, dataset);
-  const maintenance = workoutStimulus(maintenanceSets, dataset);
-  const net = gross - maintenance;
+  const perWorkout = workoutStimulus(sets, dataset);
+  const weeklyStimulus = perWorkout * frequency;
+  const days = atrophyDays(frequency, input.stimulusHours);
+  const dailyAtrophy = dailyAtrophyRate(input);
+  const weeklyAtrophy = days * dailyAtrophy;
+  const wns = weeklyStimulus - weeklyAtrophy;
 
-  const maxFrequency = maxUsefulFrequency(input.stimulusHours);
-  const effectiveFrequency = Math.min(frequency, maxFrequency);
-  const wns = effectiveFrequency * net;
-
+  const maintenanceStimulus = workoutStimulus(input.maintenanceSets, dataset);
   const landmarks = wnsLandmarks(input);
+
   return {
-    gross,
-    maintenance,
-    net,
-    frequency,
-    effectiveFrequency,
-    maxFrequency,
-    capped: frequency > maxFrequency + 1e-9,
+    perWorkout,
+    weeklyStimulus,
+    atrophyDays: days,
+    dailyAtrophy,
+    weeklyAtrophy,
     wns,
     weeklySets: frequency * sets,
+    maintenanceWorkoutsWorth: maintenanceStimulus > 0 ? wns / maintenanceStimulus : 0,
     landmarks,
     band: wnsBand(wns, landmarks),
-    notes: wnsNotes(input, { gross, maintenance, net, effectiveFrequency, maxFrequency, wns }),
+    notes: wnsNotes(input, { wns, days, perWorkout, frequency, sets }),
   };
 }
 
 function wnsNotes(
   input: WnsInput,
-  r: { gross: number; maintenance: number; net: number; effectiveFrequency: number; maxFrequency: number; wns: number }
+  r: { wns: number; days: number; perWorkout: number; frequency: number; sets: number }
 ): string[] {
   const notes: string[] = [];
   const round1 = (v: number) => Math.round(v * 10) / 10;
+  const cover = stimulusDays(input.stimulusHours);
 
-  if (input.setsPerWorkout <= input.maintenanceSets) {
+  if (r.days > 0) {
     notes.push(
-      `At ${input.setsPerWorkout} sets a workout you are at or below the maintenance volume of ${input.maintenanceSets}, so the whole workout goes on holding what you have. Growth starts with the set after that.`
+      `Each workout's stimulus covers ${round1(cover)} days, so ${round1(r.frequency)}× a week leaves ${round1(
+        r.days
+      )} atrophy ${r.days === 1 ? "day" : "days"} — ${round1(r.days * dailyAtrophyRate(input))} units lost from what you built.`
     );
-  } else if (r.gross > 0) {
+  } else {
     notes.push(
-      `${Math.round((r.maintenance / r.gross) * 100)}% of each workout's stimulus pays the maintenance cost — only the remaining ${round1(
-        r.net
-      )} units grow anything.`
-    );
-  }
-
-  if (input.frequency > r.maxFrequency + 1e-9) {
-    notes.push(
-      `A workout's stimulus lasts ~${Math.round(input.stimulusHours)} h, so anything past ${round1(
-        r.maxFrequency
-      )} sessions a week lands on a signal that is already switched on. Your ${input.frequency}× counts as ${round1(
-        r.maxFrequency
-      )}×.`
+      `${round1(r.frequency)} workouts × ${round1(cover)} stimulus days covers the whole week: no atrophy days at all, so every unit of stimulus counts.`
     );
   }
 
-  // The best way to split the weekly volume you are already doing.
-  const best = bestSplit(input.frequency * input.setsPerWorkout, input);
-  if (best && Math.abs(best.frequency - Math.min(input.frequency, r.maxFrequency)) > 0.01 && best.wns > r.wns * 1.05) {
+  // What one more workout a week would be worth, at the same sets per workout.
+  if (r.frequency >= 1 && r.frequency < 7 && r.sets > 0) {
+    const more = weeklyNetStimulusRaw({ ...input, frequency: r.frequency + 1 });
     notes.push(
-      `The same ${round1(input.frequency * input.setsPerWorkout)} weekly sets score ${round1(
-        best.wns
-      )} as ${best.frequency}× ${round1(best.setsPerWorkout)} sets — spreading volume thinner costs you a maintenance charge in every extra workout, and stacking it too deep runs into diminishing returns.`
+      `A ${Math.round(r.frequency) + 1}th workout at the same ${round1(r.sets)} sets would take you to ${round1(
+        more
+      )} (+${round1(more - r.wns)}) — adding sets to the workouts you already do is worth less, because the per-workout curve flattens while atrophy is charged by the day.`
+    );
+  }
+
+  // The best way to arrange the weekly volume you already do.
+  const weekly = r.frequency * r.sets;
+  const best = bestSplit(weekly, input);
+  if (best && best.frequency !== Math.round(r.frequency) && best.wns > r.wns + 0.05) {
+    notes.push(
+      `Those same ${round1(weekly)} weekly sets are worth ${round1(best.wns)} spread over ${
+        best.frequency
+      } workouts (≈${round1(best.setsPerWorkout)} sets each), against ${round1(r.wns)} the way you do them now.`
     );
   }
 
   return notes;
 }
 
+/** WNS only, without the surrounding analysis (used internally). */
+function weeklyNetStimulusRaw(input: WnsInput): number {
+  const dataset = findDataset(input.dataset);
+  return (
+    workoutStimulus(input.setsPerWorkout, dataset) * Math.max(0, input.frequency) -
+    atrophyDays(input.frequency, input.stimulusHours) * dailyAtrophyRate(input)
+  );
+}
+
 /* ========================================================================
- * SPLITS — the same weekly volume, arranged differently
+ * SPLITS & CURVES
  * ====================================================================== */
 
 export interface Split {
@@ -216,79 +241,88 @@ export interface Split {
   wns: number;
 }
 
-/** WNS for a fixed weekly set count at each whole frequency worth trying. */
-export function splitOptions(weeklySets: number, settings: WnsSettings, maxFreq = 6): Split[] {
-  const dataset = findDataset(settings.dataset);
-  const maintenance = workoutStimulus(settings.maintenanceSets, dataset);
-  const cap = maxUsefulFrequency(settings.stimulusHours);
+/** The same weekly set count, arranged over 1…7 workouts. */
+export function splitOptions(weeklySets: number, settings: WnsSettings, maxFreq = 7): Split[] {
   const out: Split[] = [];
   for (let f = 1; f <= maxFreq; f++) {
     const setsPerWorkout = weeklySets / f;
     if (setsPerWorkout < 1) break;
-    const net = workoutStimulus(setsPerWorkout, dataset) - maintenance;
-    out.push({ frequency: f, setsPerWorkout, wns: Math.min(f, cap) * net });
+    out.push({
+      frequency: f,
+      setsPerWorkout,
+      wns: weeklyNetStimulusRaw({ ...settings, frequency: f, setsPerWorkout }),
+    });
   }
   return out;
 }
 
-export function bestSplit(weeklySets: number, settings: WnsSettings, maxFreq = 6): Split | null {
+export function bestSplit(weeklySets: number, settings: WnsSettings, maxFreq = 7): Split | null {
   const opts = splitOptions(weeklySets, settings, maxFreq);
   if (!opts.length) return null;
   return opts.reduce((a, b) => (b.wns > a.wns + 1e-9 ? b : a));
 }
 
-/** WNS across a range of sets per workout, at a fixed frequency (for charts). */
-export function wnsCurve(
+/** WNS across training frequencies at a fixed sets per workout (for charts). */
+export function frequencyCurve(
+  settings: WnsSettings,
+  setsPerWorkout: number,
+  maxFreq = 7
+): { frequency: number; wns: number }[] {
+  const out: { frequency: number; wns: number }[] = [];
+  for (let f = 1; f <= maxFreq; f++) {
+    out.push({ frequency: f, wns: weeklyNetStimulusRaw({ ...settings, frequency: f, setsPerWorkout }) });
+  }
+  return out;
+}
+
+/** WNS across sets per workout at a fixed frequency (for charts). */
+export function setsCurve(
   settings: WnsSettings,
   frequency: number,
-  maxSets = 15
+  maxSets = 12
 ): { sets: number; wns: number }[] {
-  const dataset = findDataset(settings.dataset);
-  const maintenance = workoutStimulus(settings.maintenanceSets, dataset);
-  const f = Math.min(Math.max(0, frequency), maxUsefulFrequency(settings.stimulusHours));
   const out: { sets: number; wns: number }[] = [];
   for (let s = 1; s <= maxSets; s++) {
-    out.push({ sets: s, wns: f * (workoutStimulus(s, dataset) - maintenance) });
+    out.push({ sets: s, wns: weeklyNetStimulusRaw({ ...settings, frequency, setsPerWorkout: s }) });
   }
   return out;
 }
 
 /* ========================================================================
- * LANDMARKS — what a WNS number means
+ * LANDMARKS — reading a WNS number
  * ----------------------------------------------------------------------
- * WNS is an arbitrary scale, and it moves with the dataset and the
- * maintenance volume you choose, so fixed thresholds would lie. Instead the
- * landmarks are computed under your own settings from reference weekly set
- * counts drawn from the volume literature — ~10 sets a week to start growing,
- * ~16–26 for the productive range, ~34 as the point where most people stop
- * recovering — each split over a reference frequency of 2.
+ * WNS is an arbitrary scale that stretches with the dataset and the
+ * maintenance volume, so fixed thresholds would mislead. Everything here is
+ * expressed as multiples of one maintenance workout's stimulus, S(maintenance):
+ * a week worth one maintenance workout of *net* stimulus is the minimum
+ * effective dose, two to four is the productive range, and six is about as
+ * much as anyone turns into muscle. Those multiples are this app's
+ * interpretation, not part of Beardsley's model — the model itself only fixes
+ * the zero point.
  * ====================================================================== */
 
-/** Weekly sets each landmark is anchored to, at REFERENCE_FREQUENCY. */
-export const LANDMARK_REFERENCE = { mev: 10, mavLo: 16, mavHi: 26, mrv: 34 };
-export const REFERENCE_FREQUENCY = 2;
+export const LANDMARK_MULTIPLES = { mev: 1, mavLo: 2, mavHi: 4, mrv: 6 };
 
 export interface WnsLandmarks {
-  /** Anything at or below this is maintenance, not growth. */
+  /** Maintenance: zero net stimulus, by construction. */
   mv: number;
   mev: number;
   mavLo: number;
   mavHi: number;
   mrv: number;
+  /** S(maintenance) — the unit the others are multiples of. */
+  unit: number;
 }
 
 export function wnsLandmarks(settings: WnsSettings): WnsLandmarks {
-  const dataset = findDataset(settings.dataset);
-  const maintenance = workoutStimulus(settings.maintenanceSets, dataset);
-  const f = Math.min(REFERENCE_FREQUENCY, maxUsefulFrequency(settings.stimulusHours));
-  const at = (weeklySets: number) =>
-    Math.max(0, f * (workoutStimulus(weeklySets / f, dataset) - maintenance));
+  const unit = workoutStimulus(settings.maintenanceSets, findDataset(settings.dataset));
   return {
     mv: 0,
-    mev: at(LANDMARK_REFERENCE.mev),
-    mavLo: at(LANDMARK_REFERENCE.mavLo),
-    mavHi: at(LANDMARK_REFERENCE.mavHi),
-    mrv: at(LANDMARK_REFERENCE.mrv),
+    mev: unit * LANDMARK_MULTIPLES.mev,
+    mavLo: unit * LANDMARK_MULTIPLES.mavLo,
+    mavHi: unit * LANDMARK_MULTIPLES.mavHi,
+    mrv: unit * LANDMARK_MULTIPLES.mrv,
+    unit,
   };
 }
 
@@ -299,51 +333,51 @@ export interface WnsBand {
 }
 
 export function wnsBand(wns: number, l: WnsLandmarks): WnsBand {
-  if (wns < 0)
+  if (wns < -0.05)
     return {
       key: "losing",
-      label: "Below maintenance",
-      blurb: "Less stimulus than it takes to hold the muscle you have — over time you will lose some.",
+      label: "Losing muscle",
+      blurb: "The atrophy between sessions outweighs what your workouts build. Train the muscle more often, or do more per workout.",
     };
-  if (wns < l.mev * 0.25)
+  if (wns <= 0.05)
     return {
       key: "maintenance",
       label: "Maintenance",
-      blurb: "Enough to keep what you have and nothing more. Fine on a break, not a training plan.",
+      blurb: "Stimulus and atrophy cancel out exactly. You hold what you have and add nothing.",
     };
   if (wns < l.mev)
     return {
       key: "minimal",
       label: "Minimal growth",
-      blurb: "Above maintenance but under the minimum effective dose. You will grow slowly, if at all.",
+      blurb: "Positive, but under the minimum effective dose. Growth will be slow.",
     };
   if (wns < l.mavLo)
     return {
       key: "growing",
       label: "Growing",
-      blurb: "Past the minimum effective dose. Add a set per workout and you move into the productive range.",
+      blurb: "Past the minimum effective dose — real growth, with room to add a workout.",
     };
   if (wns <= l.mavHi)
     return {
       key: "productive",
       label: "Productive range",
-      blurb: "The adaptive range — as much stimulus as most people can turn into muscle week after week.",
+      blurb: "The range most people can actually turn into muscle week after week.",
     };
   if (wns <= l.mrv)
     return {
       key: "peak",
       label: "Near your ceiling",
-      blurb: "More stimulus than the productive range, and more fatigue with it. Sustainable for the last weeks of a block, not indefinitely.",
+      blurb: "A lot of stimulus, and the fatigue that comes with it. Good for the last weeks of a block, not indefinitely.",
     };
   return {
     key: "over",
     label: "Beyond recoverable",
-    blurb: "More stimulus than almost anyone recovers from. On paper it scores well; in practice fatigue eats it. Deload and rebuild.",
+    blurb: "More stimulus than almost anyone recovers from. The model prices stimulus, not fatigue — in practice this is where progress stalls.",
   };
 }
 
 /* ========================================================================
- * MATRIX — every frequency × sets combination at a glance
+ * MATRIX & TARGETS
  * ====================================================================== */
 
 export interface MatrixCell {
@@ -360,12 +394,9 @@ export function wnsMatrix(
   setsList: number[]
 ): MatrixCell[][] {
   const landmarks = wnsLandmarks(settings);
-  const dataset = findDataset(settings.dataset);
-  const maintenance = workoutStimulus(settings.maintenanceSets, dataset);
-  const cap = maxUsefulFrequency(settings.stimulusHours);
   return setsList.map((sets) =>
     frequencies.map((f) => {
-      const wns = Math.min(f, cap) * (workoutStimulus(sets, dataset) - maintenance);
+      const wns = weeklyNetStimulusRaw({ ...settings, frequency: f, setsPerWorkout: sets });
       return {
         frequency: f,
         setsPerWorkout: sets,
@@ -378,8 +409,8 @@ export function wnsMatrix(
 }
 
 /**
- * The cheapest ways to reach a target WNS: for each frequency, the smallest
- * whole number of sets per workout that gets there (null if it cannot).
+ * The cheapest way to reach a target WNS at each frequency: the fewest whole
+ * sets per workout that get there, or null if no sane number of sets does.
  */
 export function waysToHit(
   target: number,
@@ -387,16 +418,10 @@ export function waysToHit(
   frequencies: number[],
   maxSets = 30
 ): { frequency: number; setsPerWorkout: number | null; weeklySets: number | null; wns: number }[] {
-  const dataset = findDataset(settings.dataset);
-  const maintenance = workoutStimulus(settings.maintenanceSets, dataset);
-  const cap = maxUsefulFrequency(settings.stimulusHours);
   return frequencies.map((f) => {
-    const effective = Math.min(f, cap);
     for (let s = 1; s <= maxSets; s++) {
-      const wns = effective * (workoutStimulus(s, dataset) - maintenance);
-      if (wns >= target) {
-        return { frequency: f, setsPerWorkout: s, weeklySets: f * s, wns };
-      }
+      const wns = weeklyNetStimulusRaw({ ...settings, frequency: f, setsPerWorkout: s });
+      if (wns >= target) return { frequency: f, setsPerWorkout: s, weeklySets: f * s, wns };
     }
     return { frequency: f, setsPerWorkout: null, weeklySets: null, wns: 0 };
   });
