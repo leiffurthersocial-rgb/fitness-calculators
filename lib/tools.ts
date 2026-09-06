@@ -32,6 +32,10 @@ import Caffeine from "@/components/calculators/Caffeine";
 import Sleep from "@/components/calculators/Sleep";
 import Water from "@/components/calculators/Water";
 import SweatRate from "@/components/calculators/SweatRate";
+import Mobility from "@/components/calculators/Mobility";
+import Skills from "@/components/calculators/Skills";
+import BreathTables from "@/components/calculators/BreathTables";
+import BreathHold from "@/components/calculators/BreathHold";
 
 export interface Tool {
   id: string;
@@ -83,6 +87,28 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "lift-balance", name: "Lift balance", blurb: "Are your big lifts in proportion?", Component: LiftBalance },
       { id: "strength-score", name: "Strength score", blurb: "One overall score & percentile across your lifts", Component: StrengthScore },
       { id: "rpe", name: "RPE / 1RM converter", blurb: "RPE ↔ %1RM ↔ reps in reserve", Component: RpeConverter },
+    ],
+  },
+  {
+    group: "Mobility",
+    emoji: "🧘",
+    tools: [
+      { id: "mobility", name: "Mobility session", blurb: "Pick your goals & minutes, get a guided routine", Component: Mobility },
+    ],
+  },
+  {
+    group: "Skills",
+    emoji: "🤸",
+    tools: [
+      { id: "skills", name: "Skill progressions", blurb: "Handstand, muscle-up, backflip — step by step", Component: Skills },
+    ],
+  },
+  {
+    group: "Breathwork",
+    emoji: "🫁",
+    tools: [
+      { id: "breath-tables", name: "CO₂ / O₂ tables", blurb: "Guided apnea tables built from your max hold", Component: BreathTables },
+      { id: "breath-hold", name: "Breath-hold score", blurb: "Percentile & level for your max static hold", Component: BreathHold },
     ],
   },
   {

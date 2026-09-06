@@ -92,9 +92,74 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   },
   "workout-plan": {
     description:
-      "Generate a weekly training plan from your goal, available days, equipment and lifts, with set/rep schemes, RIR targets and weekly volume per muscle.",
+      "Generate a weekly training plan that trains every muscle 1.5–2× a week, then rate its effectiveness on stimulating reps, fatigue cost and your real recovery.",
     sources: [
       { label: "Schoenfeld et al. — resistance-training volume & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
+      { label: "Beardsley — stimulating reps & motor unit recruitment", url: "https://sandcresearch.medium.com/" },
+      { label: "Schoenfeld et al. — training frequency meta-analysis", url: "https://pubmed.ncbi.nlm.nih.gov/27102172/" },
+      { label: "Refalo et al. — proximity to failure & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/36378242/" },
+    ],
+    faq: [
+      { q: "Why so few sets compared to other calculators?", a: "Because sets are not the unit that drives growth — reps close to failure are. High motor-unit recruitment and slow fibre shortening velocity only coincide in roughly the last five reps before failure, so a set stopped four reps short contributes about one stimulating rep for a full set's worth of fatigue. Run fewer sets closer to failure, more often, and you get the same stimulus for far less recovery cost." },
+      { q: "What does the effectiveness score actually measure?", a: "Six things, weighted: the weekly number of stimulating reps per muscle (WNS) against the band for your goal, how the program's fatigue cost compares with your estimated recovery capacity, the stimulus-to-fatigue ratio, per-muscle training frequency, how well the rep ranges match your goal, and whether the sessions are a length you'll actually keep turning up for." },
+      { q: "How do I get 1.5× frequency on an odd number of days?", a: "The week is a rolling cycle, not a fixed template. Three days of Anterior/Posterior runs A, P, A one week and P, A, P the next — each session type comes round 1.5× per week on average. The volume and frequency read-outs report that rolling average, because it's what your body actually receives." },
+      { q: "Why does my recovery context change the score?", a: "Because fatigue only matters relative to what you can absorb. Sleep, life stress, whether you're in a calorie deficit, your age and your training experience all move your recovery capacity, and the same program can sit comfortably inside it or well outside it depending on those. A plan that outruns your recovery doesn't feel like overtraining — it shows up as lifts that stop moving." },
+    ],
+  },
+
+  mobility: {
+    description:
+      "Build a mobility session around the goals you pick — front splits, overhead shoulders, deep squat, backbend — in the minutes you actually have, with a guided timer.",
+    sources: [
+      { label: "Thomas et al. — stretching dose & range of motion", url: "https://pubmed.ncbi.nlm.nih.gov/30427671/" },
+      { label: "Behm et al. — acute effects of stretching on performance", url: "https://pubmed.ncbi.nlm.nih.gov/26642915/" },
+    ],
+    faq: [
+      { q: "How long do I need to stretch to actually gain range?", a: "About five minutes per week per muscle group captures most of the range-of-motion gain available — and frequency matters more than session length, so short and near-daily beats one weekly marathon. The session tells you how many of these sessions a week hits that dose for each goal you picked." },
+      { q: "Why does the session include loaded work, not just stretching?", a: "Short-term range is mostly increased stretch tolerance; lasting change comes from tissue adaptation, and that responds to long holds and especially to loading the end range. Loaded and contract–relax entries are what turn passive range into range you can control — and that's the range that's retained." },
+      { q: "Can I do this before lifting?", a: "Use the pre-training warm-up goal, which is built from dynamic work and short holds. Static holds over about 60 seconds per muscle can transiently reduce force and power output, so save the long passive work for after training or a separate session." },
+    ],
+  },
+
+  skills: {
+    description:
+      "Step-by-step progressions for the handstand, muscle-up, front lever, planche, pistol squat, backflip and more — each step with a clear test for when you've got it.",
+    sources: [
+      { label: "USA Gymnastics — safety & progressions", url: "https://usagym.org/" },
+    ],
+    faq: [
+      { q: "How often should I practise a skill?", a: "Short and often, always fresh. Ten to fifteen focused minutes five days a week beats one long weekly session, and skill work belongs at the START of a session, before anything that makes you tired — a rep performed badly is still a rep you learn." },
+      { q: "Can I teach myself a backflip?", a: "No. Flips are the one category here where self-teaching is genuinely dangerous: an under-rotated standing backflip risks the neck and spine. Get a coach and learn it on a trampoline, into a foam pit or onto crash mats. Everything else in this list can be self-taught with patience." },
+      { q: "Why does the progress bar not move when I tick a later step?", a: "Progress counts consecutive steps from the bottom of the ladder. Ticking step 4 while step 2 is still open doesn't move you up, because skipped steps are exactly what stalls a skill at the 80% mark — the next step shown is always the lowest one still open." },
+    ],
+  },
+
+  "breath-tables": {
+    description:
+      "Guided CO₂ and O₂ breath-hold tables built from your own max hold, with a phase-by-phase timer, clear instructions and the safety rules that actually matter.",
+    sources: [
+      { label: "Bain et al. — physiology of static apnea", url: "https://pubmed.ncbi.nlm.nih.gov/29687392/" },
+      { label: "Divers Alert Network — breath-hold safety", url: "https://dan.org/" },
+    ],
+    faq: [
+      { q: "What's the difference between a CO₂ table and an O₂ table?", a: "A CO₂ table holds the breath-hold length constant and shrinks the recovery between rounds, so you start each hold with more leftover carbon dioxide and the urge to breathe arrives earlier — it trains CO₂ tolerance. An O₂ table keeps the recovery long and lengthens the holds, pushing further into genuine oxygen depletion. CO₂ tables are the workhorse and can be near-daily; O₂ tables are taxing and belong once or twice a week, never on consecutive days." },
+      { q: "Should I hyperventilate before a hold?", a: "Never. Fast deep breathing lowers carbon dioxide without adding meaningful oxygen, which removes the warning signal that makes you want to breathe while doing nothing about the risk of blacking out. Take one relaxed breath to about 80% full and start the hold." },
+      { q: "Is breath-hold training safe?", a: "On dry land, sitting or lying down, with no hyperventilation — yes, for healthy adults. In or near water it is not: apnea blackout is silent and gives no warning. Never practise breath holds in a pool, a bath, or while swimming, and skip apnea training entirely if you're pregnant or have heart disease, uncontrolled blood pressure, epilepsy or a history of fainting." },
+      { q: "How quickly will my hold improve?", a: "Faster than most people expect, because the first limit is CO₂ tolerance rather than oxygen. Doubling a sub-60-second hold within 8–12 weeks of consistent table work is common — and a good part of the first jump comes simply from learning to relax and stay still." },
+    ],
+  },
+
+  "breath-hold": {
+    description:
+      "Score your maximum static breath hold: an age- and sex-adjusted percentile, a level on the apnea ladder, how it compares with the world record, and what it should become.",
+    sources: [
+      { label: "AIDA International — static apnea records", url: "https://www.aidainternational.org/" },
+      { label: "Bain et al. — physiology of static apnea", url: "https://pubmed.ncbi.nlm.nih.gov/29687392/" },
+    ],
+    faq: [
+      { q: "What's a good breath hold?", a: "The untrained adult average is around 45–60 seconds. Ninety seconds already puts you well above average, two to three minutes is solid recreational apnea, four minutes takes structured training, and competitive static apnea starts around six. The men's dry static world record is 11:35." },
+      { q: "How is the percentile calculated?", a: "Breath-hold times are strongly right-skewed, so the population is modelled as log-normal and your percentile is read off the z-score of the logarithm of your time. The curve is anchored on an untrained median near 55 s for men and 45 s for women, a 90th percentile around two minutes and a 99.9th around six, then adjusted for age." },
+      { q: "Why does age change my score?", a: "Lung volume and chest-wall compliance both decline with age, so the same hold represents a better performance the older you are. The median the curve compares you against drops by roughly 0.6% a year after 30." },
     ],
   },
 
