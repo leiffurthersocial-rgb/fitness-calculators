@@ -44,6 +44,12 @@ export function setEffectiveness(rir: number): number {
   return Math.max(0, STIMULATING_REPS_AT_FAILURE - r) / STIMULATING_REPS_AT_FAILURE;
 }
 
+/** Stimulating reps in one set: at most the last ~5 reps before failure. */
+export function stimulatingReps(reps: number, rir: number): number {
+  const r = Math.max(0, Math.floor(reps));
+  return Math.min(r, Math.max(0, STIMULATING_REPS_AT_FAILURE - Math.max(0, rir)));
+}
+
 /** Workout hypertrophy stimulus (arbitrary units, 1 set to failure = 1). */
 export function workoutStimulus(effectiveSets: number, curve: WnsCurve = "schoenfeld"): number {
   if (!(effectiveSets > 0)) return 0;

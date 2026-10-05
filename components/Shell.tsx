@@ -69,7 +69,7 @@ export default function Shell({ initialId }: { initialId: string }) {
     <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col lg:flex-row">
       {/* ---- Sidebar (desktop) ---- */}
       <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col gap-6 overflow-y-auto border-r border-[var(--line)] px-6 py-7 lg:flex print:hidden">
-        <Brand onHome={() => select("my-numbers")} />
+        <Brand onHome={() => select("routine-planner")} />
         <Settings units={units} setUnits={setUnits} theme={theme} onToggleTheme={toggle} />
         <ProfilePanel />
         <NavList activeId={active.id} query={query} setQuery={setQuery} onSelect={select} />
@@ -78,7 +78,7 @@ export default function Shell({ initialId }: { initialId: string }) {
 
       {/* ---- Mobile top bar ---- */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)]/95 px-4 py-3 backdrop-blur lg:hidden print:hidden">
-        <Brand onHome={() => select("my-numbers")} compact />
+        <Brand onHome={() => select("routine-planner")} compact />
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
           aria-expanded={mobileNavOpen}
@@ -256,7 +256,7 @@ function Brand({ onHome, compact }: { onHome: () => void; compact?: boolean }) {
       <div>
         <div className="text-xl font-bold leading-none tracking-tight">Vital</div>
         {!compact && (
-          <div className="swiss-label mt-1 text-zinc-400">Health &amp; fitness tools</div>
+          <div className="swiss-label mt-1 text-zinc-400">Hypertrophy &amp; fitness</div>
         )}
       </div>
     </button>

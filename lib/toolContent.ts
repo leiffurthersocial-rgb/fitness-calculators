@@ -29,6 +29,41 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       "A live snapshot of your key health & fitness numbers — maintenance calories, BMI, FFMI, muscle-gain potential, healthy-weight range and heart-rate zones — from one set of stats.",
   },
 
+  "routine-planner": {
+    description:
+      "Build a hypertrophy routine from sessions and exercises, save it in your browser, and get it rated per muscle with Chris Beardsley's Weekly Net Stimulus model.",
+    sources: [
+      { label: "Beardsley — Weekly Net Stimulus (S&C Research)", url: "https://www.patreon.com/posts/weekly-net-102750269" },
+      { label: "Beardsley — Stimulating reps", url: "https://www.patreon.com/posts/stimulating-reps-99706085" },
+      { label: "Pelland et al. — the resistance-training dose response", url: "https://doi.org/10.1007/s40279-025-02344-w" },
+      { label: "Schoenfeld, Ogborn & Krieger (2017) — weekly set volume & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
+    ],
+    faq: [
+      { q: "How is my routine rated?", a: "Sessions are spread evenly over the week, then every muscle's week is scored with the Weekly Net Stimulus model: growth stimulus from each workout minus atrophy between workouts. Each muscle gets 0–100 (30 = maintenance, 100 = the stimulus of 4 hard sets 3× a week), and the routine score is the average, with smaller muscles counted half." },
+      { q: "How are sets counted for each muscle?", a: "Fractionally. A set counts as 1 set for the main muscle and half a set for helpers, so one set of bench press is 1 chest, ½ front delts and ½ triceps. The Exercise library shows the numbers for every exercise." },
+      { q: "Why does my bro split score lower?", a: "Training a muscle once a week leaves about five days of atrophy, and piling 10+ sets into one session gives diminishing returns. Splitting the same sets over two or three sessions gives more stimulus and less atrophy." },
+      { q: "Where are my routines saved?", a: "In your browser's local storage on this device. Nothing is uploaded. Use Copy to paste a routine somewhere else." },
+    ],
+  },
+  "stimulating-reps": {
+    description:
+      "Count the stimulating reps in your sets with Chris Beardsley's model: only the last ~5 reps before failure build muscle, so reps in reserve cost you growth.",
+    sources: [
+      { label: "Beardsley — Stimulating reps", url: "https://www.patreon.com/posts/stimulating-reps-99706085" },
+      { label: "Beardsley — max stimulating reps per workout", url: "https://sandcresearch.medium.com/what-is-the-maximum-number-of-stimulating-reps-that-we-can-do-in-a-workout-for-a-muscle-group-9379d91bf2c" },
+    ],
+    faq: [
+      { q: "What is a stimulating rep?", a: "A rep where all the motor units are recruited and the muscle fibers shorten slowly under high tension. In a set to failure that is about the last 5 reps, whether the set is 6 reps or 30." },
+      { q: "Do I have to train to failure?", a: "No, but each rep left in reserve removes about one stimulating rep. Sets at 1–2 RIR keep most of the stimulus with less fatigue; at 4–5 RIR very little is left." },
+    ],
+  },
+  "exercise-library": {
+    description:
+      "Look up which muscles 50+ exercises train and how many sets each counts for, using fractional set counting (1 for the main muscle, ½ for helpers).",
+    faq: [
+      { q: "What do 1 and ½ mean?", a: "A set counts as one full set for the muscle doing most of the work and half a set for muscles that help. The Routine planner adds these up to get weekly sets per muscle." },
+    ],
+  },
   "net-stimulus": {
     description:
       "Chris Beardsley's Weekly Net Stimulus model: score a weekly training schedule for one muscle as workout hypertrophy stimulus minus atrophy between sessions, and find the best training frequency.",

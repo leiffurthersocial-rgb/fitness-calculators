@@ -33,6 +33,9 @@ import Sleep from "@/components/calculators/Sleep";
 import Water from "@/components/calculators/Water";
 import SweatRate from "@/components/calculators/SweatRate";
 import WeeklyNetStimulus from "@/components/calculators/WeeklyNetStimulus";
+import RoutinePlanner from "@/components/calculators/RoutinePlanner";
+import StimulatingReps from "@/components/calculators/StimulatingReps";
+import ExerciseLibrary from "@/components/calculators/ExerciseLibrary";
 
 export interface Tool {
   id: string;
@@ -48,6 +51,18 @@ export interface ToolGroup {
 
 /** The full navigation registry: groups, in display order, with their tools. */
 export const TOOL_GROUPS: ToolGroup[] = [
+  {
+    group: "Hypertrophy",
+    tools: [
+      { id: "routine-planner", name: "Routine planner", blurb: "Build sessions, save routines and get a hypertrophy rating", Component: RoutinePlanner },
+      { id: "net-stimulus", name: "Weekly net stimulus", blurb: "Beardsley's model: weekly growth stimulus minus atrophy", Component: WeeklyNetStimulus },
+      { id: "stimulating-reps", name: "Stimulating reps", blurb: "How many reps in your sets actually build muscle", Component: StimulatingReps },
+      { id: "exercise-library", name: "Exercise library", blurb: "Which muscles each exercise trains, and how much", Component: ExerciseLibrary },
+      { id: "workout-plan", name: "Workout plan generator", blurb: "Weekly plan from your goal, sport & lifts", Component: WorkoutPlan },
+      { id: "muscle-gain", name: "Muscle-gain potential", blurb: "How much muscle you can gain & by when", Component: MuscleGain },
+      { id: "ffmi", name: "FFMI", blurb: "Fat-free mass index", Component: Ffmi },
+    ],
+  },
   {
     group: "Overview",
     tools: [
@@ -68,12 +83,14 @@ export const TOOL_GROUPS: ToolGroup[] = [
     ],
   },
   {
-    group: "Hypertrophy",
+    group: "Body & Nutrition",
     tools: [
-      { id: "net-stimulus", name: "Weekly net stimulus", blurb: "Beardsley's model: weekly growth stimulus minus atrophy", Component: WeeklyNetStimulus },
-      { id: "workout-plan", name: "Workout plan generator", blurb: "Weekly plan from your goal, sport & lifts", Component: WorkoutPlan },
-      { id: "muscle-gain", name: "Muscle-gain potential", blurb: "How much muscle you can gain & by when", Component: MuscleGain },
-      { id: "ffmi", name: "FFMI", blurb: "Fat-free mass index", Component: Ffmi },
+      { id: "tdee", name: "TDEE / BMR", blurb: "Daily energy needs", Component: Tdee },
+      { id: "diet-planner", name: "Cut / bulk planner", blurb: "Calories, macros & a timeline to your goal", Component: DietPlanner },
+      { id: "macros", name: "Macros", blurb: "Protein / carbs / fat split", Component: Macros },
+      { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
+      { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },
+      { id: "calorie-burn", name: "Calorie burn", blurb: "Energy used by activity (METs)", Component: CalorieBurn },
     ],
   },
   {
@@ -87,17 +104,6 @@ export const TOOL_GROUPS: ToolGroup[] = [
       { id: "treadmill-pace", name: "Treadmill pace", blurb: "Incline → equivalent flat pace (ACSM)", Component: TreadmillPace },
       { id: "ftp-zones", name: "Cycling power zones", blurb: "FTP-based watt zones + W/kg (Coggan)", Component: FtpZones },
       { id: "swim-zones", name: "Swim pace zones", blurb: "Critical Swim Speed + pace zones", Component: SwimZones },
-    ],
-  },
-  {
-    group: "Body & Nutrition",
-    tools: [
-      { id: "tdee", name: "TDEE / BMR", blurb: "Daily energy needs", Component: Tdee },
-      { id: "diet-planner", name: "Cut / bulk planner", blurb: "Calories, macros & a timeline to your goal", Component: DietPlanner },
-      { id: "macros", name: "Macros", blurb: "Protein / carbs / fat split", Component: Macros },
-      { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
-      { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },
-      { id: "calorie-burn", name: "Calorie burn", blurb: "Energy used by activity (METs)", Component: CalorieBurn },
     ],
   },
   {

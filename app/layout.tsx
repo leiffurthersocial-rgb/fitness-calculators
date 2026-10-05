@@ -21,11 +21,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://vital-fitness.vercel.app"
   ),
   title: {
-    default: "Vital — Health & Fitness Hub",
+    default: "Vital — Hypertrophy & Fitness Tools",
     template: "%s",
   },
   description:
-    "A suite of clean, science-based health & fitness calculators — strength, cardio, nutrition and recovery — all in your browser.",
+    "Science-based hypertrophy tools — a routine planner with ratings, weekly net stimulus and stimulating reps — plus strength, nutrition, cardio and recovery calculators, all in your browser.",
   applicationName: "Vital",
   icons: {
     icon: "/icon.svg",
