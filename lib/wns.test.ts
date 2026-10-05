@@ -5,6 +5,7 @@ import {
   weeklyNetStimulus,
   evenSchedule,
   wnsVerdict,
+  weeklyNetStimulusSimple,
 } from "./wns";
 
 describe("workoutStimulus", () => {
@@ -81,5 +82,34 @@ describe("evenSchedule", () => {
   it("spreads sets across the week", () => {
     expect(evenSchedule(9, 3)).toEqual([3, 0, 3, 0, 3, 0, 0]);
     expect(evenSchedule(6, 2)).toEqual([3, 0, 0, 3, 0, 0, 0]);
+  });
+});
+
+describe("weeklyNetStimulusSimple (frequency × sets form)", () => {
+  it("3 sets once a week is maintenance", () => {
+    expect(weeklyNetStimulusSimple(1, 3).wns).toBeCloseTo(0);
+  });
+  it("atrophy days = 7 − frequency × duration", () => {
+    expect(weeklyNetStimulusSimple(2, 3, { stimulusHours: 48 }).uncoveredHours / 24).toBe(3);
+    expect(weeklyNetStimulusSimple(3, 3, { stimulusHours: 36 }).uncoveredHours / 24).toBe(2.5);
+    expect(weeklyNetStimulusSimple(4, 3, { stimulusHours: 48 }).uncoveredHours).toBe(0);
+  });
+  it("WNS = f × S(n) − atrophy, by hand", () => {
+    // Schoenfeld, 48 h, maintenance 3: rate/day = 3^b / 5
+    const b = Math.log(2) / Math.log(6);
+    const expected = 2 * Math.pow(4, b) - 3 * (Math.pow(3, b) / 5);
+    expect(weeklyNetStimulusSimple(2, 4).wns).toBeCloseTo(expected);
+  });
+  it("timeline coverage matches the formula", () => {
+    for (const f of [1, 2, 3, 4, 5, 6, 7]) {
+      for (const h of [36, 48, 72]) {
+        const r = weeklyNetStimulusSimple(f, 3, { stimulusHours: h });
+        const covered = r.coveredByDay.reduce((a, c) => a + c, 0);
+        expect(168 - covered).toBe(r.uncoveredHours);
+      }
+    }
+  });
+  it("matches the day-by-day model on Mon/Thu", () => {
+    expect(weeklyNetStimulusSimple(2, 3).wns).toBeCloseTo(weeklyNetStimulus([3, 0, 0, 3, 0, 0, 0]).wns);
   });
 });

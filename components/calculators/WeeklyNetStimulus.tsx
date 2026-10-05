@@ -19,9 +19,9 @@ import {
   DAY_LABELS,
   DEFAULT_WNS_OPTIONS,
   WNS_CURVES,
-  evenSchedule,
   setEffectiveness,
   weeklyNetStimulus,
+  weeklyNetStimulusSimple,
   workoutStimulus,
   wnsVerdict,
   type WnsCurve,
@@ -54,14 +54,33 @@ export default function WeeklyNetStimulus() {
   const setDay = (day: number, sets: number) =>
     setSchedule((s) => s.map((v, i) => (i === day ? Math.max(0, Math.min(30, sets)) : v)));
 
-  const r = weeklyNetStimulus(schedule, opts);
+  // "simple" = the calculator form (same sets every workout, evenly spaced);
+  // "days" = any weekly schedule, with stimulus windows placed on real days.
+  const [mode, setMode] = useLocalStorage<"simple" | "days">("vital.wns.mode", "simple");
+  const [simple, setSimple] = useLocalStorage("vital.wns.simple", { frequency: 3, sets: 4 });
+
+  const applyPreset = (sched: number[]) => {
+    setSchedule(sched);
+    const days = sched.filter((v) => v > 0);
+    setSimple({ frequency: days.length, sets: days[0] ?? 0 });
+  };
+  const presetActive = (sched: number[]) => {
+    if (mode === "days") return sched.every((v, i) => v === schedule[i]);
+    const days = sched.filter((v) => v > 0);
+    return days.length === simple.frequency && days[0] === simple.sets;
+  };
+
+  const r =
+    mode === "simple"
+      ? weeklyNetStimulusSimple(simple.frequency, simple.sets, opts)
+      : weeklyNetStimulus(schedule, opts);
   const verdict = VERDICT[wnsVerdict(r.wns)];
   const eff = setEffectiveness(opts.rir);
 
   // Same weekly volume spread over 1–7 evenly spaced sessions.
   const freqData = Array.from({ length: 7 }, (_, i) => {
     const f = i + 1;
-    return { f: `${f}×`, freq: f, wns: Number(weeklyNetStimulus(evenSchedule(r.totalSets, f), opts).wns.toFixed(2)) };
+    return { f: `${f}×`, freq: f, wns: Number(weeklyNetStimulusSimple(f, r.totalSets / f, opts).wns.toFixed(2)) };
   });
   const best = freqData.reduce((a, b) => (b.wns > a.wns ? b : a));
 
@@ -71,11 +90,40 @@ export default function WeeklyNetStimulus() {
         {/* ---- Inputs ---- */}
         <Card>
           <CardTitle>01 — Your training week</CardTitle>
-          <p className="mb-4 text-sm text-zinc-500">
-            Hard sets for <strong className="text-zinc-700 dark:text-zinc-200">one muscle group</strong>{" "}
-            on each day of the week.
-          </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-zinc-500">
+              Hard sets for <strong className="text-zinc-700 dark:text-zinc-200">one muscle group</strong>.
+            </p>
+            <SegmentedControl
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: "simple", label: "Frequency × sets" },
+                { value: "days", label: "Day by day" },
+              ]}
+            />
+          </div>
 
+          {mode === "simple" ? (
+            <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
+              <Field label="Workouts per week">
+                <SegmentedControl
+                  value={String(simple.frequency)}
+                  onChange={(v) => setSimple((x) => ({ ...x, frequency: Number(v) }))}
+                  options={[1, 2, 3, 4, 5, 6, 7].map((n) => ({ value: String(n), label: String(n) }))}
+                />
+              </Field>
+              <Field label="Sets per workout">
+                <NumberInput
+                  value={simple.sets}
+                  onChange={(v) => setSimple((x) => ({ ...x, sets: v }))}
+                  min={0}
+                  max={30}
+                  suffix="sets"
+                />
+              </Field>
+            </div>
+          ) : (
           <div className="grid grid-cols-7 gap-2">
             {DAY_LABELS.map((d, i) => {
               const sets = schedule[i] ?? 0;
@@ -116,18 +164,19 @@ export default function WeeklyNetStimulus() {
               );
             })}
           </div>
+          )}
 
           <div className="mt-5">
             <div className="swiss-label mb-2 text-zinc-400">Presets</div>
             <div className="flex flex-wrap gap-2">
               {PRESETS.map((p) => {
-                const active = p.schedule.every((v, i) => v === schedule[i]);
+                const active = presetActive(p.schedule);
                 return (
                   <button
                     key={p.label}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => setSchedule(p.schedule)}
+                    onClick={() => applyPreset(p.schedule)}
                     className={
                       "neu-btn rounded-lg px-3 py-1.5 text-xs font-semibold " +
                       (active ? "text-accent-600 dark:text-accent-400" : "text-zinc-600 dark:text-zinc-300")
@@ -139,7 +188,7 @@ export default function WeeklyNetStimulus() {
               })}
               <button
                 type="button"
-                onClick={() => setSchedule([0, 0, 0, 0, 0, 0, 0])}
+                onClick={() => applyPreset([0, 0, 0, 0, 0, 0, 0])}
                 className="neu-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-400"
               >
                 Clear
@@ -248,13 +297,26 @@ export default function WeeklyNetStimulus() {
 
             {/* Formula breakdown */}
             <div className="neu-inset-sm rounded-xl p-3 font-mono text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300">
-              <div>
-                Σ stimulus ={" "}
-                {r.sessions.length === 0
-                  ? "0"
-                  : r.sessions.map((s) => fmt2(s.stimulus)).join(" + ")}{" "}
-                = {fmt2(r.weeklyStimulus)}
-              </div>
+              {mode === "simple" ? (
+                <>
+                  <div>
+                    stimulus = {r.frequency} × S({fmt2(r.sessions[0]?.effectiveSets ?? 0)}) = {r.frequency} ×{" "}
+                    {fmt2(r.sessions[0]?.stimulus ?? 0)} = {fmt2(r.weeklyStimulus)}
+                  </div>
+                  <div>
+                    atrophy days = max(0, 7 − {r.frequency} × {(opts.stimulusHours / 24).toFixed(2)}) ={" "}
+                    {(r.uncoveredHours / 24).toFixed(2)}
+                  </div>
+                </>
+              ) : (
+                <div>
+                  Σ stimulus ={" "}
+                  {r.sessions.length === 0
+                    ? "0"
+                    : r.sessions.map((s) => fmt2(s.stimulus)).join(" + ")}{" "}
+                  = {fmt2(r.weeklyStimulus)}
+                </div>
+              )}
               <div>
                 atrophy = {(r.uncoveredHours / 24).toFixed(2)} d × {r.atrophyRatePerDay.toFixed(3)}/d ={" "}
                 {fmt2(r.atrophyEffect)}
@@ -268,6 +330,12 @@ export default function WeeklyNetStimulus() {
           <InfoNote>
             <p>
               <strong>Weekly net stimulus = Σ workout hypertrophy stimulus − weekly atrophy effect.</strong>
+            </p>
+            <p>
+              In <em>Frequency × sets</em> mode this is the calculator form used by wnscalculator.com:
+              WNS = stimulus per workout × frequency − atrophy days × daily atrophy rate, with atrophy
+              days = 7 − frequency × stimulus duration (never below 0). <em>Day by day</em> places each
+              workout&apos;s window on its actual day, so uneven spacing and overlapping windows count.
             </p>
             <p>
               Workout stimulus: each workout&apos;s effective sets n give S(n) = n<sup>b</sup> arbitrary

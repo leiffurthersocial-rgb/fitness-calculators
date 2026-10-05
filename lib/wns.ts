@@ -162,3 +162,48 @@ export function wnsVerdict(wns: number): WnsVerdict {
   if (wns < -0.05) return "loss";
   return "maintenance";
 }
+
+/**
+ * The calculator form of the model (as on wnscalculator.com): the same
+ * effective sets every workout, sessions spread evenly through the week.
+ *
+ *   WNS = frequency × S(sets per workout) − atrophy days × daily atrophy rate
+ *   atrophy days = max(0, 7 − frequency × stimulus duration in days)
+ */
+export function weeklyNetStimulusSimple(
+  frequency: number,
+  setsPerSession: number,
+  opts: Partial<WnsOptions> = {}
+): WnsResult {
+  const o = { ...DEFAULT_WNS_OPTIONS, ...opts };
+  const f = Math.min(7, Math.max(0, Math.round(frequency)));
+  const sets = Math.max(0, setsPerSession);
+  const effectiveSets = sets * setEffectiveness(o.rir);
+  const stimulus = workoutStimulus(effectiveSets, o.curve);
+  const active = f > 0 && stimulus > 0;
+  const d = clampHours(o.stimulusHours);
+
+  const uncoveredHours = active ? Math.max(0, HOURS_PER_WEEK - f * d) : HOURS_PER_WEEK;
+  const rate = atrophyRatePerHour(o);
+  const weeklyStimulus = f * stimulus;
+  const atrophyEffect = uncoveredHours * rate;
+
+  // Evenly spaced start hours; windows only overlap once f × d ≥ 168, so the
+  // drawn timeline always agrees with the formula above.
+  const starts = Array.from({ length: f }, (_, i) => Math.round((i * HOURS_PER_WEEK) / Math.max(1, f)));
+  const covered = new Array<boolean>(HOURS_PER_WEEK).fill(false);
+  if (active) starts.forEach((s) => { for (let h = 0; h < d; h++) covered[(s + h) % HOURS_PER_WEEK] = true; });
+
+  return {
+    wns: weeklyStimulus - atrophyEffect,
+    weeklyStimulus,
+    atrophyEffect,
+    atrophyRatePerDay: rate * 24,
+    uncoveredHours,
+    frequency: f,
+    totalSets: f * sets,
+    totalEffectiveSets: f * effectiveSets,
+    sessions: starts.map((s) => ({ day: Math.floor(s / 24), sets, effectiveSets, stimulus })),
+    coveredByDay: Array.from({ length: 7 }, (_, i) => covered.slice(i * 24, i * 24 + 24).filter(Boolean).length),
+  };
+}
