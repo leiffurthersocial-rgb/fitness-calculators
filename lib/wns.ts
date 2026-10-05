@@ -213,3 +213,34 @@ export function weeklyNetStimulusSimple(
     coveredByDay: Array.from({ length: 7 }, (_, i) => covered.slice(i * 24, i * 24 + 24).filter(Boolean).length),
   };
 }
+
+export interface WnsWorkout {
+  /** Hour of the week the workout starts (0 = Monday 00:00). */
+  hour: number;
+  /** Workout hypertrophy stimulus (already adjusted for fatigue). */
+  stimulus: number;
+  /** Whether the workout elevates growth for the stimulus duration. */
+  opensWindow: boolean;
+}
+
+/**
+ * General form of the model for arbitrary workouts placed by hour:
+ * WNS = Σ stimulus − (hours outside every stimulus window) × atrophy rate.
+ */
+export function wnsFromWorkouts(
+  workouts: WnsWorkout[],
+  opts: Partial<WnsOptions> = {}
+): { wns: number; weeklyStimulus: number; atrophyEffect: number; uncoveredHours: number } {
+  const o = { ...DEFAULT_WNS_OPTIONS, ...opts };
+  const d = clampHours(o.stimulusHours);
+  const covered = new Array<boolean>(HOURS_PER_WEEK).fill(false);
+  for (const w of workouts) {
+    if (!w.opensWindow) continue;
+    const start = Math.round(w.hour);
+    for (let h = 0; h < d; h++) covered[(((start + h) % HOURS_PER_WEEK) + HOURS_PER_WEEK) % HOURS_PER_WEEK] = true;
+  }
+  const uncoveredHours = covered.filter((c) => !c).length;
+  const weeklyStimulus = workouts.reduce((a, w) => a + Math.max(0, w.stimulus), 0);
+  const atrophyEffect = uncoveredHours * atrophyRatePerHour(o);
+  return { wns: weeklyStimulus - atrophyEffect, weeklyStimulus, atrophyEffect, uncoveredHours };
+}

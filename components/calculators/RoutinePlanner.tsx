@@ -3,20 +3,33 @@
 import { useMemo, useState } from "react";
 import { Card, CardTitle, Field, NumberInput, TextInput, SegmentedControl, Select, Button, InfoNote } from "../ui";
 import { useLocalStorage } from "@/lib/useLocalStorage";
-import { EXERCISES, EXERCISE_CATEGORIES, MUSCLES, type MuscleId } from "@/lib/exercises";
+import {
+  EXERCISES,
+  EXERCISE_CATEGORIES,
+  MUSCLES,
+  MUSCLE_BY_ID,
+  MUSCLE_REGIONS,
+  type MuscleId,
+} from "@/lib/exercises";
 import {
   ROUTINE_TEMPLATES,
   SESSION_SET_CAP,
   exerciseName,
+  exerciseProfile,
   layoutLabel,
   newId,
   rateRoutine,
   routineFromTemplate,
+  setAllRir,
+  setAllSets,
+  type MuscleRating,
   type MuscleStatus,
+  type Priority,
   type Routine,
   type RoutineExercise,
   type RoutineRating,
   type RoutineSession,
+  type SessionAnalysis,
 } from "@/lib/routine";
 import { DAY_LABELS, WNS_CURVES, type WnsCurve } from "@/lib/wns";
 
@@ -27,7 +40,7 @@ interface Store {
 
 const STATUS: Record<MuscleStatus, { label: string; cls: string }> = {
   optimal: { label: "Optimal", cls: "text-accent-600 dark:text-accent-400 font-semibold" },
-  growing: { label: "Growing", cls: "text-zinc-800 dark:text-zinc-200" },
+  growing: { label: "Growing", cls: "text-zinc-700 dark:text-zinc-300" },
   maintaining: { label: "Maintaining", cls: "text-amber-700 dark:text-amber-400" },
   losing: { label: "Losing", cls: "text-amber-700 dark:text-amber-400 font-semibold" },
   untrained: { label: "Not trained", cls: "text-zinc-500" },
@@ -39,7 +52,11 @@ const TONE = {
   bad: "bg-red-700",
 };
 
+const RIR_OPTIONS = [0, 1, 2, 3, 4].map((n) => ({ value: String(n), label: n === 0 ? "Failure" : `${n} RIR` }));
+const NEXT_PRIORITY: Record<Priority, Priority> = { normal: "focus", focus: "skip", skip: "normal" };
+
 const sessionLetter = (i: number) => String.fromCharCode(65 + (i % 26));
+const pct = (n: number) => `${Math.round(n * 100)}%`;
 
 export default function RoutinePlanner() {
   const initial = useMemo<Store>(() => {
@@ -60,6 +77,11 @@ export default function RoutinePlanner() {
     }));
   const updateSession = (id: string, fn: (s: RoutineSession) => RoutineSession) =>
     update((r) => ({ ...r, sessions: r.sessions.map((s) => (s.id === id ? fn(s) : s)) }));
+  const cyclePriority = (m: MuscleId) =>
+    update((r) => ({
+      ...r,
+      priorities: { ...r.priorities, [m]: NEXT_PRIORITY[r.priorities?.[m] ?? "normal"] },
+    }));
 
   const addRoutine = (templateId: string) => {
     const r = routineFromTemplate(templateId);
@@ -149,20 +171,26 @@ export default function RoutinePlanner() {
             </Button>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-3">
-          <p className="text-xs text-zinc-500">
-            Saved automatically in this browser · last edit {new Date(routine.updatedAt).toLocaleString()}
-          </p>
-          <span className="flex items-center gap-2 text-sm font-semibold">
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-[var(--line)] pt-4">
+          <span className="swiss-label text-zinc-600 dark:text-zinc-400">All exercises</span>
+          <BulkControls
+            onSets={(n) => update((r) => ({ ...r, sessions: setAllSets(r.sessions, n) }))}
+            onRir={(n) => update((r) => ({ ...r, sessions: setAllRir(r.sessions, n) }))}
+          />
+          <span className="ml-auto flex items-center gap-2 text-sm font-semibold">
             <span className="flex h-7 min-w-7 items-center justify-center bg-zinc-900 px-1.5 text-white dark:bg-zinc-100 dark:text-zinc-900">
               {rating.grade}
             </span>
             <span className="tabular-nums">{rating.score}/100</span>
           </span>
         </div>
+        <p className="mt-3 text-xs text-zinc-500">
+          Saved automatically in this browser · last edit {new Date(routine.updatedAt).toLocaleString()}
+        </p>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr] xl:items-start">
+      <div className="grid gap-6 xl:grid-cols-[1.45fr_1fr] xl:items-start">
         {/* ---- Builder ---- */}
         <div className="space-y-6">
           {routine.sessions.map((s, i) => (
@@ -170,7 +198,7 @@ export default function RoutinePlanner() {
               key={s.id}
               index={i}
               session={s}
-              stats={rating.sessionStats[i]}
+              analysis={rating.sessions[i]}
               canRemove={routine.sessions.length > 1}
               onChange={(fn) => updateSession(s.id, fn)}
               onRemove={() => update((r) => ({ ...r, sessions: r.sessions.filter((x) => x.id !== s.id) }))}
@@ -186,9 +214,7 @@ export default function RoutinePlanner() {
         </div>
 
         {/* ---- Rating ---- */}
-        <div className="space-y-6 xl:sticky xl:top-6">
-          <RatingCard rating={rating} routine={routine} curve={curve} setCurve={setCurve} />
-        </div>
+        <RatingCard rating={rating} routine={routine} curve={curve} setCurve={setCurve} onPriority={cyclePriority} />
       </div>
 
       <SavedRoutines
@@ -203,17 +229,43 @@ export default function RoutinePlanner() {
 
 /* ------------------------------------------------------------------ */
 
+/** Two "apply to all" selects: every exercise's sets, every exercise's effort. */
+function BulkControls({ onSets, onRir }: { onSets: (n: number) => void; onRir: (n: number) => void }) {
+  const cls =
+    "field h-9 rounded-lg px-2.5 text-sm font-medium text-zinc-800 outline-none dark:text-zinc-100";
+  return (
+    <span className="flex flex-wrap gap-2">
+      <select aria-label="Set sets for all exercises" value="" onChange={(e) => e.target.value && onSets(Number(e.target.value))} className={cls}>
+        <option value="">Sets…</option>
+        {[1, 2, 3, 4, 5, 6].map((n) => (
+          <option key={n} value={n}>
+            {n} set{n > 1 ? "s" : ""} each
+          </option>
+        ))}
+      </select>
+      <select aria-label="Set effort for all exercises" value="" onChange={(e) => e.target.value !== "" && onRir(Number(e.target.value))} className={cls}>
+        <option value="">Effort…</option>
+        {RIR_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.value === "0" ? "All to failure" : `All at ${o.label}`}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
+}
+
 function SessionCard({
   index,
   session,
-  stats,
+  analysis,
   canRemove,
   onChange,
   onRemove,
 }: {
   index: number;
   session: RoutineSession;
-  stats: { sets: number; minutes: number };
+  analysis: SessionAnalysis;
   canRemove: boolean;
   onChange: (fn: (s: RoutineSession) => RoutineSession) => void;
   onRemove: () => void;
@@ -223,7 +275,7 @@ function SessionCard({
   const addExercise = () =>
     onChange((s) => ({
       ...s,
-      exercises: [...s.exercises, { id: newId(), exerciseId: "bench-press", sets: 3, rir: 1 }],
+      exercises: [...s.exercises, { id: newId(), exerciseId: "machine-chest", sets: 3, rir: 1 }],
     }));
   const move = (id: string, dir: -1 | 1) =>
     onChange((s) => {
@@ -234,6 +286,8 @@ function SessionCard({
       [ex[i], ex[j]] = [ex[j], ex[i]];
       return { ...s, exercises: ex };
     });
+
+  const endFactor = analysis.exerciseFactors.at(-1) ?? 1;
 
   return (
     <Card>
@@ -273,27 +327,23 @@ function SessionCard({
         <p className="mb-4 text-sm text-zinc-500">No exercises yet.</p>
       ) : (
         <div className="mb-4">
-          <div className="swiss-label mb-2 hidden grid-cols-[1fr_5.5rem_8rem_4.5rem] gap-2 text-zinc-500 sm:grid">
+          <div className="swiss-label mb-2 hidden grid-cols-[1fr_5.5rem_7.5rem_4.75rem] gap-2 text-zinc-500 sm:grid">
             <span>Exercise</span>
             <span>Sets</span>
             <span>Effort</span>
             <span />
           </div>
-          <ol className="space-y-3 sm:space-y-2">
+          <ol className="space-y-3">
             {session.exercises.map((e, i) => (
               <li
                 key={e.id}
-                className="grid grid-cols-[1fr_1fr_auto] gap-2 border-b border-[var(--line)] pb-3 sm:grid-cols-[1fr_5.5rem_8rem_4.5rem] sm:border-0 sm:pb-0"
+                className="grid grid-cols-[1fr_1fr_auto] items-start gap-2 border-b border-[var(--line)] pb-3 last:border-0 sm:grid-cols-[1fr_5.5rem_7.5rem_4.75rem]"
               >
-                <div className="col-span-3 space-y-2 sm:col-span-1">
+                <div className="col-span-3 space-y-1.5 sm:col-span-1">
                   <ExercisePicker value={e.exerciseId} onChange={(exerciseId) => setExercise(e.id, { exerciseId })} />
                   {e.exerciseId === "custom" && (
                     <div className="grid grid-cols-2 gap-2">
-                      <TextInput
-                        value={e.name ?? ""}
-                        onChange={(name) => setExercise(e.id, { name })}
-                        placeholder="Exercise name"
-                      />
+                      <TextInput value={e.name ?? ""} onChange={(name) => setExercise(e.id, { name })} placeholder="Exercise name" />
                       <Select<MuscleId | "">
                         value={e.muscle ?? ""}
                         onChange={(m) => setExercise(e.id, { muscle: m || undefined })}
@@ -301,18 +351,18 @@ function SessionCard({
                       />
                     </div>
                   )}
+                  <ExerciseMeta exercise={e} factor={analysis.exerciseFactors[i] ?? 1} />
                 </div>
                 <NumberInput value={e.sets} onChange={(sets) => setExercise(e.id, { sets })} min={0} max={20} suffix="sets" />
-                <Select
-                  value={String(e.rir)}
-                  onChange={(v) => setExercise(e.id, { rir: Number(v) })}
-                  options={[0, 1, 2, 3, 4].map((n) => ({ value: String(n), label: n === 0 ? "Failure" : `${n} RIR` }))}
-                />
-                <div className="flex items-center justify-end gap-1">
+                <Select value={String(e.rir)} onChange={(v) => setExercise(e.id, { rir: Number(v) })} options={RIR_OPTIONS} />
+                <div className="flex items-start justify-end gap-1">
                   <IconBtn label="Move up" onClick={() => move(e.id, -1)} disabled={i === 0}>
                     ↑
                   </IconBtn>
-                  <IconBtn label="Remove exercise" onClick={() => onChange((s) => ({ ...s, exercises: s.exercises.filter((x) => x.id !== e.id) }))}>
+                  <IconBtn
+                    label="Remove exercise"
+                    onClick={() => onChange((s) => ({ ...s, exercises: s.exercises.filter((x) => x.id !== e.id) }))}
+                  >
                     ×
                   </IconBtn>
                 </div>
@@ -322,15 +372,47 @@ function SessionCard({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-[var(--line)] pt-4">
         <Button variant="ghost" onClick={addExercise}>
           + Add exercise
         </Button>
-        <span className="text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
-          {stats.sets} sets · ~{stats.minutes} min
+        {session.exercises.length > 0 && (
+          <BulkControls
+            onSets={(n) => onChange((s) => setAllSets([s], n)[0])}
+            onRir={(n) => onChange((s) => setAllRir([s], n)[0])}
+          />
+        )}
+        <span className="ml-auto text-right text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
+          {analysis.sets} sets · ~{analysis.minutes} min
+          <span className="block text-xs">
+            Fatigue {Math.round(analysis.fatigue)}
+            {endFactor < 1 ? ` · last exercise −${pct(1 - endFactor)}` : ""}
+          </span>
         </span>
       </div>
     </Card>
+  );
+}
+
+/** Small line under an exercise: what it trains, its efficiency, fatigue cost. */
+function ExerciseMeta({ exercise, factor }: { exercise: RoutineExercise; factor: number }) {
+  const p = exerciseProfile(exercise);
+  const muscles = (Object.entries(p.muscles) as [MuscleId, number][]).sort((a, b) => b[1] - a[1]);
+  if (muscles.length === 0) return null;
+  return (
+    <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+      {muscles.map(([m, c], i) => (
+        <span key={m}>
+          {i > 0 && " · "}
+          <span className={c === 1 ? "font-semibold text-zinc-800 dark:text-zinc-200" : ""}>
+            {MUSCLE_BY_ID[m].name}
+            {c === 1 ? "" : " ½"}
+          </span>
+        </span>
+      ))}
+      <span className="text-zinc-500"> — {pct(p.efficiency)} efficient</span>
+      {factor < 1 && <span className="text-amber-700 dark:text-amber-400"> · −{pct(1 - factor)} fatigue</span>}
+    </p>
   );
 }
 
@@ -390,11 +472,13 @@ function RatingCard({
   routine,
   curve,
   setCurve,
+  onPriority,
 }: {
   rating: RoutineRating;
   routine: Routine;
   curve: WnsCurve;
   setCurve: (c: WnsCurve) => void;
+  onPriority: (m: MuscleId) => void;
 }) {
   const days = layoutLabel(rating.layout, routine.sessions);
   return (
@@ -455,42 +539,38 @@ function RatingCard({
 
       {/* Muscle table */}
       <div className="mt-6">
-        <div className="swiss-label mb-2 text-zinc-500">Per muscle</div>
+        <div className="mb-2 flex items-baseline justify-between gap-2">
+          <span className="swiss-label text-zinc-500">Per muscle</span>
+          <span className="text-xs text-zinc-500">Tap ☆ to mark focus or skip</span>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--line-strong)] text-left text-xs text-zinc-600 dark:text-zinc-400">
+              <th className="w-7 py-1.5" />
               <th className="py-1.5 font-medium">Muscle</th>
-              <th className="py-1.5 text-right font-medium">Sets/wk</th>
-              <th className="py-1.5 pl-3 text-right font-medium">Freq</th>
-              <th className="w-[38%] py-1.5 pl-3 font-medium">Score</th>
+              <th className="py-1.5 pl-2 text-right font-medium" title="Fractional sets per week (helpers count ½)">
+                Sets
+              </th>
+              <th className="py-1.5 pl-2 text-right font-medium" title="Sessions per week with direct work">
+                Direct
+              </th>
+              <th className="w-[32%] py-1.5 pl-3 font-medium">Score</th>
             </tr>
           </thead>
-          <tbody>
-            {rating.muscles.map((m) => (
-              <tr key={m.muscle} className="border-b border-[var(--line)]">
-                <td className="py-2">
-                  <div className="font-medium">{m.name}</div>
-                  <div className={"text-xs " + STATUS[m.status].cls}>
-                    {STATUS[m.status].label}
-                    {m.maxSessionSets > SESSION_SET_CAP + 0.01 ? " · too much in one session" : ""}
-                  </div>
-                </td>
-                <td className="py-2 text-right tabular-nums">{fmtSets(m.weeklySets)}</td>
-                <td className="py-2 pl-3 text-right tabular-nums">{m.frequency}×</td>
-                <td className="py-2 pl-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 flex-1 bg-zinc-200 dark:bg-zinc-700">
-                      <div
-                        className={m.status === "optimal" ? "h-full bg-accent-500" : "h-full bg-zinc-800 dark:bg-zinc-200"}
-                        style={{ width: `${m.score}%` }}
-                      />
-                    </div>
-                    <span className="w-7 text-right text-xs tabular-nums">{m.score}</span>
-                  </div>
+          {MUSCLE_REGIONS.map((region) => (
+            <tbody key={region}>
+              <tr>
+                <td colSpan={5} className="swiss-label pb-1 pt-4 text-zinc-900 dark:text-zinc-100">
+                  {region}
                 </td>
               </tr>
-            ))}
-          </tbody>
+              {rating.muscles
+                .filter((m) => MUSCLE_BY_ID[m.muscle].region === region)
+                .map((m) => (
+                  <MuscleRow key={m.muscle} m={m} onPriority={() => onPriority(m.muscle)} />
+                ))}
+            </tbody>
+          ))}
         </table>
       </div>
 
@@ -506,22 +586,86 @@ function RatingCard({
 
       <InfoNote>
         <p>
-          Sessions are spread evenly over the week (A, B, A, B…). Each muscle&apos;s week is then
-          scored with Chris Beardsley&apos;s Weekly Net Stimulus model: the growth stimulus from
-          every workout, minus the atrophy in the time between workouts.
+          <strong>Model.</strong> Sessions are spread evenly over the week (A, B, A, B…). Each
+          muscle&apos;s week is scored with Chris Beardsley&apos;s Weekly Net Stimulus: the growth
+          stimulus from every workout minus the atrophy between workouts.
         </p>
         <p>
-          Sets are counted fractionally: 1 set for the main muscle and 0.5 for helpers (a bench
-          press set is 1 chest, 0.5 front delts, 0.5 triceps). Sets short of failure count for
-          less: each rep in reserve removes one of the ~5 stimulating reps.
+          <strong>Effective sets</strong> per workout = sets × set credit × exercise efficiency ×
+          proximity to failure × fatigue. Set credit is 1 for the main muscle and ½ for helpers
+          (fractional counting, which predicted growth best in Pelland et al.). Efficiency (70–100%)
+          reflects how reliably the target muscle is what fails: stable machines and cables with a
+          good resistance curve score highest; balance, grip, lower-back or helper-muscle limits
+          score lower. Each rep in reserve removes one of ~5 stimulating reps.
         </p>
         <p>
-          Muscle score: 0 = a whole week of atrophy, 30 = maintenance, 100 = the stimulus of 4 hard
-          sets to failure 3× a week. The routine score weights major muscles fully and smaller
-          ones (front/rear delts, arms, calves, abs) half.
+          <strong>Fatigue.</strong> Within a workout, sets for the same muscle have diminishing
+          returns (the Schoenfeld/Pelland curve), and once a session passes ~12 fatigue units
+          (heavy compounds cost more) later exercises lose 1.5% per unit, down to 70%. Between
+          workouts, training a muscle again before its damage clears (~72 h) cuts that
+          workout&apos;s stimulus by up to 40%, more after high volume.
+        </p>
+        <p>
+          <strong>Frequency.</strong> &quot;Direct&quot; counts only sessions where the muscle is a
+          main mover. Helper sets still add stimulus, and keep the muscle out of atrophy only if
+          they add up to at least one effective set in that session.
+        </p>
+        <p>
+          <strong>Score.</strong> 0 = a whole week of atrophy, 30 = maintenance, 100 = 4 hard,
+          efficient sets 3× a week. The routine score weights muscles by size (and doubles focus
+          muscles, ignores skipped ones).
         </p>
       </InfoNote>
     </Card>
+  );
+}
+
+function MuscleRow({ m, onPriority }: { m: MuscleRating; onPriority: () => void }) {
+  const skip = m.priority === "skip";
+  const icon = m.priority === "focus" ? "★" : skip ? "–" : "☆";
+  const label = m.priority === "focus" ? "Focus" : skip ? "Skipped" : "Normal";
+  return (
+    <tr className={"border-b border-[var(--line)] " + (skip ? "opacity-45" : "")}>
+      <td className="py-2 align-top">
+        <button
+          type="button"
+          onClick={onPriority}
+          title={`${label} — tap to change`}
+          aria-label={`${m.name} priority: ${label}. Tap to change.`}
+          className={
+            "h-6 w-6 text-base leading-none " +
+            (m.priority === "focus" ? "text-accent-600 dark:text-accent-400" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100")
+          }
+        >
+          {icon}
+        </button>
+      </td>
+      <td className="py-2">
+        <div className="font-medium" title={MUSCLE_BY_ID[m.muscle].detail}>
+          {m.name}
+        </div>
+        <div className={"text-xs " + STATUS[m.status].cls}>
+          {skip ? "Skipped" : STATUS[m.status].label}
+          {!skip && m.effectiveSets > 0 && (
+            <span className="font-normal text-zinc-500"> · {m.effectiveSets.toFixed(1)} effective</span>
+          )}
+          {!skip && m.maxSessionSets > SESSION_SET_CAP + 0.01 && <span className="font-normal"> · too much per session</span>}
+        </div>
+      </td>
+      <td className="py-2 pl-2 text-right align-top tabular-nums">{fmtSets(m.weeklySets)}</td>
+      <td className="py-2 pl-2 text-right align-top tabular-nums">{m.frequency}×</td>
+      <td className="py-2 pl-3 align-top">
+        <div className="flex h-5 items-center gap-2">
+          <div className="h-2 flex-1 bg-zinc-200 dark:bg-zinc-700">
+            <div
+              className={m.status === "optimal" ? "h-full bg-accent-500" : "h-full bg-zinc-800 dark:bg-zinc-200"}
+              style={{ width: `${m.score}%` }}
+            />
+          </div>
+          <span className="w-7 text-right text-xs tabular-nums">{m.score}</span>
+        </div>
+      </td>
+    </tr>
   );
 }
 

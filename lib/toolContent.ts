@@ -39,7 +39,9 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       { label: "Schoenfeld, Ogborn & Krieger (2017) — weekly set volume & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
     ],
     faq: [
-      { q: "How is my routine rated?", a: "Sessions are spread evenly over the week, then every muscle's week is scored with the Weekly Net Stimulus model: growth stimulus from each workout minus atrophy between workouts. Each muscle gets 0–100 (30 = maintenance, 100 = the stimulus of 4 hard sets 3× a week), and the routine score is the average, with smaller muscles counted half." },
+      { q: "How is my routine rated?", a: "Sessions are spread evenly over the week, then every muscle's week is scored with the Weekly Net Stimulus model: growth stimulus from each workout minus atrophy between workouts. Each set is adjusted for the exercise's hypertrophy efficiency, how close to failure you go, and fatigue. Each muscle gets 0–100 (30 = maintenance, 100 = 4 hard, efficient sets 3× a week), and the routine score is a weighted average by muscle size and your focus/skip choices." },
+      { q: "How is fatigue accounted for?", a: "Three ways. Within a workout, extra sets for the same muscle add less and less (diminishing returns). Once a session has built up a lot of fatigue, especially from heavy compounds like deadlifts and squats, later exercises lose some stimulus. And training a muscle again before it has recovered from a high-volume session (within ~72 hours) cuts that workout's stimulus." },
+      { q: "Do helper sets count toward frequency?", a: "No. The frequency shown counts only sessions where the muscle is a main mover. Helper sets still add stimulus (as half sets), and they keep a muscle out of atrophy only when they add up to at least one effective set in a session." },
       { q: "How are sets counted for each muscle?", a: "Fractionally. A set counts as 1 set for the main muscle and half a set for helpers, so one set of bench press is 1 chest, ½ front delts and ½ triceps. The Exercise library shows the numbers for every exercise." },
       { q: "Why does my bro split score lower?", a: "Training a muscle once a week leaves about five days of atrophy, and piling 10+ sets into one session gives diminishing returns. Splitting the same sets over two or three sessions gives more stimulus and less atrophy." },
       { q: "Where are my routines saved?", a: "In your browser's local storage on this device. Nothing is uploaded. Use Copy to paste a routine somewhere else." },
@@ -59,9 +61,11 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   },
   "exercise-library": {
     description:
-      "Look up which muscles 50+ exercises train and how many sets each counts for, using fractional set counting (1 for the main muscle, ½ for helpers).",
+      "100+ hypertrophy exercises by muscle — lats vs mid back vs traps, biceps, triceps, quads, hamstrings and more — with set credit, hypertrophy efficiency and fatigue cost for each.",
     faq: [
       { q: "What do 1 and ½ mean?", a: "A set counts as one full set for the muscle doing most of the work and half a set for muscles that help. The Routine planner adds these up to get weekly sets per muscle." },
+      { q: "What is hypertrophy efficiency?", a: "How reliably a hard set turns into stimulating reps for the target muscle. Following Chris Beardsley, a muscle only gets stimulating reps if it's what limits the set. Stable machines and cables with a matching resistance curve score near 100%. Exercises where balance, grip, the lower back or helper muscles can give out first score lower (70–90%)." },
+      { q: "How should I train my back?", a: "It depends on the look you want. Width comes from the lats: pulldowns, pull-ups, pullovers and rows with the elbows tucked to your sides. Thickness comes from the mid back (mid traps, rhomboids): rows with the elbows flared out and Kelso shrugs. Upper traps need shrugs. Pick the muscle in the filter to see the most efficient options." },
     ],
   },
   "net-stimulus": {
