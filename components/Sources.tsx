@@ -4,7 +4,7 @@ import type { Source } from "@/lib/toolContent";
 export default function Sources({ items }: { items?: Source[] }) {
   if (!items || items.length === 0) return null;
   return (
-    <section className="neu rounded-3xl p-5 sm:p-6">
+    <section className="panel rounded-xl p-5 sm:p-6">
       <h2 className="swiss-label mb-4 flex items-center gap-2 text-zinc-500">
         <span aria-hidden className="h-2 w-2 bg-accent-500" />
         Sources &amp; methods

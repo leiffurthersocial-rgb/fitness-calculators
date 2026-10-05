@@ -4,7 +4,7 @@ import type { QA } from "@/lib/toolContent";
 export default function Faq({ items }: { items?: QA[] }) {
   if (!items || items.length === 0) return null;
   return (
-    <section className="neu rounded-3xl p-5 sm:p-6">
+    <section className="panel rounded-xl p-5 sm:p-6">
       <h2 className="swiss-label mb-4 flex items-center gap-2 text-zinc-500">
         <span aria-hidden className="h-2 w-2 bg-accent-500" />
         FAQ
@@ -13,7 +13,7 @@ export default function Faq({ items }: { items?: QA[] }) {
         {items.map((qa) => (
           <div key={qa.q} className="py-3 first:pt-0 last:pb-0">
             <dt className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{qa.q}</dt>
-            <dd className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{qa.a}</dd>
+            <dd className="mt-1 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-400">{qa.a}</dd>
           </div>
         ))}
       </dl>

@@ -137,14 +137,14 @@ export default function WeeklyNetStimulus() {
                     type="button"
                     aria-label={`Add a set on ${d}`}
                     onClick={() => setDay(i, sets + 1)}
-                    className="neu-btn h-7 w-full rounded-lg text-sm font-semibold text-zinc-500"
+                    className="btn h-7 w-full rounded-lg text-sm font-semibold text-zinc-500"
                   >
                     +
                   </button>
                   <div
                     className={
-                      "flex h-12 w-full items-center justify-center rounded-xl text-xl font-bold tabular-nums " +
-                      (on ? "neu-inset text-zinc-900 dark:text-zinc-50" : "neu-inset-sm text-zinc-300 dark:text-zinc-600")
+                      "flex h-12 w-full items-center justify-center rounded-lg text-xl font-bold tabular-nums " +
+                      (on ? "field text-zinc-900 dark:text-zinc-50" : "well text-zinc-400 dark:text-zinc-500")
                     }
                     aria-live="polite"
                     aria-label={`${sets} sets on ${d}`}
@@ -156,7 +156,7 @@ export default function WeeklyNetStimulus() {
                     aria-label={`Remove a set on ${d}`}
                     onClick={() => setDay(i, sets - 1)}
                     disabled={!on}
-                    className="neu-btn h-7 w-full rounded-lg text-sm font-semibold text-zinc-500 disabled:opacity-40"
+                    className="btn h-7 w-full rounded-lg text-sm font-semibold text-zinc-500 disabled:opacity-40"
                   >
                     −
                   </button>
@@ -178,8 +178,8 @@ export default function WeeklyNetStimulus() {
                     aria-pressed={active}
                     onClick={() => applyPreset(p.schedule)}
                     className={
-                      "neu-btn rounded-lg px-3 py-1.5 text-xs font-semibold " +
-                      (active ? "text-accent-600 dark:text-accent-400" : "text-zinc-600 dark:text-zinc-300")
+                      "btn rounded-lg px-3 py-1.5 text-sm font-medium " +
+                      (active ? "text-accent-600 dark:text-accent-400" : "text-zinc-800 dark:text-zinc-200")
                     }
                   >
                     {p.label}
@@ -189,7 +189,7 @@ export default function WeeklyNetStimulus() {
               <button
                 type="button"
                 onClick={() => applyPreset([0, 0, 0, 0, 0, 0, 0])}
-                className="neu-btn rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-400"
+                className="btn rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-500"
               >
                 Clear
               </button>
@@ -197,7 +197,7 @@ export default function WeeklyNetStimulus() {
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <Field label="Proximity to failure" hint={`${Math.round(eff * 5)} of 5 stimulating reps`}>
+            <Field label="Proximity to failure" hint={`${Math.round(eff * 5)}/5 stim. reps`}>
               <Select
                 value={String(opts.rir)}
                 onChange={(v) => patch({ rir: Number(v) })}
@@ -218,7 +218,7 @@ export default function WeeklyNetStimulus() {
                 ]}
               />
             </Field>
-            <Field label="Maintenance volume" hint="sets, once a week">
+            <Field label="Maintenance volume" hint="once a week">
               <NumberInput
                 value={opts.maintenanceSets}
                 onChange={(v) => patch({ maintenanceSets: v })}
@@ -237,7 +237,7 @@ export default function WeeklyNetStimulus() {
             </Field>
             </div>
           </div>
-          <p className="mt-3 text-xs text-zinc-400">
+          <p className="mt-3 text-sm text-zinc-500">
             {WNS_CURVES.find((c) => c.value === opts.curve)?.note}.
           </p>
         </Card>
@@ -280,7 +280,7 @@ export default function WeeklyNetStimulus() {
                   </span>
                 </span>
               </div>
-              <div className="neu-inset-sm grid grid-cols-7 gap-1 rounded-xl p-1.5">
+              <div className="well grid grid-cols-7 gap-1 rounded-lg p-1.5">
                 {DAY_LABELS.map((d, i) => (
                   <div key={d} className="text-center">
                     <div className="flex h-6 overflow-hidden rounded-md bg-zinc-300 dark:bg-zinc-600">
@@ -289,14 +289,14 @@ export default function WeeklyNetStimulus() {
                         style={{ width: `${(r.coveredByDay[i] / 24) * 100}%` }}
                       />
                     </div>
-                    <div className="mt-1 text-[10px] font-medium text-zinc-400">{d}</div>
+                    <div className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">{d}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Formula breakdown */}
-            <div className="neu-inset-sm rounded-xl p-3 font-mono text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-300">
+            <div className="well rounded-lg p-3 font-mono text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-300">
               {mode === "simple" ? (
                 <>
                   <div>
@@ -382,7 +382,7 @@ export default function WeeklyNetStimulus() {
                     {freqData.map((d) => (
                       <Cell
                         key={d.f}
-                        fill={d.freq === r.frequency ? "#e1301f" : d.freq === best.freq ? "#ef8a80" : "#b9bfc8"}
+                        fill={d.freq === r.frequency ? "#e1301f" : d.freq === best.freq ? "#ef8a80" : "#9a9da3"}
                       />
                     ))}
                   </Bar>

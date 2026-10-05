@@ -6,10 +6,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ------------------------------------------------------------------------
-   Design language: Swiss (International Typographic Style) structure —
-   strict grid, grotesk type, numbered sections, one signal red — rendered
-   on soft neumorphic surfaces that are extruded from, or pressed into, a
-   single background tone.
+   Design language: Swiss (International Typographic Style) — strict grid,
+   grotesk type, numbered sections, flat white panels with hairline rules
+   and one signal red. Tuned for legibility: dark ink on near-white.
    ------------------------------------------------------------------------ */
 @theme {
   /* Swiss signal red. Kept under the `accent` name so every tool picks it up. */
@@ -17,92 +16,108 @@
   --color-accent-100: #fbdcd9;
   --color-accent-200: #f6b8b2;
   --color-accent-300: #ef8a80;
-  --color-accent-400: #e8584b;
+  --color-accent-400: #ee5b4e;
   --color-accent-500: #e1301f;
   --color-accent-600: #c8251a;
   --color-accent-700: #a31d15;
   --color-accent-800: #7d1812;
   --color-accent-900: #55110d;
 
-  /* Cool neutral greys tuned to the neumorphic surface. */
-  --color-zinc-50: #e8ebef;
-  --color-zinc-100: #dee2e7;
-  --color-zinc-200: #d0d5dc;
-  --color-zinc-300: #b9bfc8;
-  --color-zinc-400: #8b929c;
-  --color-zinc-500: #646b75;
-  --color-zinc-600: #4b515a;
-  --color-zinc-700: #3a3f46;
-  --color-zinc-800: #2d3137;
-  --color-zinc-900: #23262b;
-  --color-zinc-950: #1c1e22;
+  /* Neutral greys, darkened at the mid-range so secondary text stays
+     readable (zinc-400/500 pass contrast on white). */
+  --color-zinc-50: #f5f5f4;
+  --color-zinc-100: #ececea;
+  --color-zinc-200: #dcdcd9;
+  --color-zinc-300: #c4c4c0;
+  --color-zinc-400: #6f7279;
+  --color-zinc-500: #565a61;
+  --color-zinc-600: #44474d;
+  --color-zinc-700: #34363b;
+  --color-zinc-800: #26282c;
+  --color-zinc-900: #1b1c1f;
+  --color-zinc-950: #121315;
 }
 
 :root {
   color-scheme: light;
-  --surface: #e4e7ec;
-  --surface-hi: #ffffff;
-  --surface-lo: #b8bec7;
-  --ink: #111316;
-  --neu-out: 6px 6px 14px var(--surface-lo), -6px -6px 14px var(--surface-hi);
-  --neu-out-sm: 3px 3px 7px var(--surface-lo), -3px -3px 7px var(--surface-hi);
-  --neu-in: inset 3px 3px 7px var(--surface-lo), inset -3px -3px 7px var(--surface-hi);
-  --neu-in-sm: inset 2px 2px 4px var(--surface-lo), inset -2px -2px 4px var(--surface-hi);
+  --surface: #f3f3f1; /* page */
+  --panel: #ffffff; /* cards, inputs */
+  --fill: #f3f3f1; /* wells inside cards */
+  --line: #d6d6d2; /* hairlines & borders */
+  --line-strong: #16171a;
+  --ink: #16171a;
 }
 
 html.dark {
   color-scheme: dark;
-  --surface: #23262b;
-  --surface-hi: #2d3137;
-  --surface-lo: #16181b;
-  --ink: #f2f3f5;
+  --surface: #121315;
+  --panel: #1b1c1f;
+  --fill: #24262a;
+  --line: #34373c;
+  --line-strong: #f2f2f0;
+  --ink: #f2f2f0;
+}
+
+/* Dark mode: lift the mid-greys so secondary text stays readable on dark. */
+html.dark {
+  --color-zinc-400: #a3a6ac;
+  --color-zinc-500: #b3b6bb;
 }
 
 body {
   background: var(--surface);
   color: var(--ink);
   font-family: var(--font-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-feature-settings: "ss01", "cv11";
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-/* ---- Neumorphic surfaces ---- */
-.neu {
-  background: var(--surface);
-  box-shadow: var(--neu-out);
+@layer components {
+/* ---- Flat surfaces ---- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
 }
-.neu-sm {
-  background: var(--surface);
-  box-shadow: var(--neu-out-sm);
+/* Small bordered element on a well (selected segment, badge, brand mark). */
+.chip {
+  background: var(--panel);
+  border: 1px solid var(--line);
 }
-.neu-inset {
-  background: var(--surface);
-  box-shadow: var(--neu-in);
+/* Text inputs & selects. */
+.field {
+  background: var(--panel);
+  border: 1px solid var(--line);
 }
-.neu-inset-sm {
-  background: var(--surface);
-  box-shadow: var(--neu-in-sm);
+.field:hover {
+  border-color: var(--color-zinc-400);
 }
-/* A raised control that presses in on hover/press/active. */
-.neu-btn {
-  background: var(--surface);
-  box-shadow: var(--neu-out-sm);
-  transition: box-shadow 0.15s ease, color 0.15s ease;
+.field:focus {
+  border-color: var(--color-accent-500);
 }
-.neu-btn:hover {
-  box-shadow: 1px 1px 3px var(--surface-lo), -1px -1px 3px var(--surface-hi);
+/* Quiet tinted area inside a panel (stats, results, tracks). */
+.well {
+  background: var(--fill);
 }
-.neu-btn:active,
-.neu-btn[aria-pressed="true"],
-.neu-btn[aria-current="page"] {
-  box-shadow: var(--neu-in-sm);
+/* Outline button; selected state fills with ink. */
+.btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+.btn[aria-pressed="true"] {
+  border-color: var(--color-accent-500);
 }
 
 /* Swiss rules & labels. */
 .swiss-label {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+}
 }
 
 /* Subtle scrollbar styling so the sidebar feels clean. */
@@ -115,14 +130,13 @@ body {
   outline-offset: 2px;
 }
 
-/* Range slider: inset track, raised thumb. */
+/* Range slider: hairline track, red thumb. */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  height: 8px;
+  height: 4px;
   border-radius: 9999px;
-  background: var(--surface);
-  box-shadow: var(--neu-in-sm);
+  background: var(--line);
   accent-color: var(--color-accent-500);
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -131,16 +145,15 @@ input[type="range"]::-webkit-slider-thumb {
   height: 18px;
   border-radius: 9999px;
   background: var(--color-accent-500);
-  box-shadow: 2px 2px 5px var(--surface-lo), -2px -2px 5px var(--surface-hi);
+  border: 2px solid var(--panel);
   cursor: pointer;
 }
 input[type="range"]::-moz-range-thumb {
   width: 18px;
   height: 18px;
-  border: 0;
+  border: 2px solid var(--panel);
   border-radius: 9999px;
   background: var(--color-accent-500);
-  box-shadow: 2px 2px 5px var(--surface-lo), -2px -2px 5px var(--surface-hi);
   cursor: pointer;
 }
 
@@ -156,13 +169,6 @@ input[type="range"]::-moz-range-thumb {
   }
   .print\:hidden {
     display: none !important;
-  }
-  .neu,
-  .neu-sm,
-  .neu-inset,
-  .neu-inset-sm {
-    box-shadow: none !important;
-    border: 1px solid #ccc;
   }
 }
 

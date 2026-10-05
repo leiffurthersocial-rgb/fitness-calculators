@@ -25,14 +25,14 @@ export default function ShareBar() {
       <button
         type="button"
         onClick={copy}
-        className="neu-btn rounded-xl px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200"
+        className="btn rounded-lg px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200"
       >
         {copied ? "Copied ✓" : "Copy link"}
       </button>
       <button
         type="button"
         onClick={() => window.print()}
-        className="neu-btn rounded-xl px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200"
+        className="btn rounded-lg px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200"
       >
         Print
       </button>

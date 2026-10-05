@@ -68,7 +68,7 @@ export default function Shell({ initialId }: { initialId: string }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col lg:flex-row">
       {/* ---- Sidebar (desktop) ---- */}
-      <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col gap-6 overflow-y-auto px-6 py-7 lg:flex print:hidden">
+      <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col gap-6 overflow-y-auto border-r border-[var(--line)] px-6 py-7 lg:flex print:hidden">
         <Brand onHome={() => select("my-numbers")} />
         <Settings units={units} setUnits={setUnits} theme={theme} onToggleTheme={toggle} />
         <ProfilePanel />
@@ -77,13 +77,13 @@ export default function Shell({ initialId }: { initialId: string }) {
       </aside>
 
       {/* ---- Mobile top bar ---- */}
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-[var(--surface)]/95 px-4 py-3 shadow-[0_6px_14px_-10px_var(--surface-lo)] backdrop-blur lg:hidden print:hidden">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)]/95 px-4 py-3 backdrop-blur lg:hidden print:hidden">
         <Brand onHome={() => select("my-numbers")} compact />
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
           aria-expanded={mobileNavOpen}
           aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
-          className="neu-btn swiss-label rounded-xl px-4 py-2 text-zinc-700 dark:text-zinc-200"
+          className="btn swiss-label rounded-xl px-4 py-2 text-zinc-700 dark:text-zinc-200"
         >
           {mobileNavOpen ? "Close" : "Menu"}
         </button>
@@ -105,7 +105,7 @@ export default function Shell({ initialId }: { initialId: string }) {
             <span className="text-accent-600 dark:text-accent-400">
               {pad(groupIndex + 1)} / {activeGroup?.group}
             </span>
-            <span aria-hidden className="h-px flex-1 bg-zinc-300 dark:bg-zinc-700" />
+            <span aria-hidden className="h-px flex-1 bg-[var(--line)]" />
             <span>
               Tool {pad(toolNumber)} of {ALL_TOOLS.length}
             </span>
@@ -115,7 +115,7 @@ export default function Shell({ initialId }: { initialId: string }) {
               <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-zinc-900 sm:text-5xl dark:text-zinc-50">
                 {active.name}
               </h1>
-              <p className="mt-2 max-w-2xl text-base text-zinc-500">{active.blurb}</p>
+              <p className="mt-2 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">{active.blurb}</p>
             </div>
             <ShareBar />
           </div>
@@ -159,7 +159,7 @@ function Settings({
       />
       <button
         onClick={onToggleTheme}
-        className="neu-btn flex h-10 w-10 items-center justify-center rounded-xl text-zinc-600 dark:text-zinc-300"
+        className="btn flex h-10 w-10 items-center justify-center rounded-xl text-zinc-600 dark:text-zinc-300"
         aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
         title="Toggle light / dark"
       >
@@ -199,7 +199,7 @@ function NavList({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search tools"
           aria-label="Search tools"
-          className="neu-inset w-full rounded-xl border-0 py-2.5 pl-10 pr-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-accent-500/40 dark:text-zinc-100"
+          className="field w-full rounded-lg py-2.5 pl-10 pr-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-accent-500/40 dark:text-zinc-100"
         />
         <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400">
           <SearchIcon />
@@ -212,7 +212,7 @@ function NavList({
         )}
         {filteredGroups.map((g) => (
           <div key={g.group}>
-            <div className="swiss-label mb-2 flex items-baseline gap-2 border-b border-zinc-300 px-1 pb-1.5 text-zinc-500 dark:border-zinc-700">
+            <div className="swiss-label mb-2 flex items-baseline gap-2 border-b border-[var(--line-strong)] px-1 pb-1.5 text-zinc-900 dark:text-zinc-100">
               <span className="text-accent-600 tabular-nums dark:text-accent-400">{pad(g.index)}</span>
               <span className="flex-1">{g.group}</span>
               <span className="font-normal tabular-nums text-zinc-400">{g.tools.length}</span>
@@ -228,8 +228,8 @@ function NavList({
                     className={
                       "relative block w-full rounded-xl px-3 py-2 text-left text-sm transition " +
                       (isActive
-                        ? "neu-inset-sm font-semibold text-zinc-900 dark:text-zinc-50"
-                        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100")
+                        ? "well font-semibold text-zinc-900 dark:text-zinc-50"
+                        : "text-zinc-700 hover:bg-[var(--fill)] hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50")
                     }
                   >
                     {isActive && (
@@ -250,8 +250,8 @@ function NavList({
 function Brand({ onHome, compact }: { onHome: () => void; compact?: boolean }) {
   return (
     <button onClick={onHome} className="flex items-center gap-3 text-left" aria-label="Vital home">
-      <div className="neu-sm flex h-10 w-10 items-center justify-center rounded-xl">
-        <div className="h-4 w-4 bg-accent-500" />
+      <div className="flex h-10 w-10 items-center justify-center bg-accent-500">
+        <div className="h-3 w-3 bg-white" />
       </div>
       <div>
         <div className="text-xl font-bold leading-none tracking-tight">Vital</div>
@@ -265,7 +265,7 @@ function Brand({ onHome, compact }: { onHome: () => void; compact?: boolean }) {
 
 function Footer() {
   return (
-    <p className="mt-auto border-t border-zinc-300 pt-4 text-xs leading-relaxed text-zinc-400 dark:border-zinc-700">
+    <p className="mt-auto border-t border-[var(--line)] pt-4 text-xs leading-relaxed text-zinc-500">
       Estimates for general guidance only, not medical advice. All data stays in
       your browser.
     </p>

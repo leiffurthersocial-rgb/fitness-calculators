@@ -42,7 +42,7 @@ export default function ProfilePanel() {
     kg > 0 ? Number(weightFromKg(kg, units).toFixed(1)) : 0;
 
   return (
-    <div className="neu rounded-2xl">
+    <div className="panel rounded-2xl">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -52,13 +52,13 @@ export default function ProfilePanel() {
         <span className="swiss-label flex items-center gap-2 text-zinc-500">
           <span aria-hidden className="h-2 w-2 bg-accent-500" /> Your stats
         </span>
-        <span className={"text-xs text-zinc-400 transition " + (open ? "rotate-90" : "")}>
+        <span className={"text-xs text-zinc-500 transition " + (open ? "rotate-90" : "")}>
           ▸
         </span>
       </button>
 
       {!open && (
-        <div className="px-4 pb-3 text-xs tabular-nums text-zinc-400">
+        <div className="px-4 pb-3 text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
           {profile.sex === "male" ? "M" : "F"} · {profile.age}y · {height}
           {lu} · {weight}
           {wu} · {profile.bodyFatPct}% bf
@@ -152,7 +152,7 @@ export default function ProfilePanel() {
             </div>
           </div>
 
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-zinc-500">
             Saved on this device and used to auto-fill every calculator.
           </p>
         </div>
