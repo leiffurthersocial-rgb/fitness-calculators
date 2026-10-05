@@ -29,6 +29,23 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       "A live snapshot of your key health & fitness numbers — maintenance calories, BMI, FFMI, muscle-gain potential, healthy-weight range and heart-rate zones — from one set of stats.",
   },
 
+  "net-stimulus": {
+    description:
+      "Chris Beardsley's Weekly Net Stimulus model: score a weekly training schedule for one muscle as workout hypertrophy stimulus minus atrophy between sessions, and find the best training frequency.",
+    sources: [
+      { label: "Beardsley — Weekly Net Stimulus (S&C Research)", url: "https://www.patreon.com/posts/weekly-net-102750269" },
+      { label: "Beardsley — Atrophy occurs within a training week", url: "https://www.patreon.com/posts/atrophy-occurs-107681018" },
+      { label: "Beardsley — Stimulating reps", url: "https://www.patreon.com/posts/stimulating-reps-99706085" },
+      { label: "Schoenfeld, Ogborn & Krieger (2017) — weekly set volume & hypertrophy", url: "https://pubmed.ncbi.nlm.nih.gov/27433992/" },
+      { label: "Pelland et al. — the resistance-training dose response", url: "https://doi.org/10.1007/s40279-025-02344-w" },
+    ],
+    faq: [
+      { q: "What is weekly net stimulus?", a: "Chris Beardsley's model of how much a muscle grows in a week: the sum of the hypertrophy stimulus from each workout, minus the muscle lost to atrophy during the time no workout is stimulating growth. Positive means growth, zero is maintenance, negative is loss." },
+      { q: "Why does 3 sets once a week only maintain muscle?", a: "Maintenance studies show it, and the model is calibrated on it. One workout keeps growth elevated for about two days, then the muscle atrophies for about five days, cancelling the gain. Doing 1 set twice a week cuts atrophy time to about three days, so it causes growth." },
+      { q: "Which sets count?", a: "Only hard sets, close to failure. In Beardsley's stimulating-reps model a set to failure has about 5 stimulating reps and each rep in reserve removes one, so a set at 2 RIR counts as 0.6 of a set." },
+      { q: "Why is full body better than a split here?", a: "Two reasons. Per-session returns diminish, so splitting the same weekly sets into more sessions gives more total stimulus. More frequent sessions also leave less of the week uncovered, so less muscle is lost to atrophy." },
+    ],
+  },
   "build-rater": {
     description:
       "Rate how your height, weight, wingspan, strength and athleticism fit 30+ sports and positions, with a 0–100 score, a best-fit finder and a body-composition target.",

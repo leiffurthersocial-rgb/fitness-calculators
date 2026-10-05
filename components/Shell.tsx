@@ -59,28 +59,31 @@ export default function Shell({ initialId }: { initialId: string }) {
 
   const active = findTool(activeId) ?? ALL_TOOLS[0];
   const ActiveComponent = active.Component;
-  const activeGroup = TOOL_GROUPS.find((g) => g.tools.some((t) => t.id === active.id));
+  const groupIndex = TOOL_GROUPS.findIndex((g) => g.tools.some((t) => t.id === active.id));
+  const activeGroup = TOOL_GROUPS[groupIndex];
+  const toolNumber = ALL_TOOLS.findIndex((t) => t.id === active.id) + 1;
   const content = getToolContent(active.id);
+  const hasRefs = (content.sources?.length ?? 0) > 0 || (content.faq?.length ?? 0) > 0;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-7xl flex-col lg:flex-row">
+    <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col lg:flex-row">
       {/* ---- Sidebar (desktop) ---- */}
-      <aside className="hidden w-72 shrink-0 flex-col gap-5 border-r border-zinc-200 p-5 dark:border-zinc-800 lg:flex print:hidden">
-        <Brand theme={theme} onToggleTheme={toggle} onHome={() => select("my-numbers")} />
-        <UnitsToggle units={units} setUnits={setUnits} />
+      <aside className="sticky top-0 hidden h-screen w-80 shrink-0 flex-col gap-6 overflow-y-auto px-6 py-7 lg:flex print:hidden">
+        <Brand onHome={() => select("my-numbers")} />
+        <Settings units={units} setUnits={setUnits} theme={theme} onToggleTheme={toggle} />
         <ProfilePanel />
         <NavList activeId={active.id} query={query} setQuery={setQuery} onSelect={select} />
         <Footer />
       </aside>
 
       {/* ---- Mobile top bar ---- */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90 lg:hidden print:hidden">
-        <Brand theme={theme} onToggleTheme={toggle} onHome={() => select("my-numbers")} compact />
+      <header className="sticky top-0 z-20 flex items-center justify-between bg-[var(--surface)]/95 px-4 py-3 shadow-[0_6px_14px_-10px_var(--surface-lo)] backdrop-blur lg:hidden print:hidden">
+        <Brand onHome={() => select("my-numbers")} compact />
         <button
           onClick={() => setMobileNavOpen((o) => !o)}
           aria-expanded={mobileNavOpen}
           aria-label={mobileNavOpen ? "Close navigation" : "Open navigation"}
-          className="rounded-xl border border-zinc-300 px-3 py-1.5 text-sm font-medium dark:border-zinc-700"
+          className="neu-btn swiss-label rounded-xl px-4 py-2 text-zinc-700 dark:text-zinc-200"
         >
           {mobileNavOpen ? "Close" : "Menu"}
         </button>
@@ -88,47 +91,64 @@ export default function Shell({ initialId }: { initialId: string }) {
 
       {/* ---- Mobile slide-down nav ---- */}
       {mobileNavOpen && (
-        <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 lg:hidden print:hidden">
-          <UnitsToggle units={units} setUnits={setUnits} />
-          <div className="mt-4">
-            <ProfilePanel />
-          </div>
-          <div className="mt-4">
-            <NavList activeId={active.id} query={query} setQuery={setQuery} onSelect={select} />
-          </div>
+        <div className="space-y-5 px-4 pb-6 pt-4 lg:hidden print:hidden">
+          <Settings units={units} setUnits={setUnits} theme={theme} onToggleTheme={toggle} />
+          <ProfilePanel />
+          <NavList activeId={active.id} query={query} setQuery={setQuery} onSelect={select} />
         </div>
       )}
 
       {/* ---- Main content ---- */}
-      <main className="min-w-0 flex-1 p-5 lg:p-8">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <div className="text-sm font-medium text-accent-600 dark:text-accent-400">
-              {activeGroup?.emoji} {activeGroup?.group}
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">{active.name}</h1>
-            <p className="text-sm text-zinc-500">{active.blurb}</p>
+      <main className="min-w-0 flex-1 px-4 pb-16 pt-6 sm:px-6 lg:px-10 lg:pt-10">
+        <header className="mb-8">
+          <div className="swiss-label flex items-center gap-3 text-zinc-400">
+            <span className="text-accent-600 dark:text-accent-400">
+              {pad(groupIndex + 1)} / {activeGroup?.group}
+            </span>
+            <span aria-hidden className="h-px flex-1 bg-zinc-300 dark:bg-zinc-700" />
+            <span>
+              Tool {pad(toolNumber)} of {ALL_TOOLS.length}
+            </span>
           </div>
-          <ShareBar />
-        </div>
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-3xl font-bold leading-[1.05] tracking-tight text-zinc-900 sm:text-5xl dark:text-zinc-50">
+                {active.name}
+              </h1>
+              <p className="mt-2 max-w-2xl text-base text-zinc-500">{active.blurb}</p>
+            </div>
+            <ShareBar />
+          </div>
+        </header>
+
         <ActiveComponent />
-        <Sources items={content.sources} />
-        <Faq items={content.faq} />
+
+        {hasRefs && (
+          <div className="mt-10 grid gap-6 xl:grid-cols-[1fr_1.4fr]">
+            <Sources items={content.sources} />
+            <Faq items={content.faq} />
+          </div>
+        )}
       </main>
     </div>
   );
 }
 
-function UnitsToggle({
+const pad = (n: number) => String(n).padStart(2, "0");
+
+function Settings({
   units,
   setUnits,
+  theme,
+  onToggleTheme,
 }: {
   units: UnitSystem;
   setUnits: (u: UnitSystem) => void;
+  theme: string;
+  onToggleTheme: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-      <span className="text-xs font-medium text-zinc-500">Units</span>
+    <div className="flex items-center justify-between gap-2">
       <SegmentedControl
         value={units}
         onChange={setUnits}
@@ -137,6 +157,14 @@ function UnitsToggle({
           { value: "imperial", label: "Imperial" },
         ]}
       />
+      <button
+        onClick={onToggleTheme}
+        className="neu-btn flex h-10 w-10 items-center justify-center rounded-xl text-zinc-600 dark:text-zinc-300"
+        aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+        title="Toggle light / dark"
+      >
+        {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+      </button>
     </div>
   );
 }
@@ -154,40 +182,42 @@ function NavList({
 }) {
   const norm = (s: string) => s.normalize("NFKD").toLowerCase();
   const q = norm(query.trim());
-  const filteredGroups = TOOL_GROUPS.map((g) => ({
+  const filteredGroups = TOOL_GROUPS.map((g, i) => ({
     ...g,
+    index: i + 1,
     tools: q
       ? g.tools.filter((t) => norm(t.name).includes(q) || norm(t.blurb).includes(q))
       : g.tools,
   })).filter((g) => g.tools.length > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="relative">
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search tools…"
+          placeholder="Search tools"
           aria-label="Search tools"
-          className="w-full rounded-xl border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="neu-inset w-full rounded-xl border-0 py-2.5 pl-10 pr-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-accent-500/40 dark:text-zinc-100"
         />
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
-          🔍
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400">
+          <SearchIcon />
         </span>
       </div>
 
-      <nav className="space-y-5">
+      <nav className="space-y-6">
         {filteredGroups.length === 0 && (
           <p className="px-2 text-sm text-zinc-400">No tools match “{query}”.</p>
         )}
         {filteredGroups.map((g) => (
           <div key={g.group}>
-            <div className="mb-1.5 flex items-center gap-2 px-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              <span>{g.emoji}</span>
-              {g.group}
+            <div className="swiss-label mb-2 flex items-baseline gap-2 border-b border-zinc-300 px-1 pb-1.5 text-zinc-500 dark:border-zinc-700">
+              <span className="text-accent-600 tabular-nums dark:text-accent-400">{pad(g.index)}</span>
+              <span className="flex-1">{g.group}</span>
+              <span className="font-normal tabular-nums text-zinc-400">{g.tools.length}</span>
             </div>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {g.tools.map((t) => {
                 const isActive = t.id === activeId;
                 return (
@@ -196,12 +226,15 @@ function NavList({
                     onClick={() => onSelect(t.id)}
                     aria-current={isActive ? "page" : undefined}
                     className={
-                      "block w-full rounded-xl px-3 py-2 text-left text-sm transition " +
+                      "relative block w-full rounded-xl px-3 py-2 text-left text-sm transition " +
                       (isActive
-                        ? "bg-accent-600 text-white shadow-sm"
-                        : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800")
+                        ? "neu-inset-sm font-semibold text-zinc-900 dark:text-zinc-50"
+                        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100")
                     }
                   >
+                    {isActive && (
+                      <span aria-hidden className="absolute left-0 top-1/2 h-4 w-1 -translate-y-1/2 rounded-r bg-accent-500" />
+                    )}
                     {t.name}
                   </button>
                 );
@@ -214,47 +247,65 @@ function NavList({
   );
 }
 
-function Brand({
-  theme,
-  onToggleTheme,
-  onHome,
-  compact,
-}: {
-  theme: string;
-  onToggleTheme: () => void;
-  onHome: () => void;
-  compact?: boolean;
-}) {
+function Brand({ onHome, compact }: { onHome: () => void; compact?: boolean }) {
   return (
-    <div className="flex items-center justify-between">
-      <button onClick={onHome} className="flex items-center gap-2 text-left">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-600 text-lg font-black text-white">
-          V
-        </div>
+    <button onClick={onHome} className="flex items-center gap-3 text-left" aria-label="Vital home">
+      <div className="neu-sm flex h-10 w-10 items-center justify-center rounded-xl">
+        <div className="h-4 w-4 bg-accent-500" />
+      </div>
+      <div>
+        <div className="text-xl font-bold leading-none tracking-tight">Vital</div>
         {!compact && (
-          <div>
-            <div className="text-lg font-bold leading-none">Vital</div>
-            <div className="text-xs text-zinc-400">Health &amp; fitness hub</div>
-          </div>
+          <div className="swiss-label mt-1 text-zinc-400">Health &amp; fitness tools</div>
         )}
-      </button>
-      <button
-        onClick={onToggleTheme}
-        className="rounded-xl border border-zinc-300 p-2 text-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
-        aria-label="Toggle theme"
-        title="Toggle light / dark"
-      >
-        {theme === "dark" ? "☀️" : "🌙"}
-      </button>
-    </div>
+      </div>
+    </button>
   );
 }
 
 function Footer() {
   return (
-    <p className="mt-auto pt-4 text-xs leading-relaxed text-zinc-400">
-      Estimates for general guidance only — not medical advice. All data stays in
+    <p className="mt-auto border-t border-zinc-300 pt-4 text-xs leading-relaxed text-zinc-400 dark:border-zinc-700">
+      Estimates for general guidance only, not medical advice. All data stays in
       your browser.
     </p>
+  );
+}
+
+const iconProps = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+function SunIcon() {
+  return (
+    <svg {...iconProps}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg {...iconProps}>
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg {...iconProps} width={14} height={14}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
   );
 }

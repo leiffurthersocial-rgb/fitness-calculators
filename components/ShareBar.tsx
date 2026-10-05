@@ -21,18 +21,18 @@ export default function ShareBar() {
   };
 
   return (
-    <div className="flex shrink-0 items-center gap-2 print:hidden">
+    <div className="flex shrink-0 items-center gap-3 print:hidden">
       <button
         type="button"
         onClick={copy}
-        className="rounded-xl border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+        className="neu-btn rounded-xl px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200"
       >
         {copied ? "Copied ✓" : "Copy link"}
       </button>
       <button
         type="button"
         onClick={() => window.print()}
-        className="rounded-xl border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+        className="neu-btn rounded-xl px-4 py-2 text-sm font-semibold text-zinc-700 dark:text-zinc-200"
       >
         Print
       </button>

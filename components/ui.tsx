@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/* Shared, minimal UI primitives so every calculator looks consistent:
-   rounded cards, clean inputs, labeled results, and an expandable
-   "how this is calculated" note. One accent color throughout. */
+/* Shared UI primitives so every calculator looks consistent: neumorphic
+   cards (raised) and inputs (pressed in), Swiss-style uppercase labels and
+   big tabular numbers, and an expandable "how this is calculated" note.
+   One signal-red accent throughout. */
 
 export function Card({
   children,
@@ -16,7 +17,7 @@ export function Card({
   return (
     <div
       className={
-        "rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 " +
+        "neu rounded-3xl p-5 sm:p-6 " +
         className
       }
     >
@@ -27,7 +28,8 @@ export function Card({
 
 export function CardTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+    <h3 className="swiss-label mb-5 flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+      <span aria-hidden className="h-2 w-2 shrink-0 bg-accent-500" />
       {children}
     </h3>
   );
@@ -44,9 +46,9 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 flex items-baseline justify-between text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <span className="mb-1.5 flex items-baseline justify-between gap-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
         {label}
-        {hint && <span className="text-xs font-normal text-zinc-400">{hint}</span>}
+        {hint && <span className="text-right text-[11px] font-normal text-zinc-400">{hint}</span>}
       </span>
       {children}
     </label>
@@ -54,7 +56,7 @@ export function Field({
 }
 
 const inputBase =
-  "w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition focus:border-accent-500 focus:ring-2 focus:ring-accent-500/30 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100";
+  "neu-inset w-full rounded-xl border-0 px-3.5 py-2.5 text-sm tabular-nums text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:ring-2 focus:ring-accent-500/40 dark:text-zinc-100";
 
 /** Keep only digits and a single decimal point (no native number sanitising). */
 function cleanDecimal(raw: string): string {
@@ -211,7 +213,7 @@ export function SegmentedControl<T extends string>({
   options: { value: T; label: string }[];
 }) {
   return (
-    <div role="group" className="inline-flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">
+    <div role="group" className="neu-inset-sm inline-flex flex-wrap rounded-xl p-1">
       {options.map((o) => (
         <button
           key={o.value}
@@ -221,7 +223,7 @@ export function SegmentedControl<T extends string>({
           className={
             "rounded-lg px-3 py-1.5 text-sm font-medium transition " +
             (value === o.value
-              ? "bg-white text-accent-700 shadow-sm dark:bg-zinc-950 dark:text-accent-400"
+              ? "neu-sm text-accent-600 dark:text-accent-400"
               : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200")
           }
         >
@@ -245,17 +247,15 @@ export function Result({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl bg-accent-50 px-4 py-3 dark:bg-accent-900/20">
-      <div className="text-xs font-medium uppercase tracking-wide text-accent-700 dark:text-accent-400">
-        {label}
-      </div>
-      <div className="mt-0.5 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+    <div className="neu-inset rounded-2xl border-l-4 border-accent-500 px-4 py-3.5">
+      <div className="swiss-label text-accent-600 dark:text-accent-400">{label}</div>
+      <div className="mt-1 text-3xl font-bold leading-none tracking-tight tabular-nums text-zinc-900 dark:text-zinc-50">
         {value}
         {unit && (
-          <span className="ml-1 text-base font-medium text-zinc-400">{unit}</span>
+          <span className="ml-1.5 text-base font-medium tracking-normal text-zinc-400">{unit}</span>
         )}
       </div>
-      {sub && <div className="mt-0.5 text-xs text-zinc-500">{sub}</div>}
+      {sub && <div className="mt-1.5 text-xs text-zinc-500">{sub}</div>}
     </div>
   );
 }
@@ -271,9 +271,9 @@ export function Stat({
   unit?: string;
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+    <div className="neu-inset-sm rounded-xl px-3 py-2.5">
+      <div className="swiss-label text-zinc-500">{label}</div>
+      <div className="mt-0.5 text-lg font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
         {value}
         {unit && <span className="ml-1 text-sm font-normal text-zinc-400">{unit}</span>}
       </div>
@@ -285,13 +285,14 @@ export function Stat({
 export function InfoNote({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+    <div className="mt-5 border-t border-zinc-300/60 pt-3 dark:border-zinc-700/60">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-accent-600 dark:hover:text-accent-400"
+        aria-expanded={open}
+        className="swiss-label flex items-center gap-1.5 text-zinc-400 hover:text-accent-600 dark:hover:text-accent-400"
       >
-        <span className={"transition " + (open ? "rotate-90" : "")}>▸</span>
+        <span aria-hidden className={"transition " + (open ? "rotate-90" : "")}>▸</span>
         How this is calculated
       </button>
       {open && (
@@ -312,14 +313,14 @@ export function Badge({
 }) {
   const tones = {
     accent:
-      "bg-accent-100 text-accent-800 dark:bg-accent-900/40 dark:text-accent-300",
-    warn: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-    neutral: "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+      "neu-sm text-accent-600 dark:text-accent-400",
+    warn: "neu-sm text-amber-700 dark:text-amber-400",
+    neutral: "neu-inset-sm text-zinc-600 dark:text-zinc-300",
   };
   return (
     <span
       className={
-        "inline-block rounded-full px-2.5 py-0.5 text-xs font-medium " +
+        "inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold " +
         tones[tone]
       }
     >
@@ -331,8 +332,7 @@ export function Badge({
 /** An inline "which should I use?" recommendation line. */
 export function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex gap-1.5 rounded-lg bg-accent-50 px-2.5 py-1.5 text-xs leading-relaxed text-accent-800 dark:bg-accent-900/20 dark:text-accent-300">
-      <span aria-hidden>💡</span>
+    <p className="flex gap-2 border-l-2 border-accent-500 py-0.5 pl-2.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
       <span>{children}</span>
     </p>
   );
@@ -351,18 +351,16 @@ export function Button({
 }) {
   const variants = {
     primary:
-      "bg-accent-600 text-white hover:bg-accent-500 active:bg-accent-700",
-    ghost:
-      "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800",
-    danger:
-      "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40",
+      "bg-accent-500 text-white shadow-[var(--neu-out-sm)] hover:bg-accent-600 active:shadow-[var(--neu-in-sm)]",
+    ghost: "neu-btn text-zinc-700 dark:text-zinc-200",
+    danger: "neu-btn text-red-600 dark:text-red-400",
   };
   return (
     <button
       type={type}
       onClick={onClick}
       className={
-        "rounded-xl px-3.5 py-2 text-sm font-medium transition " +
+        "rounded-xl px-4 py-2 text-sm font-semibold transition " +
         variants[variant]
       }
     >
@@ -373,7 +371,7 @@ export function Button({
 
 /** Two-column grid that collapses on mobile — the standard calculator layout. */
 export function CalcGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-5 lg:grid-cols-2">{children}</div>;
+  return <div className="grid gap-6 xl:grid-cols-2">{children}</div>;
 }
 
 /**
@@ -390,14 +388,13 @@ export function EmptyHint({
   onAction?: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-      <span aria-hidden>💡</span>
+    <div className="neu-inset-sm flex flex-wrap items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm text-zinc-500 dark:text-zinc-400">
       <span className="flex-1">{children}</span>
       {actionLabel && onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="shrink-0 rounded-lg bg-accent-100 px-2.5 py-1 text-xs font-semibold text-accent-700 transition hover:bg-accent-200 dark:bg-accent-900/40 dark:text-accent-300"
+          className="neu-btn shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-accent-600 dark:text-accent-400"
         >
           {actionLabel}
         </button>

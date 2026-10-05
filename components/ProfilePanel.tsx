@@ -42,15 +42,15 @@ export default function ProfilePanel() {
     kg > 0 ? Number(weightFromKg(kg, units).toFixed(1)) : 0;
 
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <div className="neu rounded-2xl">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between px-3 py-2 text-left"
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
       >
-        <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          <span aria-hidden>👤</span> Your stats
+        <span className="swiss-label flex items-center gap-2 text-zinc-500">
+          <span aria-hidden className="h-2 w-2 bg-accent-500" /> Your stats
         </span>
         <span className={"text-xs text-zinc-400 transition " + (open ? "rotate-90" : "")}>
           ▸
@@ -58,7 +58,7 @@ export default function ProfilePanel() {
       </button>
 
       {!open && (
-        <div className="px-3 pb-2 text-xs text-zinc-400">
+        <div className="px-4 pb-3 text-xs tabular-nums text-zinc-400">
           {profile.sex === "male" ? "M" : "F"} · {profile.age}y · {height}
           {lu} · {weight}
           {wu} · {profile.bodyFatPct}% bf
@@ -66,7 +66,7 @@ export default function ProfilePanel() {
       )}
 
       {open && (
-        <div className="space-y-3 px-3 pb-3">
+        <div className="space-y-3 px-4 pb-4">
           <div className="grid grid-cols-2 gap-2">
             <Field label="Age">
               <NumberInput value={profile.age} onChange={(v) => patch({ age: v })} />
@@ -113,8 +113,8 @@ export default function ProfilePanel() {
             />
           </Field>
 
-          <div className="border-t border-zinc-100 pt-2 dark:border-zinc-800">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          <div className="border-t border-zinc-300 pt-3 dark:border-zinc-700">
+            <div className="swiss-label mb-2 text-zinc-400">
               Performance <span className="font-normal normal-case">(optional)</span>
             </div>
             <div className="grid grid-cols-2 gap-2">

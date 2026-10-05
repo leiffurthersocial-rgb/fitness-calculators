@@ -5,31 +5,104 @@
    light/dark switch that defaults to dark. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ------------------------------------------------------------------------
+   Design language: Swiss (International Typographic Style) structure —
+   strict grid, grotesk type, numbered sections, one signal red — rendered
+   on soft neumorphic surfaces that are extruded from, or pressed into, a
+   single background tone.
+   ------------------------------------------------------------------------ */
 @theme {
-  /* Single tasteful accent color (emerald). */
-  --color-accent-50: #ecfdf5;
-  --color-accent-100: #d1fae5;
-  --color-accent-200: #a7f3d0;
-  --color-accent-300: #6ee7b7;
-  --color-accent-400: #34d399;
-  --color-accent-500: #10b981;
-  --color-accent-600: #059669;
-  --color-accent-700: #047857;
-  --color-accent-800: #065f46;
-  --color-accent-900: #064e3b;
+  /* Swiss signal red. Kept under the `accent` name so every tool picks it up. */
+  --color-accent-50: #fdf0ef;
+  --color-accent-100: #fbdcd9;
+  --color-accent-200: #f6b8b2;
+  --color-accent-300: #ef8a80;
+  --color-accent-400: #e8584b;
+  --color-accent-500: #e1301f;
+  --color-accent-600: #c8251a;
+  --color-accent-700: #a31d15;
+  --color-accent-800: #7d1812;
+  --color-accent-900: #55110d;
+
+  /* Cool neutral greys tuned to the neumorphic surface. */
+  --color-zinc-50: #e8ebef;
+  --color-zinc-100: #dee2e7;
+  --color-zinc-200: #d0d5dc;
+  --color-zinc-300: #b9bfc8;
+  --color-zinc-400: #8b929c;
+  --color-zinc-500: #646b75;
+  --color-zinc-600: #4b515a;
+  --color-zinc-700: #3a3f46;
+  --color-zinc-800: #2d3137;
+  --color-zinc-900: #23262b;
+  --color-zinc-950: #1c1e22;
 }
 
 :root {
   color-scheme: light;
+  --surface: #e4e7ec;
+  --surface-hi: #ffffff;
+  --surface-lo: #b8bec7;
+  --ink: #111316;
+  --neu-out: 6px 6px 14px var(--surface-lo), -6px -6px 14px var(--surface-hi);
+  --neu-out-sm: 3px 3px 7px var(--surface-lo), -3px -3px 7px var(--surface-hi);
+  --neu-in: inset 3px 3px 7px var(--surface-lo), inset -3px -3px 7px var(--surface-hi);
+  --neu-in-sm: inset 2px 2px 4px var(--surface-lo), inset -2px -2px 4px var(--surface-hi);
 }
 
 html.dark {
   color-scheme: dark;
+  --surface: #23262b;
+  --surface-hi: #2d3137;
+  --surface-lo: #16181b;
+  --ink: #f2f3f5;
 }
 
 body {
-  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* ---- Neumorphic surfaces ---- */
+.neu {
+  background: var(--surface);
+  box-shadow: var(--neu-out);
+}
+.neu-sm {
+  background: var(--surface);
+  box-shadow: var(--neu-out-sm);
+}
+.neu-inset {
+  background: var(--surface);
+  box-shadow: var(--neu-in);
+}
+.neu-inset-sm {
+  background: var(--surface);
+  box-shadow: var(--neu-in-sm);
+}
+/* A raised control that presses in on hover/press/active. */
+.neu-btn {
+  background: var(--surface);
+  box-shadow: var(--neu-out-sm);
+  transition: box-shadow 0.15s ease, color 0.15s ease;
+}
+.neu-btn:hover {
+  box-shadow: 1px 1px 3px var(--surface-lo), -1px -1px 3px var(--surface-hi);
+}
+.neu-btn:active,
+.neu-btn[aria-pressed="true"],
+.neu-btn[aria-current="page"] {
+  box-shadow: var(--neu-in-sm);
+}
+
+/* Swiss rules & labels. */
+.swiss-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Subtle scrollbar styling so the sidebar feels clean. */
@@ -37,9 +110,38 @@ body {
   scrollbar-width: thin;
 }
 
-/* Range slider accent. */
+:focus-visible {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+}
+
+/* Range slider: inset track, raised thumb. */
 input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--surface);
+  box-shadow: var(--neu-in-sm);
   accent-color: var(--color-accent-500);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--color-accent-500);
+  box-shadow: 2px 2px 5px var(--surface-lo), -2px -2px 5px var(--surface-hi);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--color-accent-500);
+  box-shadow: 2px 2px 5px var(--surface-lo), -2px -2px 5px var(--surface-hi);
+  cursor: pointer;
 }
 
 /* Print: drop the app chrome and show just the result, edge to edge. */
@@ -54,6 +156,13 @@ input[type="range"] {
   }
   .print\:hidden {
     display: none !important;
+  }
+  .neu,
+  .neu-sm,
+  .neu-inset,
+  .neu-inset-sm {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
   }
 }
 
