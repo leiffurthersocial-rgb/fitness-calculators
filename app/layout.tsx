@@ -20,17 +20,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://vital-fitness.vercel.app"
   ),
-  title: {
-    default: "Vital — Hypertrophy & Fitness Tools",
-    template: "%s",
-  },
+  title: "Fitness Calculators",
   description:
     "Science-based hypertrophy tools — a routine planner with ratings, weekly net stimulus and stimulating reps — plus strength, nutrition, cardio and recovery calculators, all in your browser.",
-  applicationName: "Vital",
-  icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
-  },
+  applicationName: "Fitness Calculators",
+  // Tab / home-screen icons come from app/favicon.ico, app/icon.svg and
+  // app/apple-icon.png (Next.js file conventions).
+  appleWebApp: { title: "Fitness Calculators" },
 };
 
 export const viewport: Viewport = {

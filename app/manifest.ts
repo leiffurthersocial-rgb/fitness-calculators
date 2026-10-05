@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Vital — Health & Fitness Hub",
-    short_name: "Vital",
+    name: "Fitness Calculators",
+    short_name: "Fitness Calc",
     description:
       "A suite of clean, science-based health & fitness calculators — strength, cardio, nutrition and recovery — all in your browser.",
     start_url: "/",
@@ -11,8 +11,10 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#23262b",
     theme_color: "#e1301f",
     icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icon-maskable.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
     ],
   };
 }

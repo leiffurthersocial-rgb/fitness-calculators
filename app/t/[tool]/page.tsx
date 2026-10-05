@@ -15,14 +15,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const t = findTool(tool);
   if (!t) return {};
   const description = getToolContent(tool).description ?? t.blurb;
-  const title = `${t.name} — Vital`;
+  // The tab always reads "Fitness Calculators"; shares still name the tool.
+  const title = "Fitness Calculators";
+  const shareTitle = `${t.name} — Fitness Calculators`;
   const url = `/t/${tool}`;
   return {
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { title, description, url, type: "website" },
-    twitter: { card: "summary_large_image", title, description },
+    openGraph: { title: shareTitle, description, url, type: "website" },
+    twitter: { card: "summary_large_image", title: shareTitle, description },
   };
 }
 

@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Vital — Science-based health & fitness calculators";
+export const alt = "Fitness Calculators — science-based hypertrophy & fitness tools";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
