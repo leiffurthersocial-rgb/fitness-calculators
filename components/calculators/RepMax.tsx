@@ -54,7 +54,7 @@ export default function RepMax() {
           </Field>
           <Result label="Estimated 1RM" value={fmt(oneRM)} unit={unit} />
           <Tip>
-            Keep <strong>Average</strong> for everyday use — it&apos;s the most
+            Keep <strong>Average</strong>{" "}for everyday use — it&apos;s the most
             reliable across rep ranges. Brzycki reads a touch lower at high reps,
             Epley a touch higher. For the best estimate, test a set of{" "}
             <strong>5 reps or fewer</strong>.
@@ -72,7 +72,7 @@ export default function RepMax() {
 
       <Card>
         <CardTitle>Rep-max table</CardTitle>
-        <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto border border-[var(--line)]">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
               <tr>
@@ -86,9 +86,9 @@ export default function RepMax() {
                 <tr
                   key={row.reps}
                   className={
-                    "border-t border-zinc-100 dark:border-zinc-800 " +
+                    "border-t border-[var(--line)] " +
                     (highlight.has(row.reps)
-                      ? "bg-accent-50 dark:bg-accent-900/20"
+                      ? "bg-[var(--fill)]"
                       : "")
                   }
                 >

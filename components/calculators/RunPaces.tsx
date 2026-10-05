@@ -220,7 +220,7 @@ export default function RunPaces() {
             <h4 className="mb-3 mt-6 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
               Equivalent race times
             </h4>
-            <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="overflow-x-auto border border-[var(--line)]">
               <table className="w-full text-sm">
                 <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
                   <tr>
@@ -237,8 +237,8 @@ export default function RunPaces() {
                       <tr
                         key={r.key}
                         className={
-                          "border-t border-zinc-100 dark:border-zinc-800 " +
-                          (isEntered ? "bg-accent-50 dark:bg-accent-900/20" : "")
+                          "border-t border-[var(--line)] " +
+                          (isEntered ? "bg-[var(--fill)]" : "")
                         }
                       >
                         <td className="px-4 py-2 font-medium">{r.label}</td>

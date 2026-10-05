@@ -72,7 +72,7 @@ export default function PlateLoading() {
                   className={
                     "rounded-lg border px-3 py-1.5 text-sm font-medium transition " +
                     (enabled[p]
-                      ? "border-accent-500 bg-accent-50 text-accent-700 dark:bg-accent-900/30 dark:text-accent-300"
+                      ? "border-accent-500 bg-[var(--fill)] text-accent-700 dark:text-accent-300"
                       : "border-zinc-300 text-zinc-400 line-through dark:border-zinc-700")
                   }
                 >

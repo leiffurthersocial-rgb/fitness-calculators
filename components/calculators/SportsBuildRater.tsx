@@ -196,7 +196,7 @@ export default function SportsBuildRater() {
               </span>
             </div>
 
-            <SubLabel>💪 Strength</SubLabel>
+            <SubLabel>Strength</SubLabel>
             <div className="grid grid-cols-2 gap-3">
               <Field label={`Squat 1RM (${wu})`}>
                 <NumberInput value={squat} onChange={setSquat} step={2.5} suffix={wu} />
@@ -215,7 +215,7 @@ export default function SportsBuildRater() {
               </Field>
             </div>
 
-            <SubLabel>⚡ Power</SubLabel>
+            <SubLabel>Power</SubLabel>
             <div className="grid grid-cols-2 gap-3">
               <Field label="100 m sprint">
                 <NumberInput value={sprint100} onChange={setSprint100} step={0.1} suffix="s" />
@@ -228,7 +228,7 @@ export default function SportsBuildRater() {
               </Field>
             </div>
 
-            <SubLabel>🫀 Endurance &amp; reach</SubLabel>
+            <SubLabel>Endurance &amp; reach</SubLabel>
             <div className="grid grid-cols-2 gap-3">
               <Field label="VO₂max">
                 <NumberInput value={vo2max} onChange={setVo2max} suffix="ml/kg/min" />
@@ -244,9 +244,9 @@ export default function SportsBuildRater() {
         </div>
         <InfoNote>
           <p>
-            Four groups are scored: <strong>physique</strong> (height, BMI &
+            Four groups are scored: <strong>physique</strong>{" "}(height, BMI &
             wingspan vs the role&apos;s range), <strong>strength</strong>{" "}
-            (relative lifts & pull-ups), <strong>power</strong> (100 m,
+            (relative lifts & pull-ups), <strong>power</strong>{" "}(100 m,
             vertical &amp; broad jump) and <strong>endurance</strong>{" "}
             (VO₂max).
           </p>
@@ -350,15 +350,15 @@ export default function SportsBuildRater() {
             <div
               className={`mt-4 rounded-xl border px-4 py-3 ${
                 ideal
-                  ? "border-accent-200 bg-accent-50 dark:border-accent-800 dark:bg-accent-900/20"
-                  : "border-zinc-200 dark:border-zinc-800"
+                  ? "border-accent-500 bg-[var(--fill)]"
+                  : "border-[var(--line)]"
               }`}
             >
               <div className="text-xs text-zinc-500">Body-composition target</div>
               <div className="mt-0.5 text-sm font-semibold">
                 {ideal ? (
                   <span className="text-accent-700 dark:text-accent-300">
-                    Your weight is dialled in for this role 🎯
+                    Your weight is dialled in for this role
                   </span>
                 ) : (
                   <span>
@@ -383,7 +383,7 @@ export default function SportsBuildRater() {
         {(result.limiter || result.standout) && (
           <div className="mt-4 grid grid-cols-2 gap-3">
             {result.standout && (
-              <div className="rounded-xl border border-accent-200 bg-accent-50 px-3 py-2 dark:border-accent-800 dark:bg-accent-900/20">
+              <div className="rounded-xl border border-accent-500 bg-[var(--fill)] px-3 py-2">
                 <div className="text-xs text-zinc-500">Standout</div>
                 <div className="text-sm font-semibold text-accent-700 dark:text-accent-300">
                   {result.standout.label} · {result.standout.score}
@@ -460,8 +460,8 @@ export default function SportsBuildRater() {
                   onClick={() => selectRole(b.sportKey, b.posKey)}
                   className={`flex w-full items-center gap-3 rounded-lg border px-3 py-1.5 text-left text-sm transition-colors ${
                     active
-                      ? "border-accent-300 bg-accent-50 dark:border-accent-700 dark:bg-accent-900/20"
-                      : "border-zinc-200 hover:border-accent-300 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:border-accent-700 dark:hover:bg-zinc-800/50"
+                      ? "border-accent-300 bg-[var(--fill)]"
+                      : "border-zinc-200 hover:border-accent-300 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/50"
                   }`}
                 >
                   <span className="w-4 shrink-0 text-xs font-semibold text-zinc-400">

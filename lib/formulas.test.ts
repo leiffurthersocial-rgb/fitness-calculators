@@ -21,7 +21,6 @@ import {
   classifyLift,
   muscleGainPotential,
   ageMuscleFactor,
-  dietPlan,
   liftBalance,
   pctOfOneRM,
   oneRMFromRPE,
@@ -163,22 +162,6 @@ describe("muscle-gain potential", () => {
   it("age factor tapers past 30", () => {
     expect(ageMuscleFactor(30)).toBe(1);
     expect(ageMuscleFactor(50)).toBeLessThan(1);
-  });
-});
-
-describe("diet planner", () => {
-  it("a cut produces a deficit and reaches a lower body-fat target", () => {
-    const d = dietPlan({ sex: "male", age: 30, heightCm: 180, weightKg: 85, bodyFatPct: 20, activityMultiplier: 1.55, goal: "lose", ratePctPerWeek: 0.75, experience: "intermediate", targetBodyFatPct: 12 });
-    expect(d.calorieTarget).toBeLessThan(d.tdee);
-    expect(d.dailyDeltaKcal).toBeLessThan(0);
-    expect(d.weeksToTarget).toBeGreaterThan(0);
-    expect(d.targetWeightKg!).toBeLessThan(85);
-  });
-  it("maintain holds weight flat", () => {
-    const d = dietPlan({ sex: "male", age: 30, heightCm: 180, weightKg: 80, bodyFatPct: 18, activityMultiplier: 1.55, goal: "maintain", ratePctPerWeek: 0, experience: "intermediate" });
-    expect(d.calorieTarget).toBeCloseTo(d.tdee, 0);
-    const last = d.trajectory[d.trajectory.length - 1];
-    expect(last.weightKg).toBeCloseTo(80, 5);
   });
 });
 

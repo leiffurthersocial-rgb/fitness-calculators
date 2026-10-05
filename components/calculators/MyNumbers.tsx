@@ -47,7 +47,7 @@ function MetricCard({
     <button
       type="button"
       onClick={() => go(toolId)}
-      className="group flex flex-col rounded-xl border border-zinc-200 p-3 text-left transition hover:border-accent-400 hover:shadow-sm dark:border-zinc-800 dark:hover:border-accent-600"
+      className="group flex flex-col rounded-xl border border-zinc-200 p-3 text-left transition hover:border-accent-400 hover:shadow-sm dark:border-zinc-800"
     >
       <span className="text-xs text-zinc-500">{label}</span>
       <span className="mt-0.5 text-xl font-bold text-zinc-900 dark:text-zinc-50">

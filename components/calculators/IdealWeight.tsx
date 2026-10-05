@@ -104,7 +104,7 @@ export default function IdealWeight() {
       <Card>
         <CardTitle>Estimates</CardTitle>
         <div className="space-y-3">
-          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto border border-[var(--line)]">
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
                 <tr>
@@ -114,12 +114,12 @@ export default function IdealWeight() {
               </thead>
               <tbody>
                 {formulas.map((f) => (
-                  <tr key={f.name} className="border-t border-zinc-100 dark:border-zinc-800">
+                  <tr key={f.name} className="border-t border-[var(--line)]">
                     <td className="px-4 py-2 font-medium">{f.name}</td>
                     <td className="px-4 py-2">{disp(f.kg)}</td>
                   </tr>
                 ))}
-                <tr className="border-t border-zinc-100 bg-accent-50 dark:border-zinc-800 dark:bg-accent-900/20">
+                <tr className="border-t border-zinc-100 bg-[var(--fill)] dark:border-zinc-800">
                   <td className="px-4 py-2 font-semibold">Average</td>
                   <td className="px-4 py-2 font-semibold">{disp(avgKg)}</td>
                 </tr>

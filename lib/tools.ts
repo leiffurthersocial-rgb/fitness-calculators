@@ -55,6 +55,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
     group: "Hypertrophy",
     tools: [
       { id: "routine-planner", name: "Routine planner", blurb: "Build sessions, save routines and get a hypertrophy rating", Component: RoutinePlanner },
+      { id: "diet-planner", name: "Muscle building & cut planner", blurb: "Build muscle without the fat, recomp or cut — calories set by what muscle costs", Component: DietPlanner },
       { id: "net-stimulus", name: "Weekly net stimulus", blurb: "Beardsley's model: weekly growth stimulus minus atrophy", Component: WeeklyNetStimulus },
       { id: "stimulating-reps", name: "Stimulating reps", blurb: "How many reps in your sets actually build muscle", Component: StimulatingReps },
       { id: "exercise-library", name: "Exercise library", blurb: "Which muscles each exercise trains, and how much", Component: ExerciseLibrary },
@@ -86,7 +87,6 @@ export const TOOL_GROUPS: ToolGroup[] = [
     group: "Body & Nutrition",
     tools: [
       { id: "tdee", name: "TDEE / BMR", blurb: "Daily energy needs", Component: Tdee },
-      { id: "diet-planner", name: "Cut / bulk planner", blurb: "Calories, macros & a timeline to your goal", Component: DietPlanner },
       { id: "macros", name: "Macros", blurb: "Protein / carbs / fat split", Component: Macros },
       { id: "body-comp", name: "Body composition", blurb: "Navy BF%, BMI, waist ratio", Component: BodyComp },
       { id: "ideal-weight", name: "Ideal weight", blurb: "Healthy range + lean mass", Component: IdealWeight },

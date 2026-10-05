@@ -239,13 +239,20 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
   },
   "diet-planner": {
     description:
-      "Plan a cut or lean bulk: daily calories, macros and a week-by-week body-recomposition timeline with an ETA to your target body-fat percentage.",
+      "Build muscle without gaining fat: calories set by the energy cost of the muscle you can actually build, plus recomp and cut modes, a muscle-vs-fat projection and a comparison of bulking strategies.",
     sources: [
+      { label: "Helms et al. (2023) — small vs large energy surplus in trained lifters", url: "https://pubmed.ncbi.nlm.nih.gov/37914977/" },
+      { label: "Slater et al. (2019) — is an energy surplus required for hypertrophy?", url: "https://doi.org/10.3389/fnut.2019.00131" },
+      { label: "Barakat et al. (2020) — body recomposition", url: "https://doi.org/10.1519/SSC.0000000000000584" },
+      { label: "Hall (2008) — energy deficit per unit weight loss", url: "https://pubmed.ncbi.nlm.nih.gov/17848938/" },
       { label: "Aragon & Schoenfeld — rates of muscle gain", url: "https://jissn.biomedcentral.com/articles/10.1186/1550-2783-10-5" },
-      { label: "Hall et al. — energy balance & body-weight change", url: "https://pubmed.ncbi.nlm.nih.gov/21872751/" },
+      { label: "Garthe et al. (2011) — slow vs fast weight loss in athletes", url: "https://pubmed.ncbi.nlm.nih.gov/21558571/" },
     ],
     faq: [
-      { q: "Why recalculate as I go?", a: "As your bodyweight changes so does your TDEE, so a deficit that was 500 kcal shrinks over time — re-run it every few weeks." },
+      { q: "How many extra calories do I need to build muscle?", a: "Far fewer than most bulking advice suggests. Building 1 kg of lean tissue costs about 2,300 kcal. An intermediate lifter can add maybe 0.5–0.6 kg of muscle a month, which works out to roughly 40–60 kcal a day; a beginner perhaps 70–100. Anything more than that is stored as fat." },
+      { q: "Do I need to gain fat to build muscle?", a: "No. Muscle growth is driven by the training stimulus and limited by your training age, not by eating lots. In Helms et al. (2023), a large surplus mainly added fat compared with a small one, with little or no extra muscle. The authors suggest small surpluses scaled to experience; this planner starts at the muscle-only minimum, and you can add a 100 kcal buffer if your weight doesn't move." },
+      { q: "When should I recomp instead?", a: "Recomposition at maintenance works best for beginners, people returning after a break and those with more body fat: they can build a good share of their normal muscle rate while losing fat. Advanced, lean lifters build muscle much more slowly this way." },
+      { q: "Why is my cut deficit bigger than other calculators?", a: "This planner uses the energy content of body fat itself (~9,400 kcal/kg) instead of the old 7,700 kcal-per-kg-of-bodyweight rule, which also counts water. It's a starting point: adjust by 100 kcal based on your weekly average weight." },
     ],
   },
   macros: {

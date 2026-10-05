@@ -139,7 +139,7 @@ export default function Caffeine() {
                   key={p.label}
                   type="button"
                   onClick={() => addIntake(p.mg, nowHHMM())}
-                  className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium transition hover:border-accent-500 hover:bg-accent-50 dark:border-zinc-700 dark:hover:bg-accent-900/30"
+                  className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium transition hover:border-accent-500 hover:bg-[var(--fill)] dark:border-zinc-700"
                   title={`${p.mg} mg`}
                 >
                   {p.label}{" "}

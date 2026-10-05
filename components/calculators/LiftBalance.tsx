@@ -95,7 +95,7 @@ export default function LiftBalance() {
                 {fmt(Math.abs(result.weakest.deltaPct), 0)}% behind balanced
               </div>
             </div>
-            <div className="rounded-xl border border-accent-200 bg-accent-50 px-3 py-2 dark:border-accent-800 dark:bg-accent-900/20">
+            <div className="rounded-xl border border-accent-500 bg-[var(--fill)] px-3 py-2">
               <div className="text-xs text-zinc-500">Strongest</div>
               <div className="text-sm font-semibold text-accent-700 dark:text-accent-300">
                 {result.strongest.label}
@@ -109,7 +109,7 @@ export default function LiftBalance() {
           </p>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto border border-[var(--line)]">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
               <tr>
@@ -124,7 +124,7 @@ export default function LiftBalance() {
                 const off = Math.abs(r.deltaPct) >= 8;
                 const behind = r.deltaPct < 0;
                 return (
-                  <tr key={r.key} className="border-t border-zinc-100 dark:border-zinc-800">
+                  <tr key={r.key} className="border-t border-[var(--line)]">
                     <td className="px-4 py-2 font-medium">{r.label}</td>
                     <td className="px-4 py-2">{r.actual > 0 ? `${fmt(r.actual)} ${wu}` : "—"}</td>
                     <td className="px-4 py-2 text-zinc-500">

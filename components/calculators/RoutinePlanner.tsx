@@ -586,7 +586,7 @@ function RatingCard({
 
       <InfoNote>
         <p>
-          <strong>Model.</strong> Sessions are spread evenly over the week (A, B, A, B…). Each
+          <strong>Model.</strong>{" "}Sessions are spread evenly over the week (A, B, A, B…). Each
           muscle&apos;s week is scored with Chris Beardsley&apos;s Weekly Net Stimulus: the growth
           stimulus from every workout minus the atrophy between workouts.
         </p>
@@ -599,7 +599,7 @@ function RatingCard({
           score lower. Each rep in reserve removes one of ~5 stimulating reps.
         </p>
         <p>
-          <strong>Fatigue.</strong> Within a workout, sets for the same muscle have diminishing
+          <strong>Fatigue.</strong>{" "}Within a workout, sets for the same muscle have diminishing
           returns (the Schoenfeld/Pelland curve), and once a session passes ~12 fatigue units
           (heavy compounds cost more) later exercises lose 1.5% per unit, down to 70%. Between
           workouts, training a muscle again before its damage clears (~72 h) cuts that

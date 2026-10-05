@@ -97,7 +97,7 @@ export default function PaceRace() {
             <TextInput value={knownTime} onChange={setKnownTime} placeholder="50:00" />
           </Field>
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto border border-[var(--line)]">
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
                 <tr>
@@ -116,9 +116,9 @@ export default function PaceRace() {
                     <tr
                       key={r.key}
                       className={
-                        "border-t border-zinc-100 dark:border-zinc-800 " +
+                        "border-t border-[var(--line)] " +
                         (r.key === knownRace
-                          ? "bg-accent-50 dark:bg-accent-900/20"
+                          ? "bg-[var(--fill)]"
                           : "")
                       }
                     >

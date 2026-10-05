@@ -94,7 +94,7 @@ export default function Macros() {
         <InfoNote>
           <p>Cut = TDEE − 500, Bulk = TDEE + 300.</p>
           <p>
-            Protein = {proteinPerKg} g/kg × bodyweight. Fat is fixed at 25% of
+            Protein = {proteinPerKg}{" "}g/kg × bodyweight. Fat is fixed at 25% of
             calories; carbs fill the rest. 4 kcal/g protein &amp; carbs, 9 kcal/g
             fat.
           </p>
@@ -146,7 +146,7 @@ export default function Macros() {
               <NumberInput value={meals} onChange={setMeals} suffix="meals" />
             </div>
           </div>
-          <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="overflow-x-auto border border-[var(--line)]">
             <table className="w-full text-sm">
               <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
                 <tr>
@@ -157,7 +157,7 @@ export default function Macros() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-t border-zinc-100 dark:border-zinc-800">
+                <tr className="border-t border-[var(--line)]">
                   <td className="px-4 py-2 font-medium">
                     {fmt(target / Math.max(1, meals), 0)} kcal
                   </td>

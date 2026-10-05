@@ -346,7 +346,7 @@ export default function WorkoutPlan() {
               </h3>
               <Badge tone="neutral">{day.exercises.length} exercises</Badge>
             </div>
-            <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="overflow-x-auto border border-[var(--line)]">
               <table className="w-full text-sm">
                 <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
                   <tr>
@@ -361,9 +361,8 @@ export default function WorkoutPlan() {
                     // sets/load columns, with an icon to set them apart.
                     if (ex.kind !== "lift") {
                       return (
-                        <tr key={j} className="border-t border-zinc-100 dark:border-zinc-800">
+                        <tr key={j} className="border-t border-[var(--line)]">
                           <td className="px-3 py-2 font-medium">
-                            <span className="mr-1">{ex.kind === "plyo" ? "⚡" : "🫀"}</span>
                             {ex.name}
                           </td>
                           <td className="px-3 py-2 text-zinc-500" colSpan={2}>
@@ -373,7 +372,7 @@ export default function WorkoutPlan() {
                       );
                     }
                     return (
-                      <tr key={j} className="border-t border-zinc-100 dark:border-zinc-800">
+                      <tr key={j} className="border-t border-[var(--line)]">
                         <td className="px-3 py-2 font-medium">
                           {ex.name}
                           {ex.emphasised && (

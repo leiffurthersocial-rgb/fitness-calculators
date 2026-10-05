@@ -163,7 +163,7 @@ export default function StrengthStandards() {
             to a higher bar, heavier lifters a lower one, like Wilks/DOTS.
           </p>
           <p>
-            For pull-ups specifically, bodyweight <em>is</em> the resistance, so
+            For pull-ups specifically, bodyweight <em>is</em>{" "}the resistance, so
             it&apos;s weighted even more heavily than the barbell lifts — the
             &quot;relative&quot; figure converts your reps to what a reference
             80&nbsp;kg (male) / 65&nbsp;kg (female) lifter would&apos;ve needed to
@@ -297,7 +297,7 @@ export default function StrengthStandards() {
                       ? isReps
                         ? `${Math.ceil(c.toNext)} ${Math.ceil(c.toNext) === 1 ? "rep" : "reps"} to ${c.next.level}`
                         : `${fmt(weightFromKg(c.toNext, units))} ${unit} to ${c.next.level}`
-                      : "Top tier 💪"}
+                      : "Top tier"}
                   </span>
                 </div>
                 {isKey && (

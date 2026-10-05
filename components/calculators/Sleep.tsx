@@ -138,8 +138,8 @@ export default function Sleep() {
                 className={
                   "flex items-center justify-between rounded-xl border px-4 py-3 " +
                   (recommended
-                    ? "border-accent-400 bg-accent-50 ring-1 ring-accent-300 dark:border-accent-700 dark:bg-accent-900/20 dark:ring-accent-800"
-                    : "border-zinc-200 dark:border-zinc-800")
+                    ? "border-accent-400 bg-[var(--fill)] ring-1 ring-accent-300 dark:ring-accent-800"
+                    : "border-[var(--line)]")
                 }
               >
                 <div>

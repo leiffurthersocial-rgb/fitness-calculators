@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocalStorage } from "@/lib/useLocalStorage";
 import { TOOL_GROUPS, findTool, ALL_TOOLS } from "@/lib/tools";
 import { getToolContent } from "@/lib/toolContent";
 import { useTheme } from "@/lib/theme";
@@ -43,6 +44,26 @@ export default function Shell({ initialId }: { initialId: string }) {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // "/" jumps to tool search (opening the mobile menu if the sidebar is hidden).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      e.preventDefault();
+      const visible = Array.from(document.querySelectorAll<HTMLInputElement>("input[data-tool-search]")).find(
+        (el) => el.offsetParent !== null
+      );
+      if (visible) visible.focus();
+      else {
+        setMobileNavOpen(true);
+        setTimeout(() => document.querySelector<HTMLInputElement>("input[data-tool-search]")?.focus(), 0);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   const select = (id: string) => {
@@ -123,8 +144,10 @@ export default function Shell({ initialId }: { initialId: string }) {
 
         <ActiveComponent />
 
+        <RelatedTools group={activeGroup} activeId={active.id} onSelect={select} />
+
         {hasRefs && (
-          <div className="mt-10 grid gap-6 xl:grid-cols-[1fr_1.4fr]">
+          <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1.4fr]">
             <Sources items={content.sources} />
             <Faq items={content.faq} />
           </div>
@@ -135,6 +158,45 @@ export default function Shell({ initialId }: { initialId: string }) {
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+/** "More in this section" — the other tools in the active tool's group. */
+function RelatedTools({
+  group,
+  activeId,
+  onSelect,
+}: {
+  group: (typeof TOOL_GROUPS)[number] | undefined;
+  activeId: string;
+  onSelect: (id: string) => void;
+}) {
+  const others = group?.tools.filter((t) => t.id !== activeId) ?? [];
+  if (others.length === 0) return null;
+  return (
+    <section className="mt-10 print:hidden">
+      <h2 className="swiss-label mb-3 border-b border-[var(--line-strong)] pb-1.5 text-zinc-900 dark:text-zinc-100">
+        More in {group?.group}
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {others.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onSelect(t.id)}
+            className="btn group rounded-lg p-3.5 text-left"
+          >
+            <span className="flex items-center justify-between gap-2 font-semibold">
+              {t.name}
+              <span aria-hidden className="text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-accent-500">
+                →
+              </span>
+            </span>
+            <span className="mt-0.5 block text-sm text-zinc-600 dark:text-zinc-400">{t.blurb}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function Settings({
   units,
@@ -182,6 +244,10 @@ function NavList({
 }) {
   const norm = (s: string) => s.normalize("NFKD").toLowerCase();
   const q = norm(query.trim());
+  // Groups the user opened; the active tool's group and search results are always open.
+  const [opened, setOpened] = useLocalStorage<string[]>("vital.nav.open", [TOOL_GROUPS[0].group]);
+  const toggleGroup = (name: string) =>
+    setOpened((o) => (o.includes(name) ? o.filter((x) => x !== name) : [...o, name]));
   const filteredGroups = TOOL_GROUPS.map((g, i) => ({
     ...g,
     index: i + 1,
@@ -198,25 +264,46 @@ function NavList({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search tools"
-          aria-label="Search tools"
-          className="field w-full rounded-lg py-2.5 pl-10 pr-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-accent-500/40 dark:text-zinc-100"
+          aria-label="Search tools (press / )"
+          data-tool-search
+          className="field w-full rounded-lg py-2.5 pl-10 pr-9 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-2 focus:ring-accent-500/40 dark:text-zinc-100"
         />
         <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400">
           <SearchIcon />
         </span>
+        {!query && (
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 border border-[var(--line)] px-1.5 text-[11px] font-medium text-zinc-500">
+            /
+          </kbd>
+        )}
       </div>
 
-      <nav className="space-y-6">
+      <nav className="space-y-4">
         {filteredGroups.length === 0 && (
           <p className="px-2 text-sm text-zinc-400">No tools match “{query}”.</p>
         )}
-        {filteredGroups.map((g) => (
+        {filteredGroups.map((g) => {
+          const hasActive = g.tools.some((t) => t.id === activeId);
+          const isOpen = !!q || hasActive || opened.includes(g.group);
+          return (
           <div key={g.group}>
-            <div className="swiss-label mb-2 flex items-baseline gap-2 border-b border-[var(--line-strong)] px-1 pb-1.5 text-zinc-900 dark:text-zinc-100">
+            <button
+              type="button"
+              onClick={() => toggleGroup(g.group)}
+              disabled={!!q || hasActive}
+              aria-expanded={isOpen}
+              className="swiss-label mb-1.5 flex w-full items-baseline gap-2 border-b border-[var(--line-strong)] px-1 pb-1.5 text-left text-zinc-900 disabled:cursor-default dark:text-zinc-100"
+            >
               <span className="text-accent-600 tabular-nums dark:text-accent-400">{pad(g.index)}</span>
               <span className="flex-1">{g.group}</span>
               <span className="font-normal tabular-nums text-zinc-400">{g.tools.length}</span>
-            </div>
+              {!q && !hasActive && (
+                <span aria-hidden className={"text-zinc-400 transition " + (isOpen ? "rotate-90" : "")}>
+                  ▸
+                </span>
+              )}
+            </button>
+            {isOpen && (
             <div className="space-y-1">
               {g.tools.map((t) => {
                 const isActive = t.id === activeId;
@@ -240,8 +327,10 @@ function NavList({
                 );
               })}
             </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </nav>
     </div>
   );

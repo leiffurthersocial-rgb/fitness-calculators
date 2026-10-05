@@ -334,7 +334,7 @@ export default function WeeklyNetStimulus() {
             <p>
               In <em>Frequency × sets</em> mode this is the calculator form used by wnscalculator.com:
               WNS = stimulus per workout × frequency − atrophy days × daily atrophy rate, with atrophy
-              days = 7 − frequency × stimulus duration (never below 0). <em>Day by day</em> places each
+              days = 7 − frequency × stimulus duration (never below 0). <em>Day by day</em>{" "}places each
               workout&apos;s window on its actual day, so uneven spacing and overlapping windows count.
             </p>
             <p>

@@ -143,7 +143,7 @@ export default function MuscleGain() {
         />
 
         {/* Timeframe breakdown */}
-        <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="mt-4 overflow-x-auto border border-[var(--line)]">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
               <tr>
@@ -154,7 +154,7 @@ export default function MuscleGain() {
             </thead>
             <tbody>
               {r.timeframes.map((t) => (
-                <tr key={t.months} className="border-t border-zinc-100 dark:border-zinc-800">
+                <tr key={t.months} className="border-t border-[var(--line)]">
                   <td className="px-4 py-2 font-medium">{t.months} months</td>
                   <td className="px-4 py-2">
                     +{range(t.loKg, t.highKg)} {wu}

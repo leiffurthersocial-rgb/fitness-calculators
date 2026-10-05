@@ -87,7 +87,7 @@ export default function RpeConverter() {
           Loads to hit each rep target at a given RPE, from your estimated 1RM of{" "}
           <strong>{fmt(e1rm)} {wu}</strong>.
         </p>
-        <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="overflow-x-auto border border-[var(--line)]">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800/50">
               <tr>
@@ -99,7 +99,7 @@ export default function RpeConverter() {
             </thead>
             <tbody>
               {GRID_RPE.map((gr) => (
-                <tr key={gr} className="border-t border-zinc-100 dark:border-zinc-800">
+                <tr key={gr} className="border-t border-[var(--line)]">
                   <td className="px-3 py-2 font-medium">{gr}</td>
                   {GRID_REPS.map((r) => (
                     <td key={r} className="px-3 py-2 text-zinc-600 dark:text-zinc-300">
