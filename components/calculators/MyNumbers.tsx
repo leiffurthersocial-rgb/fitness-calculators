@@ -22,11 +22,10 @@ import {
 } from "@/lib/formulas";
 import { athleteScore } from "@/lib/score";
 import { weightFromKg, weightUnit, fmt } from "@/lib/units";
+import { goToTool } from "@/lib/nav";
 
-// Jump to another tool by setting the URL hash; the shell listens for it.
-function go(id: string) {
-  window.location.hash = id;
-}
+// Jump to another tool (client-side; the shell listens for the URL change).
+const go = goToTool;
 
 function MetricCard({
   label,

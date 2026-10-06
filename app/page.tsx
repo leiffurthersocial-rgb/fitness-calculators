@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <Shell initialId="routine-planner" />;
+  return <Shell initialId="hub" />;
 }

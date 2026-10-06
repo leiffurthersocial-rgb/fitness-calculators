@@ -29,6 +29,7 @@ import {
   type RoutineExercise,
   type RoutineRating,
   type RoutineSession,
+  type ScoringMode,
   type SessionAnalysis,
 } from "@/lib/routine";
 import { DAY_LABELS, WNS_CURVES, type WnsCurve } from "@/lib/wns";
@@ -65,10 +66,11 @@ export default function RoutinePlanner() {
   }, []);
   const [store, setStore, hydrated] = useLocalStorage<Store>("vital.routines", initial);
   const [curve, setCurve] = useLocalStorage<WnsCurve>("vital.routines.curve", "schoenfeld");
+  const [mode, setMode] = useLocalStorage<ScoringMode>("vital.routines.mode", "evidence");
   const [copied, setCopied] = useState(false);
 
   const routine = store.routines.find((r) => r.id === store.activeId) ?? store.routines[0];
-  const rating = useMemo(() => (routine ? rateRoutine(routine, { curve }) : null), [routine, curve]);
+  const rating = useMemo(() => (routine ? rateRoutine(routine, { curve, mode }) : null), [routine, curve, mode]);
 
   const update = (fn: (r: Routine) => Routine) =>
     setStore((s) => ({
@@ -214,13 +216,14 @@ export default function RoutinePlanner() {
         </div>
 
         {/* ---- Rating ---- */}
-        <RatingCard rating={rating} routine={routine} curve={curve} setCurve={setCurve} onPriority={cyclePriority} />
+        <RatingCard rating={rating} routine={routine} curve={curve} setCurve={setCurve} mode={mode} setMode={setMode} onPriority={cyclePriority} />
       </div>
 
       <SavedRoutines
         routines={store.routines}
         activeId={routine.id}
         curve={curve}
+        mode={mode}
         onOpen={(id) => setStore((s) => ({ ...s, activeId: id }))}
       />
     </div>
@@ -472,12 +475,16 @@ function RatingCard({
   routine,
   curve,
   setCurve,
+  mode,
+  setMode,
   onPriority,
 }: {
   rating: RoutineRating;
   routine: Routine;
   curve: WnsCurve;
   setCurve: (c: WnsCurve) => void;
+  mode: ScoringMode;
+  setMode: (m: ScoringMode) => void;
   onPriority: (m: MuscleId) => void;
 }) {
   const days = layoutLabel(rating.layout, routine.sessions);
@@ -496,6 +503,9 @@ function RatingCard({
           </div>
           <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             {rating.workoutsPerWeek} workouts · {rating.weeklySets} sets a week
+          </div>
+          <div className="text-xs text-zinc-500">
+            Evidence {rating.scores.evidence} · Beardsley WNS {rating.scores.wns}
           </div>
           <div className="mt-2 h-2 w-full bg-zinc-200 dark:bg-zinc-700">
             <div className="h-full bg-accent-500" style={{ width: `${rating.score}%` }} />
@@ -574,21 +584,36 @@ function RatingCard({
         </table>
       </div>
 
-      <div className="mt-5">
-        <Field label="Volume–stimulus dataset">
+      <div className="mt-5 space-y-4">
+        <Field label="Scoring model">
           <SegmentedControl
-            value={curve}
-            onChange={setCurve}
-            options={WNS_CURVES.map((c) => ({ value: c.value, label: c.label }))}
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "evidence", label: "Evidence (meta-analyses)" },
+              { value: "wns", label: "Beardsley WNS" },
+            ]}
           />
         </Field>
+        {mode === "wns" && (
+          <Field label="Volume–stimulus dataset">
+            <SegmentedControl
+              value={curve}
+              onChange={setCurve}
+              options={WNS_CURVES.map((c) => ({ value: c.value, label: c.label }))}
+            />
+          </Field>
+        )}
       </div>
 
       <InfoNote>
         <p>
-          <strong>Model.</strong>{" "}Sessions are spread evenly over the week (A, B, A, B…). Each
-          muscle&apos;s week is scored with Chris Beardsley&apos;s Weekly Net Stimulus: the growth
-          stimulus from every workout minus the atrophy between workouts.
+          <strong>Two models.</strong>{" "}Sessions are spread evenly over the week (A, B, A, B…).{" "}
+          <em>Evidence</em> (default) scores each muscle on its weekly effective sets, following the
+          volume dose–response in the meta-analyses (Schoenfeld 2017; Pelland et al.): growth rises
+          with volume with diminishing returns, sets beyond ~10 in one session count a quarter, and
+          frequency matters little once volume is equal. <em>Beardsley WNS</em> scores the growth
+          stimulus of every workout minus the atrophy between workouts, which rewards frequency more.
         </p>
         <p>
           <strong>Effective sets</strong> per workout = sets × set credit × exercise efficiency ×
@@ -596,7 +621,9 @@ function RatingCard({
           (fractional counting, which predicted growth best in Pelland et al.). Efficiency (70–100%)
           reflects how reliably the target muscle is what fails: stable machines and cables with a
           good resistance curve score highest; balance, grip, lower-back or helper-muscle limits
-          score lower. Each rep in reserve removes one of ~5 stimulating reps.
+          score lower. Proximity to failure: in evidence mode, 1 RIR keeps ~97% of a set&apos;s
+          stimulus, 2 RIR ~92%, 3 RIR ~85% (Robinson et al. 2024); in WNS mode each rep in reserve
+          removes one of ~5 stimulating reps.
         </p>
         <p>
           <strong>Fatigue.</strong>{" "}Within a workout, sets for the same muscle have diminishing
@@ -611,9 +638,10 @@ function RatingCard({
           they add up to at least one effective set in that session.
         </p>
         <p>
-          <strong>Score.</strong> 0 = a whole week of atrophy, 30 = maintenance, 100 = 4 hard,
-          efficient sets 3× a week. The routine score weights muscles by size (and doubles focus
-          muscles, ignores skipped ones).
+          <strong>Score.</strong> Evidence: ~3 effective sets/week ≈ 50, 6 ≈ 70, 10 ≈ 86, 15+ =
+          100. WNS: 0 = a whole week of atrophy, 30 = maintenance, 100 = 4 hard, efficient sets 3× a
+          week. The routine score weights muscles by size (and doubles focus muscles, ignores skipped
+          ones).
         </p>
       </InfoNote>
     </Card>
@@ -673,15 +701,17 @@ function SavedRoutines({
   routines,
   activeId,
   curve,
+  mode,
   onOpen,
 }: {
   routines: Routine[];
   activeId: string;
   curve: WnsCurve;
+  mode: ScoringMode;
   onOpen: (id: string) => void;
 }) {
   const rows = routines
-    .map((r) => ({ r, rating: rateRoutine(r, { curve }) }))
+    .map((r) => ({ r, rating: rateRoutine(r, { curve, mode }) }))
     .sort((a, b) => b.rating.score - a.rating.score);
   return (
     <Card>

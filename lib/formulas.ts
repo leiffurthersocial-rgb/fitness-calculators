@@ -43,6 +43,18 @@ export function estimate1RM(
 }
 
 /**
+ * Estimated 1RM from a working set, counting reps left in reserve as reps you
+ * could have done (reps to failure = reps + RIR). Averages Epley and Brzycki up
+ * to 10 reps to failure; beyond that Brzycki overshoots, so Epley alone is used.
+ */
+export function e1rmFromSet(weight: number, reps: number, rir = 0): number {
+  if (!(weight > 0) || !(reps > 0)) return 0;
+  const toFailure = reps + Math.max(0, rir);
+  if (toFailure <= 1) return weight;
+  return toFailure <= 10 ? estimate1RM(weight, toFailure, "average") : epley1RM(weight, toFailure);
+}
+
+/**
  * Invert Epley to estimate the weight you could lift for `reps` given a 1RM.
  * From 1RM = w(1 + r/30)  =>  w = 1RM / (1 + r/30).
  * We use Epley for the rep-max table because it inverts cleanly for all reps.
@@ -382,6 +394,30 @@ export function bmrMifflin(
 ): number {
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
   return sex === "male" ? base + 5 : base - 161;
+}
+
+/** Katch–McArdle BMR from lean body mass: 370 + 21.6 × LBM (kg). */
+export function bmrKatch(weightKg: number, bodyFatPct: number): number {
+  return 370 + 21.6 * weightKg * (1 - bodyFatPct / 100);
+}
+
+/**
+ * Best-guess BMR: Mifflin–St Jeor, averaged with Katch–McArdle when body fat
+ * is known. Mifflin ignores body composition, so it under-estimates for
+ * muscular people and over-estimates for those with more fat; Katch uses lean
+ * mass directly. Averaging the two is more robust than either alone when the
+ * body-fat number itself is an estimate.
+ */
+export function bmrBest(
+  weightKg: number,
+  heightCm: number,
+  age: number,
+  sex: "male" | "female",
+  bodyFatPct?: number
+): number {
+  const m = bmrMifflin(weightKg, heightCm, age, sex);
+  if (!bodyFatPct || bodyFatPct <= 0 || bodyFatPct >= 60) return m;
+  return (m + bmrKatch(weightKg, bodyFatPct)) / 2;
 }
 
 export const ACTIVITY_LEVELS = [

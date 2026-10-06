@@ -29,6 +29,21 @@ export const TOOL_CONTENT: Record<string, ToolContent> = {
       "A live snapshot of your key health & fitness numbers — maintenance calories, BMI, FFMI, muscle-gain potential, healthy-weight range and heart-rate zones — from one set of stats.",
   },
 
+  hub: {
+    description:
+      "The all-in-one hypertrophy dashboard: your stats, lift log with 1RM and progression forecasts, rated training plan, calories and macros, and a muscle-by-muscle forecast of your physique.",
+    sources: [
+      { label: "Pelland et al. — the resistance-training dose response", url: "https://doi.org/10.1007/s40279-025-02344-w" },
+      { label: "Helms et al. (2023) — small vs large energy surplus", url: "https://pubmed.ncbi.nlm.nih.gov/37914977/" },
+      { label: "Aragon & Schoenfeld — rates of muscle gain", url: "https://jissn.biomedcentral.com/articles/10.1186/1550-2783-10-5" },
+      { label: "Hall (2008) — energy deficit per unit weight loss", url: "https://pubmed.ncbi.nlm.nih.gov/17848938/" },
+    ],
+    faq: [
+      { q: "How does the physique forecast work?", a: "The nutrition model estimates how much muscle you can build in the timeframe from your training age, sex, age and goal. That's scaled by how well your routine trains each muscle (an untrained muscle won't grow however much you eat) and split across muscles by size and weekly effective sets. Logged lifts add a second signal: muscles whose lifts are weaker than your average are flagged as lagging." },
+      { q: "How accurate are the forecasts?", a: "They're group averages, so treat them as a direction, not a promise. People differ a lot in how fast they respond to training. The flags (under-trained, lagging, pressing-heavy) are more reliable than the exact kilograms." },
+      { q: "Where is my data stored?", a: "Only in your browser. The hub shares your stats with every other tool and reads routines from the Routine planner; logging your bench, squat, deadlift or overhead press also updates Your stats." },
+    ],
+  },
   "routine-planner": {
     description:
       "Build a hypertrophy routine from sessions and exercises, save it in your browser, and get it rated per muscle with Chris Beardsley's Weekly Net Stimulus model.",

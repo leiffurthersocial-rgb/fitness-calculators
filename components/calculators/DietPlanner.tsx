@@ -256,7 +256,7 @@ export default function DietPlanner() {
 
         <InfoNote>
           <p>
-            <strong>Maintenance</strong> = Mifflin–St Jeor BMR × activity level.
+            <strong>Maintenance</strong> = BMR × activity level, where BMR averages Mifflin–St Jeor and Katch–McArdle (lean-mass based) when your body fat is known.
           </p>
           <p>
             <strong>Muscle rate</strong>{" "}comes from the Muscle-gain potential model (Aragon&apos;s rates by training

@@ -76,7 +76,7 @@ export interface Routine {
 /* ---- Model constants ---- */
 
 /** Above this many effective sets per muscle in one session, extra sets add little. */
-export const SESSION_SET_CAP = 6;
+export const SESSION_SET_CAP = 8;
 /** Rough minutes per working set including rest. */
 export const MINUTES_PER_SET = 2.5;
 /** Fatigue units a session can absorb before later sets lose stimulus. */
@@ -91,6 +91,31 @@ export const DAMAGE_PER_SET = 0.035;
 export const DAMAGE_MAX = 0.4;
 /** Effective sets in one workout needed to keep a muscle out of atrophy. */
 export const WINDOW_MIN_SETS = 1;
+/** Per-session effective sets beyond which extra sets count only a quarter (Pelland et al.: per-session benefit plateaus around 10–11 fractional sets). */
+export const SESSION_PLATEAU = 10;
+/** Weekly effective sets that score 100 in evidence mode (gains keep rising past ~20 fractional sets, with diminishing returns). */
+export const EVIDENCE_TARGET_SETS = 15;
+
+/**
+ * How much of a set's hypertrophy stimulus remains when stopping `rir` reps
+ * short of failure. Evidence-based (Robinson et al. 2024 meta-regression;
+ * Refalo et al. 2023): growth falls only modestly from failure to 2–3 RIR,
+ * then faster. Gentler than Beardsley's "each RIR removes 1 of 5 stimulating
+ * reps", which is kept for the Weekly-net-stimulus scoring mode.
+ */
+export function effortFactor(rir: number): number {
+  const curve = [1, 0.97, 0.92, 0.85, 0.76, 0.66];
+  const r = Math.max(0, rir);
+  if (r <= 5) {
+    const i = Math.floor(r);
+    const t = r - i;
+    return i >= 5 ? curve[5] : curve[i] + (curve[i + 1] - curve[i]) * t;
+  }
+  return Math.max(0.4, 0.66 - 0.1 * (r - 5));
+}
+
+export type ScoringMode = "evidence" | "wns";
+
 /** Custom exercises: assumed efficiency and fatigue. */
 const CUSTOM = { efficiency: 0.9, fatigue: 0.8 };
 
@@ -177,7 +202,7 @@ export interface SessionAnalysis {
   direct: Set<MuscleId>;
 }
 
-export function analyzeSession(s: RoutineSession): SessionAnalysis {
+export function analyzeSession(s: RoutineSession, mode: ScoringMode = "evidence"): SessionAnalysis {
   const out: SessionAnalysis = {
     sets: 0,
     minutes: 0,
@@ -194,7 +219,7 @@ export function analyzeSession(s: RoutineSession): SessionAnalysis {
     const p = exerciseProfile(e);
     const factor = systemicFactor(load);
     out.exerciseFactors.push(factor);
-    const k = setEffectiveness(e.rir ?? 0);
+    const k = mode === "wns" ? setEffectiveness(e.rir ?? 0) : effortFactor(e.rir ?? 0);
     for (const [m, credit] of Object.entries(p.muscles) as [MuscleId, number][]) {
       const fresh = sets * credit * p.efficiency * k;
       out.effectiveFresh[m] = (out.effectiveFresh[m] ?? 0) + fresh;
@@ -229,8 +254,12 @@ export interface MuscleRating {
   /** Workouts per week with direct work for this muscle. */
   frequency: number;
   wns: number;
-  /** 0–100. */
+  /** Weekly effective sets after the per-session plateau and recovery (evidence mode). */
+  creditedSets: number;
+  /** 0–100 in the active scoring mode. */
   score: number;
+  scoreEvidence: number;
+  scoreWns: number;
   status: MuscleStatus;
   /** Most effective sets in a single workout. */
   maxSessionSets: number;
@@ -248,8 +277,11 @@ export interface RoutineFeedback {
 }
 
 export interface RoutineRating {
+  mode: ScoringMode;
   score: number;
   grade: string;
+  /** Overall scores in both modes, whichever is active. */
+  scores: { evidence: number; wns: number };
   muscles: MuscleRating[];
   layout: { day: number; hour: number; session: number }[];
   workoutsPerWeek: number;
@@ -274,10 +306,14 @@ interface MuscleWorkout {
 }
 
 /** Run the WNS model for one muscle's workouts, with the recovery penalty. */
-export function muscleWns(workouts: MuscleWorkout[], opts: WnsOptions): { wns: number; recoveryLoss: number } {
+export function muscleWns(
+  workouts: MuscleWorkout[],
+  opts: WnsOptions
+): { wns: number; recoveryLoss: number; credited: number } {
   const ws = workouts.filter((w) => w.effective > 0).sort((a, b) => a.hour - b.hour);
   let total = 0;
   let lost = 0;
+  let credited = 0;
   const stim = ws.map((w, i) => {
     const prev = ws.length > 1 ? ws[(i - 1 + ws.length) % ws.length] : null;
     const gap = prev ? (w.hour - prev.hour + HOURS_PER_WEEK) % HOURS_PER_WEEK || HOURS_PER_WEEK : HOURS_PER_WEEK;
@@ -285,9 +321,27 @@ export function muscleWns(workouts: MuscleWorkout[], opts: WnsOptions): { wns: n
     const full = workoutStimulus(w.effective, opts.curve);
     total += full;
     lost += full * penalty;
+    credited += sessionCredit(w.effective * (1 - penalty));
     return { hour: w.hour, stimulus: full * (1 - penalty), opensWindow: w.effective >= WINDOW_MIN_SETS };
   });
-  return { wns: wnsFromWorkouts(stim, opts).wns, recoveryLoss: total > 0 ? lost / total : 0 };
+  return { wns: wnsFromWorkouts(stim, opts).wns, recoveryLoss: total > 0 ? lost / total : 0, credited };
+}
+
+/** Effective sets credited from one workout: full up to the plateau, a quarter beyond it. */
+export function sessionCredit(sets: number): number {
+  if (sets <= SESSION_PLATEAU) return Math.max(0, sets);
+  return SESSION_PLATEAU + (sets - SESSION_PLATEAU) * 0.25;
+}
+
+/**
+ * Evidence-mode muscle score from weekly credited effective sets: logarithmic,
+ * like the volume dose–response in the meta-regressions (Schoenfeld 2017;
+ * Pelland et al.). ~3 sets ≈ 50, 6 ≈ 70, 10 ≈ 88, 15+ = 100. Frequency only
+ * matters through the per-session plateau and recovery, as in the evidence.
+ */
+export function evidenceScore(creditedSets: number): number {
+  if (!(creditedSets > 0)) return 0;
+  return Math.round(100 * Math.min(1, Math.log(1 + creditedSets) / Math.log(1 + EVIDENCE_TARGET_SETS)));
 }
 
 /** The WNS that scores 100: 4 hard, fully efficient direct sets, 3× a week. */
@@ -312,10 +366,14 @@ export function muscleScore(wns: number, benchmark: number, untrainedWns: number
   return Math.round(30 + 70 * Math.sqrt(ratio));
 }
 
-export function rateRoutine(routine: Routine, options: Partial<WnsOptions> = {}): RoutineRating {
+export function rateRoutine(
+  routine: Routine,
+  options: Partial<WnsOptions> & { mode?: ScoringMode } = {}
+): RoutineRating {
+  const mode: ScoringMode = options.mode ?? "evidence";
   const opts: WnsOptions = { ...DEFAULT_WNS_OPTIONS, ...options, rir: 0 };
   const layout = weeklyLayout(routine.sessions);
-  const sessions = routine.sessions.map(analyzeSession);
+  const sessions = routine.sessions.map((s) => analyzeSession(s, mode));
   const benchmark = benchmarkWns(opts);
   const untrained = wnsFromWorkouts([], opts).wns;
 
@@ -326,7 +384,7 @@ export function rateRoutine(routine: Routine, options: Partial<WnsOptions> = {})
       effective: sessions[session].effective[m.id] ?? 0,
       direct: sessions[session].direct.has(m.id),
     }));
-    const { wns, recoveryLoss } = muscleWns(workouts, opts);
+    const { wns, recoveryLoss, credited } = muscleWns(workouts, opts);
 
     let weeklySets = 0;
     let directSets = 0;
@@ -349,14 +407,22 @@ export function rateRoutine(routine: Routine, options: Partial<WnsOptions> = {})
 
     const ratio = benchmark > 0 ? wns / benchmark : 0;
     const v = wnsVerdict(wns);
+    const scoreWns = muscleScore(wns, benchmark, untrained);
+    const scoreEvidence = evidenceScore(credited);
     const status: MuscleStatus =
       weeklySets === 0
         ? "untrained"
-        : v === "loss"
-          ? "losing"
-          : v === "maintenance"
+        : mode === "wns"
+          ? v === "loss"
+            ? "losing"
+            : v === "maintenance"
+              ? "maintaining"
+              : ratio >= 0.81 // score ≥ 90
+                ? "optimal"
+                : "growing"
+          : scoreEvidence < 45
             ? "maintaining"
-            : ratio >= 0.81 // score ≥ 90
+            : scoreEvidence >= 90
               ? "optimal"
               : "growing";
 
@@ -370,7 +436,10 @@ export function rateRoutine(routine: Routine, options: Partial<WnsOptions> = {})
       effectiveSets,
       frequency: workouts.filter((w) => w.direct).length,
       wns,
-      score: muscleScore(wns, benchmark, untrained),
+      creditedSets: credited,
+      score: mode === "wns" ? scoreWns : scoreEvidence,
+      scoreEvidence,
+      scoreWns,
       status,
       maxSessionSets: Math.max(0, ...sessions.map((a) => a.effective[m.id] ?? 0)),
       recoveryLoss,
@@ -380,10 +449,15 @@ export function rateRoutine(routine: Routine, options: Partial<WnsOptions> = {})
   });
 
   const totalWeight = muscles.reduce((a, r) => a + r.weight, 0);
-  const score = totalWeight > 0 ? Math.round(muscles.reduce((a, r) => a + r.weight * r.score, 0) / totalWeight) : 0;
+  const avg = (pick: (m: MuscleRating) => number) =>
+    totalWeight > 0 ? Math.round(muscles.reduce((a, r) => a + r.weight * pick(r), 0) / totalWeight) : 0;
+  const scores = { evidence: avg((m) => m.scoreEvidence), wns: avg((m) => m.scoreWns) };
+  const score = scores[mode];
 
   return {
+    mode,
     score,
+    scores,
     grade: gradeFor(score),
     muscles,
     layout,

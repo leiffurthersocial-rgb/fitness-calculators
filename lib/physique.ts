@@ -14,7 +14,7 @@
  * to training and those with more body fat (Barakat et al. 2020).
  */
 
-import { muscleGainPotential, bmrMifflin, tdee, macroSplit, type TrainingLevel } from "./formulas";
+import { muscleGainPotential, bmrBest, tdee, macroSplit, type TrainingLevel } from "./formulas";
 
 /** Energy to build 1 kg of lean tissue, incl. synthesis costs (kcal). */
 export const LEAN_GAIN_KCAL = 2300;
@@ -104,7 +104,7 @@ export function physiquePlan(input: PhysiqueInput): PhysiquePlan {
   const extra = Math.max(0, input.extraSurplus ?? 0);
   const cutRate = input.cutRatePct ?? 0.75;
 
-  const maintenance = tdee(bmrMifflin(weightKg, heightCm, age, sex), activityMultiplier);
+  const maintenance = tdee(bmrBest(weightKg, heightCm, age, sex, bodyFatPct), activityMultiplier);
   const mg = muscleGainPotential({ sex, age, heightCm, weightKg, bodyFatPct, level });
   const maxLeanPerWeekKg = (mg.ratePerMonthLoKg + mg.ratePerMonthHiKg) / 2 / 4.345;
   const muscleOnlySurplus = (maxLeanPerWeekKg * LEAN_GAIN_KCAL) / 7;
@@ -185,7 +185,7 @@ export interface StrategyRow {
 
 /** The same person and timeframe under different calorie strategies. */
 export function compareStrategies(base: Omit<PhysiqueInput, "goal" | "extraSurplus" | "cutRatePct">): StrategyRow[] {
-  const maintenance = tdee(bmrMifflin(base.weightKg, base.heightCm, base.age, base.sex), base.activityMultiplier);
+  const maintenance = tdee(bmrBest(base.weightKg, base.heightCm, base.age, base.sex, base.bodyFatPct), base.activityMultiplier);
   const build = (extra: number) => physiquePlan({ ...base, goal: "build", extraSurplus: extra });
   const muscleOnly = build(0);
   const pctExtra = (p: number) => Math.max(0, maintenance * p - muscleOnly.muscleOnlySurplus);

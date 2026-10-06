@@ -5,6 +5,9 @@ import {
   routineFromTemplate,
   gradeFor,
   systemicFactor,
+  effortFactor,
+  evidenceScore,
+  sessionCredit,
   recoveryPenalty,
   analyzeSession,
   setAllSets,
@@ -55,9 +58,9 @@ describe("rateRoutine", () => {
     expect(muscle(r, "quads").status).toBe("untrained");
   });
   it("3 sets once a week = maintenance; 4 sets 3× a week = optimal (100)", () => {
-    const once = rateRoutine(routine(sess("A", 1, [["pec-deck", 3]])));
+    const once = rateRoutine(routine(sess("A", 1, [["pec-deck", 3]])), { mode: "wns" });
     expect(muscle(once, "chest").status).toBe("maintaining");
-    const three = rateRoutine(routine(sess("A", 3, [["pec-deck", 4]])));
+    const three = rateRoutine(routine(sess("A", 3, [["pec-deck", 4]])), { mode: "wns" });
     expect(muscle(three, "chest").score).toBe(100);
     expect(muscle(three, "chest").status).toBe("optimal");
   });
@@ -86,8 +89,8 @@ describe("rateRoutine", () => {
     expect(s("full-body")).toBeGreaterThan(s("bro-split"));
     expect(s("upper-lower")).toBeGreaterThan(s("bro-split"));
   });
-  it("maintenance scores 30, untrained 0", () => {
-    const once = rateRoutine(routine(sess("A", 1, [["pec-deck", 3]])));
+  it("maintenance scores 30, untrained 0 (WNS mode)", () => {
+    const once = rateRoutine(routine(sess("A", 1, [["pec-deck", 3]])), { mode: "wns" });
     expect(muscle(once, "chest").score).toBe(30);
     expect(muscle(once, "quads").score).toBe(0);
   });
@@ -185,5 +188,35 @@ describe("bulk edits", () => {
     const s = [sess("A", 1, [["pec-deck", 3, 2], ["squat", 4, 1]])];
     expect(setAllSets(s, 2)[0].exercises.map((e) => e.sets)).toEqual([2, 2]);
     expect(setAllRir(s, 0)[0].exercises.map((e) => e.rir)).toEqual([0, 0]);
+  });
+});
+
+describe("evidence mode", () => {
+  it("effort: failure 100%, 2 RIR ~92%, 4 RIR ~76%", () => {
+    expect(effortFactor(0)).toBe(1);
+    expect(effortFactor(2)).toBeCloseTo(0.92);
+    expect(effortFactor(4)).toBeCloseTo(0.76);
+    expect(effortFactor(1.5)).toBeGreaterThan(effortFactor(2));
+  });
+  it("score rises with weekly volume, with diminishing returns", () => {
+    expect(evidenceScore(0)).toBe(0);
+    expect(evidenceScore(6)).toBeGreaterThan(evidenceScore(3));
+    expect(evidenceScore(12) - evidenceScore(9)).toBeLessThan(evidenceScore(6) - evidenceScore(3));
+    expect(evidenceScore(30)).toBe(100);
+  });
+  it("per-session plateau: sets beyond ~10 in one workout count a quarter", () => {
+    expect(sessionCredit(8)).toBe(8);
+    expect(sessionCredit(14)).toBe(11);
+  });
+  it("frequency barely matters when weekly volume is equal", () => {
+    const once = muscle(rateRoutine(routine(sess("A", 1, [["pec-deck", 9]]))), "chest").scoreEvidence;
+    const thrice = muscle(rateRoutine(routine(sess("A", 3, [["pec-deck", 3]]))), "chest").scoreEvidence;
+    expect(Math.abs(once - thrice)).toBeLessThanOrEqual(2);
+  });
+  it("reports both overall scores", () => {
+    const r = rateRoutine(routineFromTemplate("upper-lower"));
+    expect(r.mode).toBe("evidence");
+    expect(r.scores.evidence).toBe(r.score);
+    expect(r.scores.wns).toBeGreaterThan(0);
   });
 });

@@ -34,6 +34,7 @@ import Water from "@/components/calculators/Water";
 import SweatRate from "@/components/calculators/SweatRate";
 import WeeklyNetStimulus from "@/components/calculators/WeeklyNetStimulus";
 import RoutinePlanner from "@/components/calculators/RoutinePlanner";
+import HypertrophyHub from "@/components/calculators/HypertrophyHub";
 import StimulatingReps from "@/components/calculators/StimulatingReps";
 import ExerciseLibrary from "@/components/calculators/ExerciseLibrary";
 
@@ -54,6 +55,7 @@ export const TOOL_GROUPS: ToolGroup[] = [
   {
     group: "Hypertrophy",
     tools: [
+      { id: "hub", name: "Hypertrophy hub", blurb: "Your stats, lifts, plan, nutrition and a forecast of your physique, all in one place", Component: HypertrophyHub },
       { id: "routine-planner", name: "Routine planner", blurb: "Build sessions, save routines and get a hypertrophy rating", Component: RoutinePlanner },
       { id: "diet-planner", name: "Muscle building & cut planner", blurb: "Build muscle without the fat, recomp or cut — calories set by what muscle costs", Component: DietPlanner },
       { id: "net-stimulus", name: "Weekly net stimulus", blurb: "Beardsley's model: weekly growth stimulus minus atrophy", Component: WeeklyNetStimulus },

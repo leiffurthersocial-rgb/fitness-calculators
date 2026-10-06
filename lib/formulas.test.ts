@@ -354,3 +354,18 @@ describe("biological age (multi-factor)", () => {
     expect(r.factors.find((f) => f.key === "rhr")!.years).toBeLessThanOrEqual(6);
   });
 });
+
+import { e1rmFromSet, bmrKatch, bmrBest, bmrMifflin as _mifflin } from "./formulas";
+describe("accuracy helpers", () => {
+  it("e1RM counts reps in reserve as reps you could have done", () => {
+    expect(e1rmFromSet(100, 5, 2)).toBeCloseTo(e1rmFromSet(100, 7, 0));
+    expect(e1rmFromSet(100, 1, 0)).toBe(100);
+    expect(e1rmFromSet(60, 15, 0)).toBeCloseTo(60 * (1 + 15 / 30));
+  });
+  it("Katch–McArdle uses lean mass; best BMR averages it with Mifflin", () => {
+    expect(bmrKatch(80, 15)).toBeCloseTo(370 + 21.6 * 68);
+    const m = _mifflin(80, 180, 30, "male");
+    expect(bmrBest(80, 180, 30, "male", 15)).toBeCloseTo((m + bmrKatch(80, 15)) / 2);
+    expect(bmrBest(80, 180, 30, "male")).toBe(m);
+  });
+});
